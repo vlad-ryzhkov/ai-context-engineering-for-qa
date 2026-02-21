@@ -4,10 +4,10 @@
 
 ## Why this is bad
 
-Тесты, зависящие от порядка выполнения:
-- JUnit 5 не гарантирует порядок по умолчанию
-- Параллельный запуск невозможен
-- Один упавший тест каскадно ломает все следующие
+Tests that depend on execution order:
+- JUnit 5 does not guarantee order by default
+- Parallel execution is impossible
+- One failing test cascades and breaks all subsequent tests
 
 ## Bad Example
 
@@ -65,6 +65,6 @@ class UserTest : TestBase() {
 ## What to look for in code review
 
 - `@TestMethodOrder` + `@Order` annotations
-- `lateinit var` в companion object, заполняемый в одном тесте
-- Тесты, которые падают при запуске поодиночке
-- Комментарии типа "run after test X"
+- `lateinit var` in companion object, populated by one test
+- Tests that fail when run individually
+- Comments like "run after test X"

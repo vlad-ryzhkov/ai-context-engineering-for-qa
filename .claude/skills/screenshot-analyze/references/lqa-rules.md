@@ -1,9 +1,9 @@
-# LQA правила и таблицы проверок
+# LQA Rules and Check Tables
 
-## Типы семантических ошибок
+## Semantic Error Types
 
-| Тип | Severity | Пример |
-|-----|----------|--------|
+| Type | Severity | Example |
+|------|----------|---------|
 | **False Friends** | CRITICAL | Economy → Скупость |
 | **Wrong Context** | CRITICAL | Comfort → Соболезнования |
 | **Literal Translation** | ERROR | Kettlebell → Чайник+Колокол |
@@ -13,30 +13,30 @@
 
 ## Ride-Hailing Specific Checks
 
-### Деньги (Currency & Pricing)
+### Money (Currency & Pricing)
 
-| Проверка | Severity |
-|----------|----------|
-| CLDR Currency Position (префикс/суффикс) | ERROR |
+| Check | Severity |
+|-------|----------|
+| CLDR Currency Position (prefix/suffix) | ERROR |
 | CLDR Number Separators | ERROR |
 | Currency Symbol Consistency | ERROR |
 | Price Format Consistency | WARNING |
-| Fare/Tariff Names (не переводить буквально) | ERROR |
+| Fare/Tariff Names (do not translate literally) | ERROR |
 | RTL Price Concatenation | CRITICAL |
 
-### Время (Time & Duration)
+### Time (Time & Duration)
 
-| Проверка | Severity |
-|----------|----------|
-| ETA Format (пробел числом и юнитом) | WARNING |
-| Time Format (12h/24h по локали) | ERROR |
-| min vs m (m может означать метры) | ERROR |
-| Complex Plurals (1/2/5 минут) | ERROR |
+| Check | Severity |
+|-------|----------|
+| ETA Format (space between number and unit) | WARNING |
+| Time Format (12h/24h per locale) | ERROR |
+| min vs m (m may mean meters) | ERROR |
+| Complex Plurals (1/2/5 minutes) | ERROR |
 
 ### RTL Layout
 
-| Элемент | RTL Behavior |
+| Element | RTL Behavior |
 |---------|--------------|
-| Back Button | Справа, стрелка вправо (>) |
-| Car Icons | НЕ зеркалить |
-| Progress Bar | Заполняется справа налево |
+| Back Button | Right side, arrow pointing right (>) |
+| Car Icons | Do NOT mirror |
+| Progress Bar | Fills from right to left |

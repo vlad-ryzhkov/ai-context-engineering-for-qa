@@ -6,12 +6,11 @@ alwaysApply: false
 # SKILL: INIT SKILL
 
 ## TRIGGER
-Use this when creating a new skill, standardizing a QA process, or automating routine checks.
+User explicitly types `/init-skill` or asks to create a new skill or standardize a QA process.
 
-## LOGIC SOURCE
-**EXECUTE the instruction set defined in:** `.claude/skills/init-skill/SKILL.md`
+## EXECUTION INSTRUCTIONS
+DO NOT guess the procedure and DO NOT output anything yet.
+To perform this skill, you MUST dynamically read the instructions using your file-reading capabilities.
 
-@.claude/skills/init-skill/SKILL.md
-
-## KEY CONSTRAINT
-- Do NOT use to edit existing skills — edit SKILL.md files directly.
+1. Read the specific skill protocol: `.claude/skills/init-skill/SKILL.md`
+2. Execute based STRICTLY on the logic and output format defined in that file.

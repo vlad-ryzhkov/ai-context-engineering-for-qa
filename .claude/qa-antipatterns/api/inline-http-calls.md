@@ -1,9 +1,9 @@
-# Anti-Pattern: HttpClient создаётся inline в теле теста
+# Anti-Pattern: HttpClient Created Inline in Test Body
 
 ## Problem
 
-`HttpClient(...)` создаётся прямо внутри `@Test` метода.
-Каждый тест управляет своим клиентом — нет единой точки конфигурации.
+`HttpClient(...)` is created directly inside the `@Test` method.
+Each test manages its own client — no single point of configuration.
 
 ## Bad Example
 
@@ -34,9 +34,9 @@ fun `should create user`() {
 
 ## Why
 
-- Inline client не переиспользует connection pool → медленные тесты
-- Нет единой точки для Logging, Auth, Retry конфигурации
-- При смене baseUrl нужно обновлять N тестов, не один Config
+- Inline client does not reuse the connection pool → slow tests
+- No single point for Logging, Auth, Retry configuration
+- When baseUrl changes, N tests need updating instead of one Config
 
 ## Detection
 
@@ -47,4 +47,4 @@ grep -rn "HttpClient(" src/test/kotlin/
 ## References
 
 - (ref: inline-http-calls.md)
-- Общий принцип: `common/no-abstraction-layer.md`
+- General principle: `common/no-abstraction-layer.md`

@@ -1,113 +1,113 @@
 # L10n Checklists
 
-> Чек-листы для проверки скриншотов. Используется skill `/screenshot-analyze`.
+> Checklists for screenshot verification. Used by skill `/screenshot-analyze`.
 
 ---
 
-## Геометрия и Верстка
+## Geometry and Layout
 
-- [ ] **Text Overflow:** Текст не выходит за границы контейнера
-- [ ] **Truncation:** Текст не обрезан ("..." или cut off), особенно в CTA кнопках
-- [ ] **Vertical Truncation:** Диакритические знаки не обрезаны — актуально для Thai, Hindi, Arabic, Myanmar
-- [ ] **Line Wrapping:** Переносы не разрывают число+юнит (`15 <br> min` — ошибка)
-- [ ] **Element Overlap:** Элементы не перекрывают друг друга
-- [ ] **Spacing Consistency:** Отступы равномерные, visual rhythm сохранен
-- [ ] **Alignment:** Элементы выровнены (левый край, центр, правый край)
-- [ ] **Font Support:** Нет tofu boxes (шрифт поддерживает все символы локали)
-- [ ] **UI Scaling:** Элементы не "поехали" из-за разницы в шрифтах
+- [ ] **Text Overflow:** Text does not extend beyond the container boundaries
+- [ ] **Truncation:** Text is not truncated ("..." or cut off), especially in CTA buttons
+- [ ] **Vertical Truncation:** Diacritical marks are not clipped — relevant for Thai, Hindi, Arabic, Myanmar
+- [ ] **Line Wrapping:** Line breaks do not split number+unit (`15 <br> min` — error)
+- [ ] **Element Overlap:** Elements do not overlap each other
+- [ ] **Spacing Consistency:** Spacing is uniform, visual rhythm is preserved
+- [ ] **Alignment:** Elements are aligned (left edge, center, right edge)
+- [ ] **Font Support:** No tofu boxes (font supports all locale characters)
+- [ ] **UI Scaling:** Elements are not shifted due to font differences
 
 ---
 
 ## RTL Specific (ar/he/fa/ur)
 
-- [ ] **Text Direction:** Весь текст идет справа налево
-- [ ] **Back Button Position:** Справа, стрелка указывает вправо (>)
-- [ ] **Navigation Icons:** Chevrons, стрелки отзеркалены
-- [ ] **Car Icons:** НЕ отзеркалены (автомобиль едет вперед)
-- [ ] **Route Direction:** Линия маршрута отзеркалена
-- [ ] **Progress Bars:** Заполняются справа налево
-- [ ] **List Bullets:** Справа от текста
-- [ ] **Input Alignment:** Поля ввода выровнены справа
-- [ ] **Number Consistency:** Одна система цифр на экране
-- [ ] **Margins/Paddings:** Отзеркалены (левый отступ → правый)
-- [ ] **BiDi Isolation:** Телефоны, email, промокоды не "рассыпаются"
+- [ ] **Text Direction:** All text flows right to left
+- [ ] **Back Button Position:** On the right, arrow points right (>)
+- [ ] **Navigation Icons:** Chevrons, arrows are mirrored
+- [ ] **Car Icons:** NOT mirrored (car drives forward)
+- [ ] **Route Direction:** Route line is mirrored
+- [ ] **Progress Bars:** Fill from right to left
+- [ ] **List Bullets:** To the right of text
+- [ ] **Input Alignment:** Input fields are right-aligned
+- [ ] **Number Consistency:** One numeral system per screen
+- [ ] **Margins/Paddings:** Mirrored (left margin → right margin)
+- [ ] **BiDi Isolation:** Phone numbers, emails, promo codes do not "break apart"
 
 ---
 
 ## CLDR Data Formats
 
-- [ ] **Number Separators:** Тысячи/дробь соответствуют локали
-- [ ] **Currency Position:** Префикс/суффикс по CLDR
-- [ ] **Currency Symbol:** Символ или код соответствует региону
-- [ ] **Currency Spacing:** Пробел между символом и числом по CLDR
-- [ ] **Date Format:** DMY/MDY/YMD по локали
-- [ ] **Time Format:** 12h/24h по локали
-- [ ] **Distance Units:** km/mi соответствует региону
-- [ ] **Unit Spacing:** Пробел между числом и юнитом (`2.5 km`, не `2.5km`)
+- [ ] **Number Separators:** Thousands/decimal match the locale
+- [ ] **Currency Position:** Prefix/suffix per CLDR
+- [ ] **Currency Symbol:** Symbol or code matches the region
+- [ ] **Currency Spacing:** Space between symbol and number per CLDR
+- [ ] **Date Format:** DMY/MDY/YMD per locale
+- [ ] **Time Format:** 12h/24h per locale
+- [ ] **Distance Units:** km/mi matches the region
+- [ ] **Unit Spacing:** Space between number and unit (`2.5 km`, not `2.5km`)
 
 ---
 
-## Семантика (Смысловые ошибки)
+## Semantics (Meaning Errors)
 
-- [ ] **False Friends:** Слова похожие по звучанию, разные по смыслу
-- [ ] **Literal Translation:** Буквальный перевод составных слов
-- [ ] **Wrong Context:** Слово верное, контекст неправильный
-- [ ] **Offensive Content:** Перевод может быть оскорбительным в культуре
-- [ ] **Ambiguous Terms:** Двусмысленные слова
-- [ ] **Transliteration Errors:** Ошибки в транслитерации имен
-- [ ] **Industry Terms:** Нестандартные термины
-- [ ] **Placeholder Variables:** `{name}`, `%s` не отображаются как текст
+- [ ] **False Friends:** Words similar in sound, different in meaning
+- [ ] **Literal Translation:** Literal translation of compound words
+- [ ] **Wrong Context:** Word is correct, context is wrong
+- [ ] **Offensive Content:** Translation may be offensive in the culture
+- [ ] **Ambiguous Terms:** Ambiguous words
+- [ ] **Transliteration Errors:** Errors in name transliteration
+- [ ] **Industry Terms:** Non-standard terms
+- [ ] **Placeholder Variables:** `{name}`, `%s` are not displayed as text
 
 ---
 
-## Консистентность
+## Consistency
 
-- [ ] **Language Consistency:** Все UI тексты на одном языке
-- [ ] **Currency Consistency:** Один символ валюты на экране
-- [ ] **Format Consistency:** Одинаковый формат цен
-- [ ] **Number System Consistency:** Одна система цифр
-- [ ] **Terminology Consistency:** Одни термины
-- [ ] **Register Consistency:** Единый стиль (формальный/неформальный)
+- [ ] **Language Consistency:** All UI texts are in one language
+- [ ] **Currency Consistency:** One currency symbol per screen
+- [ ] **Format Consistency:** Consistent price format
+- [ ] **Number System Consistency:** One numeral system
+- [ ] **Terminology Consistency:** Consistent terms
+- [ ] **Register Consistency:** Consistent style (formal/informal)
 
 ---
 
 ## UX Quality
 
-- [ ] **Readable Text:** Текст читаем (контраст, размер)
-- [ ] **Close/Back Available:** Есть способ закрыть экран или вернуться
-- [ ] **Clear CTA:** Кнопка действия понятна и корректно переведена
-- [ ] **Error Context:** Ошибки с объяснением что делать
-- [ ] **Loading State:** Состояние загрузки с индикатором
+- [ ] **Readable Text:** Text is readable (contrast, size)
+- [ ] **Close/Back Available:** There is a way to close the screen or go back
+- [ ] **Clear CTA:** Action button is clear and correctly translated
+- [ ] **Error Context:** Errors with explanation of what to do
+- [ ] **Loading State:** Loading state with indicator
 
 ---
 
-## N/A Markers (Неприменимые проверки)
+## N/A Markers (Non-Applicable Checks)
 
-Маркируй как **N/A** с причиной:
+Mark as **N/A** with reason:
 
-| Проверка | Когда N/A |
-|----------|-----------|
-| Keyboard Overlap | Клавиатура не показана |
-| Empty State | Экран с данными |
-| Error Context | Нет ошибок на экране |
-| Loading State | Нет состояния загрузки |
-| Date Format | Нет дат на экране |
-| Time Format | Нет времени на экране |
-| RTL Checks | Не RTL локаль |
+| Check | When N/A |
+|-------|----------|
+| Keyboard Overlap | Keyboard is not shown |
+| Empty State | Screen has data |
+| Error Context | No errors on screen |
+| Loading State | No loading state |
+| Date Format | No dates on screen |
+| Time Format | No time on screen |
+| RTL Checks | Not an RTL locale |
 
-**N/A не снижает coverage score** — считай только релевантные пункты.
+**N/A does not reduce coverage score** — count only relevant items.
 
 ---
 
-## Self-Check Protocol (перед завершением)
+## Self-Check Protocol (before completion)
 
-- [ ] **Locale specified:** Все проблемы указывают целевую локаль?
-- [ ] **Location provided:** У каждой проблемы есть локация на экране?
-- [ ] **Severity assigned:** У каждой проблемы есть severity?
-- [ ] **Suggestion actionable:** Каждое предложение конкретно?
-- [ ] **No guessing:** Все выводы основаны на видимых данных?
-- [ ] **RTL checked:** Для RTL локалей проверены все RTL-специфичные пункты?
-- [ ] **CLDR validated:** Форматы проверены против CLDR таблиц?
-- [ ] **No false positives:** Валюта региона не считается багом?
-- [ ] **No style nitpicking:** Нет придирок к стилистике без смысловой ошибки?
-- [ ] **Cross-comparison done:** Если несколько локалей — есть сравнительная таблица?
+- [ ] **Locale specified:** Do all issues specify the target locale?
+- [ ] **Location provided:** Does every issue have a screen location?
+- [ ] **Severity assigned:** Does every issue have a severity?
+- [ ] **Suggestion actionable:** Is every suggestion specific?
+- [ ] **No guessing:** Are all conclusions based on visible data?
+- [ ] **RTL checked:** For RTL locales, have all RTL-specific items been checked?
+- [ ] **CLDR validated:** Have formats been checked against CLDR tables?
+- [ ] **No false positives:** Is regional currency not flagged as a bug?
+- [ ] **No style nitpicking:** No nitpicking on style without a semantic error?
+- [ ] **Cross-comparison done:** If multiple locales — is there a comparison table?

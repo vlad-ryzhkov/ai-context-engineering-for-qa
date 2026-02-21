@@ -1,6 +1,6 @@
 ---
 name: skill-audit
-description: Аудит SKILL.md и qa_agent.md на раздутость, дублирование, вредные паттерны ("НЕ ИСПРАВЛЯТЬ", раздутые шаблоны). Используй для оптимизации AI-сетапа и снижения токен-расхода. Не используй для аудита документации — для этого /doc-lint.
+description: Audit SKILL.md and qa_agent.md for bloat, duplication, harmful patterns ("DO NOT FIX", bloated templates). Use to optimize AI setup and reduce token usage. Do not use for documentation audit — use /doc-lint instead.
 allowed-tools: "Read Write Edit Glob Grep Bash(wc*)"
 agent: agents/auditor.md
 context: fork
@@ -8,175 +8,175 @@ context: fork
 
 # Skill & Agent Audit
 
-Аудит AI-инструкций на эффективность: находит раздутость, дублирование, вредные паттерны.
+Audit AI instructions for efficiency: detect bloat, duplication, harmful patterns.
 
-## Перед началом
+## Before You Start
 
-Прочитай:
-1. `.claude/qa_agent.md` и `.claude/agents/auditor.md`
-2. `.claude/skills/init-skill/references/validation-checklist.md` — пороги строк и обязательные секции
-3. `.claude/skills/init-skill/references/yaml-reference.md` — правила YAML frontmatter
-
----
-
-## Когда использовать
-
-- После создания нового скилла через `/init-skill`
-- При подозрении что скилл тратит слишком много токенов
-- Периодически (раз в спринт) для всех скиллов
-- После обновления CLAUDE.md или qa_agent.md
+Read:
+1. `.claude/qa_agent.md` and `.claude/agents/auditor.md`
+2. `.claude/skills/init-skill/references/validation-checklist.md` — line thresholds and required sections
+3. `.claude/skills/init-skill/references/yaml-reference.md` — YAML frontmatter rules
 
 ---
 
-## Входные данные
+## When to Use
 
-| Параметр | Обязательность | Описание |
-|----------|:--------------:|----------|
-| Scope | Опционально | Путь к конкретному скиллу или "all". По умолчанию — все скиллы |
+- After creating a new skill via `/init-skill`
+- When a skill is suspected of excessive token usage
+- Periodically (once per sprint) for all skills
+- After updating CLAUDE.md or qa_agent.md
 
 ---
 
-## Алгоритм (9 проверок)
+## Input
+
+| Parameter | Required | Description |
+|-----------|:--------:|-------------|
+| Scope | Optional | Path to a specific skill or "all". Defaults to all skills |
+
+---
+
+## Algorithm (9 Checks)
 
 ## Verbosity Protocol
 
-**Structured Output Priority:** Весь analysis идёт в артефакт (MD/HTML), не в чат.
+**Structured Output Priority:** All analysis goes into the artifact (MD/HTML), not into chat.
 
-**Chat output (ограничения):**
-- Brief Summary: max 5 строк (что нашли, сколько, итог)
-- Полный отчёт: `📊 Полный отчёт: {path}` + открыть файл
+**Chat output (constraints):**
+- Brief Summary: max 5 lines (what was found, count, verdict)
+- Full report: `📊 Full report: {path}` + open file
 
-**Iterative steps:** Не выводить прогресс по каждому файлу. Checkpoint только при:
-- Phase transition (Фаза N → Фаза N+1)
-- Blocker обнаружен
-- Завершение (SKILL COMPLETE)
+**Iterative steps:** Do not output progress per file. Checkpoint only on:
+- Phase transition (Phase N → Phase N+1)
+- Blocker detected
+- Completion (SKILL COMPLETE)
 
 **Tools first:**
-- Grep → table → report, без "Now I will grep..."
-- Read → analyze → report, без "The file shows..."
+- Grep → table → report, no "Now I will grep..."
+- Read → analyze → report, no "The file shows..."
 
-**Post-Check:** Inline перед SKILL COMPLETE (5-7 строк checklist), не отдельный файл.
+**Post-Check:** Inline before SKILL COMPLETE (5–7 line checklist), not a separate file.
 
 ### Check 0: Standards Drift
 
-Проверь, что пороги в этом SKILL.md совпадают с `init-skill/references/validation-checklist.md`:
-- Лимит строк SKILL.md (сейчас в чеклисте: ≤500)
-- Обязательные поля YAML frontmatter
-- Обязательные секции контента
+Verify that thresholds in this SKILL.md match `init-skill/references/validation-checklist.md`:
+- SKILL.md line limit (current checklist value: ≤500)
+- Required YAML frontmatter fields
+- Required content sections
 
-Если расхождение найдено → **ERROR** «Standards Drift: {поле} в audit={X}, в checklist={Y}».
-Рекомендация: обновить пороги в skill-audit/SKILL.md по чеклисту.
+If drift found → **ERROR** "Standards Drift: {field} in audit={X}, in checklist={Y}".
+Recommendation: update thresholds in skill-audit/SKILL.md per checklist.
 
 ### Check 1: Line Count
 
-Для каждого SKILL.md — `wc -l`. Порог берётся из `init-skill/references/validation-checklist.md` (секция «Структура», поле SKILL.md ≤ N строк):
+For each SKILL.md — `wc -l`. Threshold taken from `init-skill/references/validation-checklist.md` (section "Structure", field SKILL.md ≤ N lines):
 
-| Порог (по чеклисту) | Severity |
-|---------------------|----------|
+| Threshold (per checklist) | Severity |
+|---------------------------|----------|
 | ≤ threshold | OK |
 | threshold+1 … threshold×1.1 | WARNING |
 | > threshold×1.1 | CRITICAL |
 
-*Текущий threshold по чеклисту: **500 строк***.
+*Current threshold per checklist: **500 lines***.
 
-Для qa_agent.md: OK ≤200, WARNING 201-300, CRITICAL >300.
+For qa_agent.md: OK ≤200, WARNING 201-300, CRITICAL >300.
 
 ### Check 1a: YAML Compliance
 
-Для каждого SKILL.md сверь frontmatter с правилами из `init-skill/references/yaml-reference.md`:
+For each SKILL.md verify frontmatter against rules from `init-skill/references/yaml-reference.md`:
 
-- `name` в kebab-case, совпадает с именем папки, без "claude"/"anthropic"
-- `description` содержит три части: **Что / Когда / Когда НЕ**
-- `description` < 1024 символов, без XML-символов (`<`, `>`), однострочный
-- Если `agent:` присутствует — referenced файл существует
+- `name` in kebab-case, matches folder name, no "claude"/"anthropic"
+- `description` contains three parts: **What / When / When NOT**
+- `description` < 1024 chars, no XML characters (`<`, `>`), single-line
+- If `agent:` is present — referenced file exists
 
-Severity: **ERROR** (отсутствует обязательное поле), **WARNING** (нарушение формата description).
+Severity: **ERROR** (required field missing), **WARNING** (description format violation).
 
 ### Check 1b: Verbosity Protocol
 
-Grep: `## Verbosity Protocol`, `SILENT MODE`, `NO CHAT TABLES` в SKILL.md файлах.
+Grep: `## Verbosity Protocol`, `SILENT MODE`, `NO CHAT TABLES` in SKILL.md files.
 
-- Severity: **CRITICAL** (если отсутствует)
-- Почему: Агенты без этого протокола замусоривают чат, выводят промежуточные таблицы и списки, тратят токены на болтовню
-- **Исключение:** Если у скилла есть `agent:` в frontmatter — проверь Verbosity Protocol в файле агента (`agents/{name}.md`). Дублировать в SKILL.md не нужно — флагать только если отсутствует и в SKILL.md, и в агенте.
-- Рекомендация: Добавить Verbosity Protocol в файл агента (не в SKILL.md)
+- Severity: **CRITICAL** (if absent)
+- Why: Agents without this protocol pollute chat, output intermediate tables and lists, waste tokens on chatter
+- **Exception:** If the skill has `agent:` in frontmatter — check for Verbosity Protocol in the agent file (`agents/{name}.md`). No need to duplicate in SKILL.md — flag only if absent from both SKILL.md and the agent.
+- Recommendation: Add Verbosity Protocol to the agent file (not to SKILL.md)
 
-### Check 2: Self-Review Protocol (раздутый)
+### Check 2: Self-Review Protocol (Bloated)
 
-Grep: `Self-Review`, `self_review`, `_self_review.md`, шаблоны отчётов с `Scorecard`.
+Grep: `Self-Review`, `self_review`, `_self_review.md`, report templates with `Scorecard`.
 
-- Severity: **WARNING** (только если self-review шаблон >50 строк или не содержит Scorecard)
-- Почему: раздутые шаблоны тратят токены; компактные Scorecard — полезный инструмент трекинга
-- Рекомендация: оптимизировать шаблон до ≤50 строк с обязательным Scorecard
-- **Исключения:**
-  - `*_self_review.md` файлы с Scorecard — ценные артефакты трекинга прогресса. Не флагать
+- Severity: **WARNING** (only if self-review template >50 lines or lacks Scorecard)
+- Why: bloated templates waste tokens; compact Scorecards are a useful tracking tool
+- Recommendation: optimize template to ≤50 lines with mandatory Scorecard
+- **Exceptions:**
+  - `*_self_review.md` files with Scorecard — valuable progress tracking artifacts. Do not flag
 
-### Check 3: "НЕ ИСПРАВЛЯТЬ" Instruction
+### Check 3: "DO NOT FIX" Instruction
 
-Grep: `НЕ ИСПРАВЛЯТЬ`, `не исправляй`, `только анализ` — в контексте review/check секций.
+Grep: `НЕ ИСПРАВЛЯТЬ`, `не исправляй`, `только анализ` — in the context of review/check sections.
 
 - Severity: **CRITICAL**
-- Почему: AI документирует проблемы вместо исправления
-- Рекомендация: заменить на "ИСПРАВЬ КОД/аудит, перекомпилируй"
+- Why: AI documents problems instead of fixing them
+- Recommendation: replace with "FIX the code/audit, recompile"
 
 ### Check 4: Tech Stack Duplication
 
-1. Прочитай CLAUDE.md → найди Tech Stack
-2. Grep в каждом SKILL.md по ключевым словам стека (Ktor, Jackson, Kotest, etc.)
-3. Если SKILL.md содержит полную таблицу стека (≥4 строки с `|`) → дублирование
+1. Read CLAUDE.md → find Tech Stack
+2. Grep each SKILL.md for stack keywords (Ktor, Jackson, Kotest, etc.)
+3. If SKILL.md contains a full stack table (≥4 rows with `|`) → duplication
 
 - Severity: **WARNING**
-- Рекомендация: заменить таблицу на `Стек LOCKED в CLAUDE.md → Tech Stack` + дополнения
+- Recommendation: replace table with `Stack LOCKED in CLAUDE.md → Tech Stack` + additions
 
 ### Check 5: Code Examples >50 Lines
 
-Найти code blocks (```kotlin, ```python, etc.) в SKILL.md. Подсчитать строки в каждом.
+Find code blocks (```kotlin, ```python, etc.) in SKILL.md. Count lines in each.
 
-- Severity: **WARNING** (если блок >50 строк)
-- Рекомендация: вынести в `references/examples.md`, оставить 3-4 строки спецификации + ссылку
+- Severity: **WARNING** (if block >50 lines)
+- Recommendation: extract to `references/examples.md`, keep 3–4 spec lines + link
 
 ### Check 6: Decorative Code Blocks
 
-Найти ``` блоки которые НЕ содержат код:
-- Нет language identifier
-- Содержимое = текст с emoji/bullet points/markdown formatting
+Find ``` blocks that do NOT contain code:
+- No language identifier
+- Content = text with emoji/bullet points/markdown formatting
 
 - Severity: **INFO**
-- Рекомендация: заменить на обычные списки/bold text
+- Recommendation: replace with plain lists/bold text
 
 ### Check 7: Anti-Patterns Verbosity
 
-Найти секции BANNED/Anti-Patterns. Подсчитать строки и парные Bad/Good блоки (❌/✅ с кодом).
+Find BANNED/Anti-Patterns sections. Count lines and paired Bad/Good blocks (❌/✅ with code).
 
-- Severity: **WARNING** (если пар >3 и строк >30)
-- Рекомендация: заменить на однострочники, подробности → `qa-antipatterns/*.md` или skill-specific references/
+- Severity: **WARNING** (if pairs >3 and lines >30)
+- Recommendation: replace with one-liners, details → `qa-antipatterns/*.md` or skill-specific references/
 
 ### Check 8: Cross-Reference Staleness
 
-1. Собрать ссылки из qa_agent.md на секции/паттерны скиллов
-2. Проверить что referenced секции существуют в текущих SKILL.md
-3. Проверить Skill Completion Protocol на ссылки удалённых паттернов
+1. Collect references from qa_agent.md to skill sections/patterns
+2. Verify that referenced sections exist in current SKILL.md files
+3. Check Skill Completion Protocol for references to deleted patterns
 
 - Severity: **ERROR**
-- Рекомендация: обновить qa_agent.md
+- Recommendation: update qa_agent.md
 
 ### Check 9: Rarely-Used Sections Inline
 
-Найти секции с:
-- "промпты для кастомизации/генерации/адаптации"
-- Мета-инструкции для пользователя (не для AI при выполнении)
-- Контент используемый 1 раз за проект, но загружаемый каждый вызов
+Find sections with:
+- "prompts for customization/generation/adaptation"
+- Meta-instructions for the user (not for AI during execution)
+- Content used once per project but loaded on every invocation
 
 - Severity: **INFO**
-- Рекомендация: вынести в `references/`
+- Recommendation: extract to `references/`
 
 ---
 
-## Формат отчёта
+## Report Format
 
-Записать полный отчёт в `audit/skill-audit-report.md` (таблица находок + Summary).
+Write the full report to `audit/skill-audit-report.md` (findings table + Summary).
 
-В чат вывести только:
+Output to chat only:
 ```
 📊 Skill Audit: {N} CRITICAL, {N} WARNING, {N} INFO → audit/skill-audit-report.md
 ```
@@ -185,27 +185,27 @@ Grep: `НЕ ИСПРАВЛЯТЬ`, `не исправляй`, `только ан
 
 ## Severity Model
 
-| Severity | Что ловит |
-|----------|-----------|
-| **CRITICAL** | "НЕ ИСПРАВЛЯТЬ", SKILL.md >500 строк |
-| **ERROR** | Stale cross-references в qa_agent.md |
-| **WARNING** | Self-Review Protocol (раздутый >50 строк), Tech Stack дублирование, код >50 строк inline, Anti-Patterns >30 строк, 300-500 строк |
-| **INFO** | Decorative ``` блоки, rarely-used sections inline |
+| Severity | What it catches |
+|----------|-----------------|
+| **CRITICAL** | "DO NOT FIX", SKILL.md >500 lines |
+| **ERROR** | Stale cross-references in qa_agent.md |
+| **WARNING** | Self-Review Protocol (bloated >50 lines), Tech Stack duplication, code >50 lines inline, Anti-Patterns >30 lines, 300–500 lines |
+| **INFO** | Decorative ``` blocks, rarely-used sections inline |
 
 ---
 
-## Post-Audit Check (в чат, НЕ создавай файл)
+## Post-Audit Check (to chat, DO NOT create a file)
 
-- [ ] Все скиллы в scope проверены?
-- [ ] Line counts верифицированы через `wc -l`?
-- [ ] Нет false positives (контекст каждого finding проверен)?
-- [ ] Рекомендации конкретные (что → куда)? ← каждая рекомендация называет конкретный файл и действие, не "улучшить" или "пересмотреть"
+- [ ] All skills in scope checked?
+- [ ] Line counts verified via `wc -l`?
+- [ ] No false positives (context of each finding verified)?
+- [ ] Recommendations are specific (what → where)? ← each recommendation names a specific file and action, not "improve" or "reconsider"
 
-**Если нашёл ошибку в аудите → исправь.**
-НЕ создавай *_self_review.md.
+**If you found an error in the audit → fix it.**
+DO NOT create *_self_review.md.
 
 ---
 
-### Завершение
+### Completion
 
-После Post-Audit Check — напечатай блок `SKILL COMPLETE` (формат в qa_agent.md § Skill Completion Protocol).
+After Post-Audit Check — print the `SKILL COMPLETE` block (format in qa_agent.md § Skill Completion Protocol).

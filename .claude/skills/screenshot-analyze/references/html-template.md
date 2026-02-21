@@ -1,6 +1,6 @@
 # HTML Report Template
 
-> Шаблон HTML отчёта для `/screenshot-analyze`.
+> HTML report template for `/screenshot-analyze`.
 
 ---
 
@@ -8,24 +8,24 @@
 
 ### Issue Categories (Tags)
 
-| Tag | CSS Class | Описание |
-|-----|-----------|----------|
-| **Семантика** | `.tag.sem` | Смысловые ошибки перевода |
-| **L10N** | `.tag.l10n` | Локализационные проблемы |
-| **CURRENCY** | `.tag.cur` | Ошибки формата валют |
-| **UI** | `.tag.ui` | Верстка: наложения, обрезания |
-| **RTL** | `.tag.rtl` | RTL-специфичные проблемы |
-| **UX** | `.tag.ux` | UX проблемы |
-| **Консист.** | `.tag.cons` | Проблемы консистентности |
+| Tag | CSS Class | Description |
+|-----|-----------|-------------|
+| **Semantics** | `.tag.sem` | Translation semantic errors |
+| **L10N** | `.tag.l10n` | Localization issues |
+| **CURRENCY** | `.tag.cur` | Currency format errors |
+| **UI** | `.tag.ui` | Layout: overlaps, truncation |
+| **RTL** | `.tag.rtl` | RTL-specific issues |
+| **UX** | `.tag.ux` | UX issues |
+| **Consist.** | `.tag.cons` | Consistency issues |
 
 ### Severity Levels
 
-| Severity | CSS Class | Русский | Цвет |
-|----------|-----------|---------|------|
-| CRITICAL | `.sev.crit` | КРИТИЧНО | #dc2626 |
-| ERROR | `.sev.err` | ОШИБКА | #ef4444 |
-| WARNING | `.sev.warn` | ВНИМАНИЕ | #f59e0b |
-| INFO | `.sev.info` | ИНФО | #3b82f6 |
+| Severity | CSS Class | Label | Color |
+|----------|-----------|-------|-------|
+| CRITICAL | `.sev.crit` | CRITICAL | #dc2626 |
+| ERROR | `.sev.err` | ERROR | #ef4444 |
+| WARNING | `.sev.warn` | WARNING | #f59e0b |
+| INFO | `.sev.info` | INFO | #3b82f6 |
 
 ---
 
@@ -131,30 +131,30 @@
 
 ## Placeholders
 
-| Placeholder | Описание |
-|-------------|----------|
-| `{COUNTRY_NAME}` | Полное название страны (Brazil, Russia) |
-| `{REGION_CODE}` | ISO код региона (BR, RU, SA) |
-| `{CURRENCY}` | Код валюты (BRL, RUB, SAR) |
-| `{CURRENCY_SYMBOL}` | Символ валюты (R$, ₽, SAR) |
-| `{DATE}` | Дата генерации отчёта |
-| `{CRITICAL_COUNT}` | Количество CRITICAL ошибок |
-| `{ERROR_COUNT}` | Количество ERROR ошибок |
-| `{WARNING_COUNT}` | Количество WARNING ошибок |
-| `{INFO_COUNT}` | Количество INFO ошибок |
-| `{FILENAME}` | Имя файла скриншота |
-| `{LOCALE}` | Локаль скриншота (ru-RU, ar-SA) |
-| `{VERDICT_CLASS}` | CSS класс вердикта (pass/fail/warn) |
-| `{VERDICT}` | Текст вердикта |
-| `{BASE64_IMAGE}` | Base64 encoded изображение |
+| Placeholder | Description |
+|-------------|-------------|
+| `{COUNTRY_NAME}` | Full country name (Brazil, Russia) |
+| `{REGION_CODE}` | ISO region code (BR, RU, SA) |
+| `{CURRENCY}` | Currency code (BRL, RUB, SAR) |
+| `{CURRENCY_SYMBOL}` | Currency symbol (R$, ₽, SAR) |
+| `{DATE}` | Report generation date |
+| `{CRITICAL_COUNT}` | Number of CRITICAL issues |
+| `{ERROR_COUNT}` | Number of ERROR issues |
+| `{WARNING_COUNT}` | Number of WARNING issues |
+| `{INFO_COUNT}` | Number of INFO issues |
+| `{FILENAME}` | Screenshot filename |
+| `{LOCALE}` | Screenshot locale (ru-RU, ar-SA) |
+| `{VERDICT_CLASS}` | Verdict CSS class (pass/fail/warn) |
+| `{VERDICT}` | Verdict text |
+| `{BASE64_IMAGE}` | Base64 encoded image |
 
 ---
 
-## Команды для подготовки изображений
+## Commands for Image Preparation
 
 ```bash
-# Проверить размер
+# Check size
 sips -g pixelWidth -g pixelHeight screenshot.png
 ```
 
-**ОБЯЗАТЕЛЬНО:** Открой отчёт командой `open {path}/analysis-report.html`
+**MUST:** Open the report with `open {path}/analysis-report.html`

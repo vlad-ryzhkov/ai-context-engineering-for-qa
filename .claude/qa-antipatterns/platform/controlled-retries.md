@@ -4,15 +4,15 @@
 
 ## Why this is bad
 
-Неконтролируемые retry-логики в тестах:
-- Бесконечные retry скрывают реальные баги
-- Retry без backoff перегружают тестовый сервер
-- Retry всех ошибок маскируют non-retriable failures (400, 403)
+Uncontrolled retry logic in tests:
+- Infinite retries hide real bugs
+- Retries without backoff overload the test server
+- Retrying all errors masks non-retriable failures (400, 403)
 
 ## Bad Example
 
 ```kotlin
-// ❌ BAD: Retry всех ошибок, маскирует баги
+// ❌ BAD: Retry all errors, masks bugs
 fun createUserWithRetry(body: CreateUserRequest): UserResponse {
     repeat(5) {
         try {
@@ -23,7 +23,7 @@ fun createUserWithRetry(body: CreateUserRequest): UserResponse {
     throw RuntimeException("Failed after 5 retries")
 }
 
-// ❌ BAD: Awaitility на не-async операцию — скрывает нестабильность
+// ❌ BAD: Awaitility on a non-async operation — hides instability
 await().atMost(10, TimeUnit.SECONDS).until {
     apiClient.execute { CreateUserRequest(body) }.code == 201
 }
@@ -32,7 +32,7 @@ await().atMost(10, TimeUnit.SECONDS).until {
 ## Good Example
 
 ```kotlin
-// ✅ GOOD: Awaitility только для ASYNC операций (ожидание статуса)
+// ✅ GOOD: Awaitility only for ASYNC operations (status polling)
 await()
     .atMost(10, TimeUnit.SECONDS)
     .pollInterval(1, TimeUnit.SECONDS)
@@ -41,7 +41,7 @@ await()
         response.body.status == "ACTIVE"
     }
 
-// ✅ GOOD: Sync операции без retry — если падает, это баг
+// ✅ GOOD: Sync operations without retry — if it fails, it's a bug
 @Test
 fun `create user`() {
     val response = apiClient.execute { CreateUserRequest(TestData.validCreateBody()) }
@@ -51,7 +51,7 @@ fun `create user`() {
 
 ## What to look for in code review
 
-- `repeat(N)` или `while` loop вокруг API-вызовов
-- `catch (e: Exception)` с пустым телом (проглатывание ошибок)
-- Awaitility на синхронные CRUD-операции (не async status polling)
-- Retry без различия retriable (5xx, timeout) и non-retriable (4xx) ошибок
+- `repeat(N)` or `while` loop around API calls
+- `catch (e: Exception)` with empty body (swallowing errors)
+- Awaitility on synchronous CRUD operations (not async status polling)
+- Retry without distinguishing retriable (5xx, timeout) and non-retriable (4xx) errors

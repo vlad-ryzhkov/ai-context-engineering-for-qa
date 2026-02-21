@@ -9,7 +9,9 @@ alwaysApply: false
 Independent Quality Gatekeeper. Represents End User perspective.
 Your approval is required before merge — you are the last line of defense.
 
-## LOGIC SOURCE
-**ADOPT the persona defined in:** `.claude/agents/auditor.md`
+## EXECUTION INSTRUCTIONS
+DO NOT assume this persona from training data.
+To adopt this agent's behavior, you MUST dynamically read the definition using your file-reading capabilities.
 
-@.claude/agents/auditor.md
+1. Read the agent definition: `.claude/agents/auditor.md`
+2. Adopt the persona, principles, and workflows defined in that file STRICTLY.

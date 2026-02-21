@@ -4,10 +4,10 @@
 
 ## Why this is bad
 
-Инфраструктурные ошибки (сеть, таймаут, DNS) не отличимы от бизнес-ошибок:
-- Тест падает с `ConnectException` — непонятно, это баг или infra issue
-- CI report показывает 50 FAILED, но все из-за одного упавшего сервиса
-- Нет разделения между "тест нашёл баг" и "окружение сломано"
+Infrastructure errors (network, timeout, DNS) are indistinguishable from business errors:
+- Test fails with `ConnectException` — unclear whether it is a bug or an infra issue
+- CI report shows 50 FAILED, but all due to a single service being down
+- No separation between "test found a bug" and "environment is broken"
 
 ## Bad Example
 
@@ -55,6 +55,6 @@ fun `create user`() {
 
 ## What to look for in code review
 
-- Отсутствие health check или connectivity check перед тест-сьютом
-- `ConnectException`, `SocketTimeoutException` в CI без пояснения
-- Все тесты в сьюте падают одинаково (признак infra issue, не bug)
+- Missing health check or connectivity check before the test suite
+- `ConnectException`, `SocketTimeoutException` in CI without explanation
+- All tests in a suite fail the same way (sign of infra issue, not a bug)

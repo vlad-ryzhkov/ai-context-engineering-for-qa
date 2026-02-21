@@ -1,208 +1,208 @@
 ---
 name: output-review
-description: Независимый аудит результата любого скилла по его чек-листу. Используй после завершения скилла для проверки качества output. Не используй для аудита самих SKILL.md — для этого /skill-audit.
+description: Independent audit of any skill's output against its checklist. Use after skill completion to verify output quality. Do not use for auditing SKILL.md files themselves — use /skill-audit for that.
 allowed-tools: "Read Write Edit Glob Grep Bash(./gradlew*) Bash(wc*)"
 agent: agents/auditor.md
 context: fork
 ---
 
-# /output-review — Независимый аудит результата скилла
+# /output-review — Independent Audit of Skill Output
 
-Проверяет OUTPUT скилла по чек-листам из SKILL.md целевого скилла. Независимая оценка — не тот же AI-контекст, который генерировал результат.
+Verifies skill OUTPUT against checklists from the target skill's SKILL.md. Independent assessment — not the same AI context that generated the result.
 
-## Перед началом
+## Before Starting
 
-Прочитай `.claude/qa_agent.md` и `.claude/agents/auditor.md`.
-
----
-
-## Когда использовать
-
-- Сразу после завершения любого скилла (`SKILL COMPLETE`)
-- Когда Score в SKILL COMPLETE кажется завышенным
-- Для независимой валидации перед мержем/релизом
-
-## Входные данные
-
-| Параметр | Обязательность | Описание |
-|----------|:--------------:|----------|
-| skill-name | Опционально | Имя скилла (`/output-review api-tests`). Если не указано — ищет `SKILL COMPLETE` в чате |
+Read `.claude/qa_agent.md` and `.claude/agents/auditor.md`.
 
 ---
 
-## Алгоритм (7 фаз)
+## When to Use
+
+- Immediately after any skill completes (`SKILL COMPLETE`)
+- When Score in SKILL COMPLETE seems inflated
+- For independent validation before merge/release
+
+## Input Data
+
+| Parameter | Required | Description |
+|-----------|:--------:|-------------|
+| skill-name | Optional | Skill name (`/output-review api-tests`). If not specified — searches for `SKILL COMPLETE` in chat |
+
+---
+
+## Algorithm (7 Phases)
 
 ## Verbosity Protocol
 
-**Structured Output Priority:** Весь analysis идёт в артефакт (MD/HTML), не в чат.
+**Structured Output Priority:** All analysis goes into the artifact (MD/HTML), not into chat.
 
-**Chat output (ограничения):**
-- Brief Summary: max 5 строк (что нашли, сколько, итог)
-- Findings table: max 15 строк (топ по severity)
-- Полный отчёт: `📊 Полный отчёт: {path}` + открыть файл
+**Chat output (constraints):**
+- Brief Summary: max 5 lines (what was found, how many, result)
+- Findings table: max 15 lines (top by severity)
+- Full report: `📊 Full report: {path}` + open file
 
-**Iterative steps:** Не выводить прогресс по каждому файлу. Checkpoint только при:
-- Phase transition (Фаза N → Фаза N+1)
-- Blocker обнаружен
-- Завершение (SKILL COMPLETE)
+**Iterative steps:** Do not output progress for each file. Checkpoint only when:
+- Phase transition (Phase N → Phase N+1)
+- Blocker detected
+- Completion (SKILL COMPLETE)
 
 **Tools first:**
-- Grep → table → report, без "Now I will grep..."
-- Read → analyze → report, без "The file shows..."
+- Grep → table → report, without "Now I will grep..."
+- Read → analyze → report, without "The file shows..."
 
-**Post-Check:** Inline перед SKILL COMPLETE (5-7 строк checklist), не отдельный файл.
+**Post-Check:** Inline before SKILL COMPLETE (5-7 line checklist), not a separate file.
 
-**Фазы 1-6:** Silent. **Фаза 7:** Сохранить полный отчёт в файл + краткая сводка в чат (max 5 строк).
+**Phases 1-6:** Silent. **Phase 7:** Save full report to file + brief summary in chat (max 5 lines).
 
-### Фаза 1 — Target Identification
+### Phase 1 — Target Identification
 
-**Цель:** Определить какой скилл аудитировать.
+**Goal:** Determine which skill to audit.
 
-1. Если указан параметр `/output-review {skill-name}` → использовать его
-2. Иначе — искать последний `SKILL COMPLETE: /{skill-name}` в контексте чата
-3. Fallback — спросить пользователя: "Какой скилл аудитировать?"
-4. Валидация: Glob `.claude/skills/{skill-name}/SKILL.md` — файл должен существовать
+1. If parameter `/output-review {skill-name}` is specified → use it
+2. Otherwise — search for the last `SKILL COMPLETE: /{skill-name}` in chat context
+3. Fallback — ask the user: "Which skill to audit?"
+4. Validation: Glob `.claude/skills/{skill-name}/SKILL.md` — file MUST exist
 
-**Если скилл не найден → STOP:**
+**If skill not found → STOP:**
 ```
-❌ Скилл /{skill-name} не найден в .claude/skills/
-Доступные: [список из Glob]
+❌ Skill /{skill-name} not found in .claude/skills/
+Available: [list from Glob]
 ```
 
 ---
 
-### Фаза 2 — Checklist Extraction
+### Phase 2 — Checklist Extraction
 
-**Цель:** Извлечь все проверки из SKILL.md целевого скилла.
+**Goal:** Extract all checks from the target skill's SKILL.md.
 
-1. Прочитать `.claude/skills/{skill-name}/SKILL.md`
-2. Найти секции (regex по заголовкам `##` / `###`):
+1. Read `.claude/skills/{skill-name}/SKILL.md`
+2. Find sections (regex by headings `##` / `###`):
    - `Self-Check` / `Definition of Done`
    - `Quality Gates`
    - `Post-*Check` (Post-Check, Post-Compilation Check, Post-Audit Check)
-   - `BANNED` / `ЗАПРЕЩЕНО`
+   - `BANNED` / `FORBIDDEN`
    - `Compilation Gate`
-3. Если существует `references/` → Glob `references/*.md` → читать, искать чек-листы
-4. Извлечь каждый пункт `- [ ]` и каждый нумерованный пункт из BANNED
+3. If `references/` exists → Glob `references/*.md` → read, search for checklists
+4. Extract each `- [ ]` item and each numbered item from BANNED
 
-**Вывод перед продолжением:** таблица `| # | Группа | Пункт |` + строка `Всего: N проверок.`
+**Output before continuing:** table `| # | Group | Item |` + line `Total: N checks.`
 
 ---
 
-### Фаза 3 — Artifact Discovery
+### Phase 3 — Artifact Discovery
 
-**Цель:** Найти артефакты (файлы), созданные скиллом.
+**Goal:** Find artifacts (files) created by the skill.
 
-**Приоритет поиска:**
+**Search priority:**
 
-1. **SKILL COMPLETE блок** → строка `Артефакты:` → парсить пути файлов
-2. **SKILL.md output-секция** → прочитать секции "Формат вывода", "Выходные данные", "Артефакты" → Glob по ожидаемым путям
-3. **Chat-only скиллы** (spec-audit, skill-audit, doc-lint, screenshot-analyze) → артефакт = контекст чата + HTML/MD отчёт если есть
+1. **SKILL COMPLETE block** → line `Artifacts:` → parse file paths
+2. **SKILL.md output section** → read sections "Output Format", "Output Data", "Artifacts" → Glob by expected paths
+3. **Chat-only skills** (spec-audit, skill-audit, doc-lint, screenshot-analyze) → artifact = chat context + HTML/MD report if available
 
-**Для каждого найденного файла — проверить существование через Glob.**
+**For each found file — verify existence via Glob.**
 
-**Если артефакты не найдены:**
+**If no artifacts found:**
 ```
-⚠️ Артефакты не обнаружены. Оценка будет проведена по контексту чата.
+⚠️ No artifacts detected. Evaluation will be performed based on chat context.
 ```
 
 ---
 
-### Фаза 4 — Evaluation
+### Phase 4 — Evaluation
 
-**Цель:** Независимо проверить каждый пункт чек-листа.
+**Goal:** Independently verify each checklist item.
 
-Для каждого пункта из Фазы 2:
+For each item from Phase 2:
 
-1. **Прочитать** релевантный артефакт (файл или контекст чата)
-2. **Оценить** соответствие пункту
-3. **Присвоить вердикт:**
+1. **Read** the relevant artifact (file or chat context)
+2. **Evaluate** compliance with the item
+3. **Assign verdict:**
 
-| Вердикт | Значение |
-|---------|----------|
-| ✅ PASS | Полностью соответствует |
-| ❌ FAIL | Не соответствует — с доказательством |
-| ⚠️ PARTIAL | Частично соответствует — описать что не так |
-| ⏭️ SKIP | Неприменимо к данному контексту |
+| Verdict | Meaning |
+|---------|---------|
+| ✅ PASS | Fully compliant |
+| ❌ FAIL | Non-compliant — with evidence |
+| ⚠️ PARTIAL | Partially compliant — describe what is wrong |
+| ⏭️ SKIP | Not applicable to this context |
 
-**Правила:**
+**Rules:**
 
-- Каждый ❌ FAIL — обязательно с **конкретным доказательством**: файл, строка, фрагмент кода
-- BANNED-пункты: Grep по артефактам на сигнатуры (например `Thread.sleep`, `shouldBe`, `Map<String, Any>`)
-- Compilation Gate: запуск команды из SKILL.md (1 попытка). Если уже была запущена — использовать результат из чата
+- Each ❌ FAIL — MUST include **specific evidence**: file, line, code fragment
+- BANNED items: Grep artifacts for signatures (e.g. `Thread.sleep`, `shouldBe`, `Map<String, Any>`)
+- Compilation Gate: run command from SKILL.md (1 attempt). If already run — use result from chat
 
-**Пример FAIL:** `❌ FAIL: assertEquals без message — файл:строка — Найдено: X / Ожидалось: Y`
-
----
-
-### Фаза 5 — Anti-Pattern Scan
-
-**Цель:** Проверить артефакты на анти-паттерны из agents/sdet.md.
-
-1. `ls .claude/qa-antipatterns/` — получить список anti-patterns
-2. Grep по артефактам на ключевые сигнатуры из имён файлов (например `Thread.sleep`, `Map<String, Any>`, PII)
-3. При обнаружении — прочитать соответствующий reference файл для контекста
-
-**Если скилл отсутствует в таблице Anti-Patterns → пропустить фазу.**
-
-| Вердикт | Значение |
-|---------|----------|
-| ✅ CLEAN | Сигнатура не найдена |
-| ❌ FOUND | Сигнатура найдена — файл:строка |
+**FAIL example:** `❌ FAIL: assertEquals without message — file:line — Found: X / Expected: Y`
 
 ---
 
-### Фаза 6 — Universal Checks
+### Phase 5 — Anti-Pattern Scan
 
-**Цель:** Проверки, общие для всех скиллов.
+**Goal:** Check artifacts for anti-patterns from agents/sdet.md.
 
-1. **SKILL COMPLETE блок** — присутствует в чате?
-2. **Формат** — содержит 5 обязательных полей:
-   - `Артефакты`
+1. `ls .claude/qa-antipatterns/` — get list of anti-patterns
+2. Grep artifacts for key signatures from file names (e.g. `Thread.sleep`, `Map<String, Any>`, PII)
+3. If detected — read the corresponding reference file for context
+
+**If skill is not in the Anti-Patterns table → skip this phase.**
+
+| Verdict | Meaning |
+|---------|---------|
+| ✅ CLEAN | Signature not found |
+| ❌ FOUND | Signature found — file:line |
+
+---
+
+### Phase 6 — Universal Checks
+
+**Goal:** Checks common to all skills.
+
+1. **SKILL COMPLETE block** — present in chat?
+2. **Format** — contains 5 required fields:
+   - `Artifacts`
    - `Compilation`
    - `Upstream`
    - `Coverage`
-   - Имя скилла в заголовке
-3. **Score < 70%** — если Coverage указан как X/Y и X/Y < 0.7 → предупреждение
+   - Skill name in the header
+3. **Score < 70%** — if Coverage is specified as X/Y and X/Y < 0.7 → warning
 
 ---
 
-### Фаза 7 — Report
+### Phase 7 — Report
 
-**Цель:** Сформировать итоговый отчёт и сохранить в файл `audit/output-review_{skill-name}_{YYYY-MM-DD}.md`.
+**Goal:** Generate the final report and save to file `audit/output-review_{skill-name}_{YYYY-MM-DD}.md`.
 
-**Если файл с таким именем уже существует — добавить суффикс `_2`, `_3` и т.д.**
+**If a file with this name already exists — add suffix `_2`, `_3`, etc.**
 
-#### Таблица результатов (по группам)
+#### Results Table (by groups)
 
 ```markdown
 ## Output Review Report: /{skill-name}
 
 ### Self-Check / Definition of Done
 
-| # | Пункт | Вердикт | Комментарий |
-|---|-------|---------|-------------|
-| 1 | Архитектура | ✅ PASS | config/, requests/, helpers/ (main) + tests (test) — присутствуют |
-| 2 | assertions с message | ❌ FAIL | assertEquals без message в RegistrationApiTests.kt:45 |
+| # | Item | Verdict | Comment |
+|---|------|---------|---------|
+| 1 | Architecture | ✅ PASS | config/, requests/, helpers/ (main) + tests (test) — present |
+| 2 | assertions with message | ❌ FAIL | assertEquals without message in RegistrationApiTests.kt:45 |
 
 ### BANNED
 
-| # | Правило | Вердикт | Комментарий |
-|---|---------|---------|-------------|
-| 1 | Thread.sleep() | ✅ PASS | Не найдено |
+| # | Rule | Verdict | Comment |
+|---|------|---------|---------|
+| 1 | Thread.sleep() | ✅ PASS | Not found |
 
 ### Anti-Patterns (agents/sdet.md)
 
-| # | Паттерн | Вердикт | Комментарий |
-|---|---------|---------|-------------|
-| 1 | PII в коде | ✅ CLEAN | @gmail.com не найден |
+| # | Pattern | Verdict | Comment |
+|---|---------|---------|---------|
+| 1 | PII in code | ✅ CLEAN | @gmail.com not found |
 
 ### Universal Checks
 
-| # | Проверка | Вердикт | Комментарий |
-|---|----------|---------|-------------|
-| 1 | SKILL COMPLETE блок | ✅ PASS | Присутствует |
-| 2 | 5 полей формата | ⚠️ PARTIAL | Отсутствует Coverage |
+| # | Check | Verdict | Comment |
+|---|-------|---------|---------|
+| 1 | SKILL COMPLETE block | ✅ PASS | Present |
+| 2 | 5 format fields | ⚠️ PARTIAL | Missing Coverage |
 ```
 
 #### Scorecard
@@ -210,81 +210,81 @@ context: fork
 ```
 Score = PASS / (PASS + FAIL) × 100
 
-Формула: {N_pass} + {N_partial}×0.5 / ({N_pass} + {N_partial}×0.5 + {N_fail}) × 100
-SKIP не учитываются.
+Formula: {N_pass} + {N_partial}×0.5 / ({N_pass} + {N_partial}×0.5 + {N_fail}) × 100
+SKIP not counted.
 ```
 
-**Пример:**
+**Example:**
 ```
 Scorecard: 12 PASS + 1 PARTIAL×0.5 / (12 + 0.5 + 2) × 100 = 86%
 ```
 
-#### Расхождения с Post-Check скилла
+#### Discrepancies with Skill's Post-Check
 
-Если скилл уже выполнил Post-Check в чате — сравнить:
-- Где self-review не согласен с оценкой скилла
-- Формат: `Пункт X: скилл → ✅, self-review → ❌ (причина)`
+If the skill already performed Post-Check in chat — compare:
+- Where self-review disagrees with the skill's assessment
+- Format: `Item X: skill → ✅, self-review → ❌ (reason)`
 
-#### Рекомендации по артефакту
+#### Artifact Recommendations
 
-Конкретные действия для устранения каждого FAIL в артефакте:
-
-```markdown
-### Рекомендации по артефакту
-
-1. **[FAIL]** assertEquals без message в RegistrationApiTests.kt:45
-   → Добавить message: `assertEquals(200, response.code, "Registration should return 200")`
-
-2. **[PARTIAL]** Coverage не указан в SKILL COMPLETE
-   → Добавить строку `├─ Coverage: X/Y тестов`
-```
-
-#### Рекомендации по улучшению скилла
-
-**Цель:** На основе найденных FAIL и PARTIAL — предложить конкретные правки в `.claude/skills/{skill-name}/SKILL.md`, чтобы следующий запуск скилла не воспроизводил те же ошибки.
-
-Логика: каждый FAIL/PARTIAL — симптом недостающего или нечёткого правила в скилле.
+Specific actions to resolve each FAIL in the artifact:
 
 ```markdown
-### Рекомендации по улучшению /{skill-name}
+### Artifact Recommendations
 
-| # | Проблема в артефакте | Причина (правило отсутствует) | Рекомендуемое правило в SKILL.md |
-|---|---------------------|-------------------------------|----------------------------------|
-| 1 | Два HTTP-кода в одном Expected Result (`201 ИЛИ 400`) | Нет явного требования атомарности | Добавить в Protocol: "Каждый сценарий содержит ровно 1 Expected Result. Запрещено `X ИЛИ Y` в одной строке." |
-| 2 | L10N сценарии отсутствуют | Нет явного Coverage Matrix для L10N | Добавить в Coverage Matrix: `L10N: {EMOJI_STRING}, {SPECIAL_CHARS}` как обязательные типы, если спека не запрещает явно. |
+1. **[FAIL]** assertEquals without message in RegistrationApiTests.kt:45
+   → Add message: `assertEquals(200, response.code, "Registration should return 200")`
+
+2. **[PARTIAL]** Coverage not specified in SKILL COMPLETE
+   → Add line `├─ Coverage: X/Y tests`
 ```
 
-**Правила генерации рекомендаций:**
-- Только для FAIL и PARTIAL (PASS и SKIP игнорировать)
-- Рекомендация должна быть конкретной: что именно добавить/изменить в SKILL.md и в какую секцию
-- Формулировать как правило/запрет, а не пожелание
-- Если найдено >5 FAIL — сгруппировать по теме, не перечислять каждый отдельно
+#### Skill Improvement Recommendations
+
+**Goal:** Based on found FAIL and PARTIAL items — propose specific edits to `.claude/skills/{skill-name}/SKILL.md`, so the next skill run does not reproduce the same errors.
+
+Logic: each FAIL/PARTIAL is a symptom of a missing or unclear rule in the skill.
+
+```markdown
+### Skill Improvement Recommendations for /{skill-name}
+
+| # | Problem in artifact | Cause (rule is missing) | Recommended rule in SKILL.md |
+|---|---------------------|-------------------------|------------------------------|
+| 1 | Two HTTP codes in one Expected Result (`201 OR 400`) | No explicit atomicity requirement | Add to Protocol: "Each scenario contains exactly 1 Expected Result. FORBIDDEN to use `X OR Y` in a single line." |
+| 2 | L10N scenarios missing | No explicit Coverage Matrix for L10N | Add to Coverage Matrix: `L10N: {EMOJI_STRING}, {SPECIAL_CHARS}` as required types, unless the spec explicitly prohibits them. |
+```
+
+**Recommendation generation rules:**
+- Only for FAIL and PARTIAL (ignore PASS and SKIP)
+- Recommendation MUST be specific: what exactly to add/change in SKILL.md and in which section
+- Formulate as a rule/prohibition, not a suggestion
+- If >5 FAIL found — group by theme, do not list each one separately
 ```
 
 ---
 
-## Ограничения
+## Constraints
 
-- Полный отчёт сохранять в `audit/output-review_{skill-name}_{YYYY-MM-DD}.md`, краткая сводка (5 строк) — в чат
-- Compilation Gate: максимум 1 попытка (не исправлять код, только зафиксировать результат)
-- Не исправлять артефакты — только документировать findings
-- Если артефакт слишком большой (>500 строк) — проверять по ключевым паттернам, не читать целиком
-
----
-
-## Post-Review Check (inline перед SKILL COMPLETE)
-
-- [ ] Все извлечённые пункты чек-листа проверены?
-- [ ] Каждый FAIL содержит конкретное доказательство (файл:строка)?
-- [ ] BANNED-пункты проверены через Grep, а не визуально?
-- [ ] Scorecard рассчитан с показом формулы (числитель/знаменатель)?
-- [ ] Нет ложных FAIL (контекст каждого finding перепроверен)?
-- [ ] Полный отчёт сохранён в `audit/output-review_{skill-name}_{YYYY-MM-DD}.md`?
-
-**Если нашёл ошибку в аудите → исправь.**
+- Save full report to `audit/output-review_{skill-name}_{YYYY-MM-DD}.md`, brief summary (5 lines) — in chat
+- Compilation Gate: maximum 1 attempt (do not fix code, only record the result)
+- Do not fix artifacts — only document findings
+- If artifact is too large (>500 lines) — check by key patterns, do not read entirely
 
 ---
 
-### Завершение
+## Post-Review Check (inline before SKILL COMPLETE)
 
-После Post-Review Check — напечатай блок `SKILL COMPLETE` (формат в qa_agent.md § Skill Completion Protocol).
+- [ ] All extracted checklist items verified?
+- [ ] Each FAIL contains specific evidence (file:line)?
+- [ ] BANNED items checked via Grep, not visually?
+- [ ] Scorecard calculated with formula shown (numerator/denominator)?
+- [ ] No false FAILs (context of each finding re-verified)?
+- [ ] Full report saved to `audit/output-review_{skill-name}_{YYYY-MM-DD}.md`?
+
+**If you found an error in the audit → fix it.**
+
+---
+
+### Completion
+
+After Post-Review Check — print `SKILL COMPLETE` block (format in qa_agent.md § Skill Completion Protocol).

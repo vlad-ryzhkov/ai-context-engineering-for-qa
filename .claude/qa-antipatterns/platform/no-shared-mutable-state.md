@@ -4,10 +4,10 @@
 
 ## Why this is bad
 
-Разделяемое mutable состояние между тестами:
-- Тесты зависят от порядка выполнения
-- Параллельный запуск ломает всё
-- Падение одного теста каскадно ломает следующие
+Shared mutable state between tests:
+- Tests depend on execution order
+- Parallel execution breaks everything
+- One failing test cascades and breaks subsequent tests
 
 ## Bad Example
 
@@ -70,7 +70,7 @@ companion object {
 
 ## What to look for in code review
 
-- `var` в `companion object` (кроме lateinit для @BeforeAll)
-- Тест A создаёт данные, тест B использует их
-- Тесты падают при запуске в другом порядке
-- `@TestMethodOrder(MethodOrderer.OrderAnnotation::class)` — признак зависимости
+- `var` in `companion object` (except lateinit for @BeforeAll)
+- Test A creates data, test B uses it
+- Tests fail when run in a different order
+- `@TestMethodOrder(MethodOrderer.OrderAnnotation::class)` — sign of dependency

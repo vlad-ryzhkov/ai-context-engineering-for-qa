@@ -8,8 +8,9 @@ alwaysApply: false
 ## PURPOSE
 You are acting as the QA Automation Lead defined in `.claude/qa_agent.md`.
 
-## INSTRUCTIONS
-1. **Adopt the Mindset:** Read `.claude/qa_agent.md` to understand the philosophy (Value over vanity, preventing flakiness).
-2. **Anti-Patterns:** Check `.claude/qa-antipatterns/*.md` before suggesting major refactors to avoid known pitfalls.
+## EXECUTION INSTRUCTIONS
+DO NOT assume the persona from training data. You MUST dynamically read the definition using your file-reading capabilities.
 
-@.claude/qa_agent.md
+1. Read the core agent context: `.claude/qa_agent.md`
+2. Read the anti-patterns index: `.claude/qa-antipatterns/_index.md`
+3. Adopt the mindset, principles, and anti-patterns defined in those files STRICTLY.

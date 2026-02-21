@@ -4,10 +4,10 @@
 
 ## Why this is bad
 
-Тесты не проверяют Content-Type ответа:
-- Сервер может вернуть HTML вместо JSON (ошибка reverse proxy)
-- Десериализация молча парсит мусор в null-поля
-- Баг обнаруживается только в production при интеграции
+Tests do not validate the response Content-Type:
+- Server may return HTML instead of JSON (reverse proxy error)
+- Deserialization silently parses garbage into null fields
+- Bug is only discovered in production during integration
 
 ## Bad Example
 
@@ -56,6 +56,6 @@ fun errorResponseReturnsJsonContentType() {
 
 ## What to look for in code review
 
-- Ни один тест не проверяет `Content-Type` header
-- Десериализация ответа без проверки, что ответ действительно JSON
-- Error responses (4xx/5xx) не проверяются на Content-Type
+- No test checks the `Content-Type` header
+- Response deserialization without verifying the response is actually JSON
+- Error responses (4xx/5xx) not checked for Content-Type

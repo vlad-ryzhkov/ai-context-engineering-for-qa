@@ -1,29 +1,29 @@
-# Спецификация: User Registration API v3
+# Specification: User Registration API v3
 
-## Эндпоинт
+## Endpoint
 
-`POST /api/v1/users/register` — создание аккаунта в статусе `PENDING`.
+`POST /api/v1/users/register` — account creation with `PENDING` status.
 
-## Бизнес-логика (Business Rules)
+## Business Rules
 
-1. **Уникальность:** Email и Phone должны быть уникальны в системе.
-2. **2FA Flow:** Успешный запрос возвращает `verification_token`. Система отправляет 6-значный OTP-код через SMS. Для подтверждения регистрации использовать эндпоинт `POST /api/v1/users/verify` (см. Спецификацию OTP).
-3. **Безопасность пароля:**
-   - 8–64 символа.
-   - Обязательно: заглавная буква, цифра, спецсимвол.
-   - **Запрещено (PII Check):** Использование полных слов (токенов) из `full_name` или email (часть до `@`). Разделители слов: точка, пробел, дефис.
-4. **Сбой SMS-шлюза:** Если SMS-шлюз недоступен, запрос завершается с кодом `503 SERVICE_UNAVAILABLE`, запись в БД не создаётся (транзакция откатывается).
+1. **Uniqueness:** Email and Phone must be unique in the system.
+2. **2FA Flow:** A successful request returns `verification_token`. The system sends a 6-digit OTP code via SMS. To confirm registration, use endpoint `POST /api/v1/users/verify` (see OTP Specification).
+3. **Password Security:**
+   - 8–64 characters.
+   - Required: uppercase letter, digit, special character.
+   - **Forbidden (PII Check):** Using full words (tokens) from `full_name` or email (part before `@`). Word delimiters: dot, space, hyphen.
+4. **SMS Gateway Failure:** If the SMS gateway is unavailable, the request completes with code `503 SERVICE_UNAVAILABLE`, the DB record is not created (transaction is rolled back).
 
-## Схема данных (Request & Response)
+## Data Schema (Request & Response)
 
-| Поле        | Тип    | Обязательно | Валидация                                                              |
-|-------------|--------|-------------|------------------------------------------------------------------------|
-| `email`     | string | Да          | RFC 5321 (lowercase), max 254 символа                                  |
-| `phone`     | string | Да          | E.164 (только цифры и `+`), min 8, max 16 символов                    |
-| `password`  | string | Да          | См. Правила безопасности                                               |
-| `full_name` | string | Да          | 2–100 символов, Unicode-буквы, дефисы и одиночные пробелы (не в начале/конце) |
+| Field       | Type   | Required | Validation                                                             |
+|-------------|--------|----------|------------------------------------------------------------------------|
+| `email`     | string | Yes      | RFC 5321 (lowercase), max 254 characters                              |
+| `phone`     | string | Yes      | E.164 (digits and `+` only), min 8, max 16 characters                 |
+| `password`  | string | Yes      | See Security Rules                                                     |
+| `full_name` | string | Yes      | 2–100 characters, Unicode letters, hyphens and single spaces (not at start/end) |
 
-**Успешный ответ (201 Created):**
+**Successful Response (201 Created):**
 ```json
 {
   "verification_token": "jwt_token_here",
@@ -31,12 +31,12 @@
 }
 ```
 
-**Формат ошибки (4xx/5xx):**
+**Error Format (4xx/5xx):**
 ```json
 {"code": "ERROR_CODE", "message": "Human readable text", "field": "field_name"}
 ```
 
-## Пример запроса (Эталон)
+## Example Request (Reference)
 
 ```json
 {
@@ -47,28 +47,28 @@
 }
 ```
 
-## Коды ошибок
+## Error Codes
 
-| HTTP | Code                  | Описание                                                  |
+| HTTP | Code                  | Description                                               |
 |------|-----------------------|-----------------------------------------------------------|
-| 400  | VALIDATION_ERROR      | Ошибка валидации поля (формат, длина, правила пароля)     |
-| 409  | CONFLICT              | Email или телефон уже зарегистрированы                    |
-| 500  | INTERNAL_ERROR        | Внутренняя ошибка сервера                                 |
-| 503  | SERVICE_UNAVAILABLE   | SMS-шлюз недоступен. Транзакция откатана, запись не создана |
+| 400  | VALIDATION_ERROR      | Field validation error (format, length, password rules)   |
+| 409  | CONFLICT              | Email or phone already registered                         |
+| 500  | INTERNAL_ERROR        | Internal server error                                     |
+| 503  | SERVICE_UNAVAILABLE   | SMS gateway unavailable. Transaction rolled back, record not created |
 
 ## Security & Logging
 
-- **Транспорт:** Только TLS 1.2+. HTTP-запросы отклоняются.
-- **Логирование:** Поле `password` должно маскироваться или исключаться из логов приложения.
+- **Transport:** TLS 1.2+ only. HTTP requests are rejected.
+- **Logging:** The `password` field must be masked or excluded from application logs.
 
-## Исключено из скоупа тестирования (Test Scope Reduction)
+## Excluded from Test Scope (Test Scope Reduction)
 
-Следующие аспекты **не тестируются** на уровне этого эндпоинта:
+The following aspects are **not tested** at this endpoint level:
 
-| Сценарий | Владелец | Что тестируем вместо |
-|---|---|---|
-| **Валидация форматов** (`email`, `phone`, `full_name`): Regex, спецсимволы | Middleware (Zod/Pydantic) | Только наличие поля: отсутствие → 400 |
-| **Уникальность (Race Condition)**: параллельные запросы с одним email/phone | Unique Index в БД | Только 409 при конфликте (последовательные запросы) |
-| **Логика PII (подстроки, токены)**: комбинации "имя в пароле" | Unit-тесты shared-library | Только базовый happy/sad path на уровне API |
-| **Гарантия доставки SMS**: факт получения OTP пользователем | Notification Service | Только 201 при успешной постановке в очередь; 503 при недоступности шлюза |
-| **Граничные значения длин** (напр. 101 символ в `full_name`) | Уровень БД | — |
+| Scenario | Owner | What to test instead |
+|----------|-------|----------------------|
+| **Format validation** (`email`, `phone`, `full_name`): Regex, special characters | Middleware (Zod/Pydantic) | Field presence only: missing → 400 |
+| **Uniqueness (Race Condition)**: parallel requests with same email/phone | Unique Index in DB | Only 409 on conflict (sequential requests) |
+| **PII Logic (substrings, tokens)**: "name in password" combinations | Unit tests of shared-library | Only basic happy/sad path at API level |
+| **SMS Delivery Guarantee**: user actually receiving the OTP | Notification Service | Only 201 on successful queue submission; 503 when gateway is unavailable |
+| **Boundary value lengths** (e.g. 101 characters in `full_name`) | DB level | — |

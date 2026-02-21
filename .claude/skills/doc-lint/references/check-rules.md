@@ -1,110 +1,110 @@
-# Правила проверки doc-lint
+# doc-lint Check Rules
 
 ## 1. Size Thresholds
 
-| Тип файла | Рекомендовано | WARNING | CRITICAL | Обоснование |
-|-----------|:------------:|:-------:|:--------:|-------------|
-| SKILL.md | ≤500 | N/A | >500 | Правило из qa_agent.md |
-| qa_agent.md, agents/*.md | ≤300 | >300 | >500 | System prompts — плотнее обычных docs |
-| CLAUDE.md | ≤200 | >200 | >300 | Всегда в контексте = расход токенов |
+| File Type | Recommended | WARNING | CRITICAL | Rationale |
+|-----------|:-----------:|:-------:|:--------:|-----------|
+| SKILL.md | ≤500 | N/A | >500 | Rule from qa_agent.md |
+| qa_agent.md, agents/*.md | ≤300 | >300 | >500 | System prompts — denser than regular docs |
+| CLAUDE.md | ≤200 | >200 | >300 | Always in context = token usage |
 | docs/*.md | ≤400 | >500 | >700 | Microsoft Docs: 200-800 ideal range |
 | README.md | ≤300 | >500 | >700 | Entry point + workshop guide |
-| YAML config (.yaml, .yml) | ≤200 | >300 | >500 | Конфиг, не проза |
-| Generic .md (fallback) | ≤400 | >500 | >700 | Fallback для прочих markdown |
+| YAML config (.yaml, .yml) | ≤200 | >300 | >500 | Config, not prose |
+| Generic .md (fallback) | ≤400 | >500 | >700 | Fallback for other markdown |
 
-### Классификация файла
+### File Classification
 
-Приоритет (сверху вниз, первое совпадение):
+Priority (top to bottom, first match):
 
-1. Имя `SKILL.md` → SKILL.md
-2. Имя `qa_agent.md` или путь содержит `agents/` → qa_agent.md/agents/*.md
-3. Имя `CLAUDE.md` → CLAUDE.md
-4. Имя `README.md` → README.md
-5. Расширение `.yaml` или `.yml` → YAML config
-6. Путь содержит `docs/` → docs/*.md
-7. Расширение `.md` → Generic .md
+1. Name `SKILL.md` → SKILL.md
+2. Name `qa_agent.md` or path contains `agents/` → qa_agent.md/agents/*.md
+3. Name `CLAUDE.md` → CLAUDE.md
+4. Name `README.md` → README.md
+5. Extension `.yaml` or `.yml` → YAML config
+6. Path contains `docs/` → docs/*.md
+7. Extension `.md` → Generic .md
 
 ---
 
 ## 2. Known Duplicate Signatures
 
-Pre-registered паттерны для быстрого поиска через Grep:
+Pre-registered patterns for fast search via Grep:
 
-| ID | Паттерн | Grep-сигнатура | Min match |
+| ID | Pattern | Grep signature | Min match |
 |----|---------|----------------|-----------|
-| KP-1 | Tech Stack (LOCKED) | `Компонент.*Технология.*BANNED` | 1 строка |
-| KP-2 | Progressive Disclosure | `Уровень 1.*YAML` или `Уровень 1.*Level 1` | 1 строка |
-| KP-3 | Core Principles | `Trust No One` + `Production Ready` + `Safety` | 3 строки в пределах 10 строк |
-| KP-4 | Skill Size Limit | `500 строк` или `≤500` в контексте skill | 1 строка |
-| KP-5 | Safety Protocols | `FORBIDDEN` + `MANDATORY` + `OVERRIDE` в пределах 10 строк | 3 строки |
+| KP-1 | Tech Stack (LOCKED) | `Компонент.*Технология.*BANNED` | 1 line |
+| KP-2 | Progressive Disclosure | `Уровень 1.*YAML` or `Уровень 1.*Level 1` | 1 line |
+| KP-3 | Core Principles | `Trust No One` + `Production Ready` + `Safety` | 3 lines within 10 lines |
+| KP-4 | Skill Size Limit | `500 строк` or `≤500` in skill context | 1 line |
+| KP-5 | Safety Protocols | `FORBIDDEN` + `MANDATORY` + `OVERRIDE` within 10 lines | 3 lines |
 
-### Правило KP-match
+### KP-match Rule
 
-Файл считается содержащим паттерн, если найдены ВСЕ строки из колонки "Min match".
-Дубликат = паттерн найден в ≥2 файлах.
+A file is considered to contain the pattern if ALL lines from the "Min match" column are found.
+Duplicate = pattern found in ≥2 files.
 
 ---
 
 ## 3. SSOT Ownership Matrix
 
-| Категория контента | SSOT Owner | Обоснование |
-|--------------------|------------|-------------|
-| Tech Stack, Safety, Conventions | `CLAUDE.md` | Всегда в контексте, минимум дублирования |
-| Mindset, Anti-Patterns, Protocols | `qa_agent.md` | Идентичность агента |
-| Правила авторинга скиллов | `qa_agent.md` | Общее для всех скиллов |
-| Алгоритм конкретного скилла | `SKILL.md` | Scoped context |
-| Туториалы, гайды | `docs/*.md` | Документационный слой |
-| Обзор проекта | `README.md` | Точка входа |
+| Content Category | SSOT Owner | Rationale |
+|------------------|------------|-----------|
+| Tech Stack, Safety, Conventions | `CLAUDE.md` | Always in context, minimal duplication |
+| Mindset, Anti-Patterns, Protocols | `qa_agent.md` | Agent identity |
+| Skill authoring rules | `qa_agent.md` | Common to all skills |
+| Specific skill algorithm | `SKILL.md` | Scoped context |
+| Tutorials, guides | `docs/*.md` | Documentation layer |
+| Project overview | `README.md` | Entry point |
 
-### Правило SSOT
+### SSOT Rule
 
-Если контент из категории X найден вне SSOT Owner — это WARNING (near-duplicate) или CRITICAL (exact duplicate >5 строк). Рекомендация: заменить на ссылку `→ см. {SSOT Owner}`.
+If content from category X is found outside the SSOT Owner — this is WARNING (near-duplicate) or CRITICAL (exact duplicate >5 lines). Recommendation: replace with a link `→ see {SSOT Owner}`.
 
 ---
 
 ## 4. Diataxis Type Detection
 
-Маркеры для определения типа документа:
+Markers for determining document type:
 
-| Тип | Маркеры | Примеры |
-|-----|---------|---------|
-| **Tutorial** | "шаг 1", "step 1", "давайте создадим", "let's create", пошаговые инструкции с нарастающей сложностью | Workshop guides |
-| **How-to** | "как сделать", "how to", "чтобы X, сделайте Y", целевые рецепты | Troubleshooting |
-| **Reference** | таблицы параметров, API signatures, enum values, чисто факты без нарратива | API docs, config refs |
-| **Explanation** | "почему", "зачем", "архитектура", "принцип", концептуальные объяснения | Architecture docs |
+| Type | Markers | Examples |
+|------|---------|---------|
+| **Tutorial** | "step 1", "let's create", step-by-step instructions with increasing complexity | Workshop guides |
+| **How-to** | "how to", "to X, do Y", goal-oriented recipes | Troubleshooting |
+| **Reference** | parameter tables, API signatures, enum values, pure facts without narrative | API docs, config refs |
+| **Explanation** | "why", "architecture", "principle", conceptual explanations | Architecture docs |
 
-### Правило Diataxis
+### Diataxis Rule
 
-Один файл содержит маркеры ≥2 типов → INFO "Mixed Diataxis types". Не критично, но рекомендуется разделять.
+One file contains markers of ≥2 types → INFO "Mixed Diataxis types". Not critical, but separation is recommended.
 
 ---
 
 ## 5. Heuristic Match Thresholds
 
-| Уровень | Критерий | Severity |
-|---------|----------|----------|
-| **Exact** | 100% match после нормализации пробелов, ≥3 строки | CRITICAL (>5 строк), WARNING (3-5 строк) |
-| **Near-duplicate** | >70% совпадения элементов для таблиц/списков (одинаковые заголовки + >70% строк) | WARNING |
-| **Conceptual** | Одинаковые ключевые термины, разная формулировка | INFO (AI judgment) |
+| Level | Criterion | Severity |
+|-------|----------|----------|
+| **Exact** | 100% match after whitespace normalization, ≥3 lines | CRITICAL (>5 lines), WARNING (3-5 lines) |
+| **Near-duplicate** | >70% element match for tables/lists (same headers + >70% rows) | WARNING |
+| **Conceptual** | Same key terms, different wording | INFO (AI judgment) |
 
-### Нормализация перед сравнением
+### Normalization Before Comparison
 
-1. Убрать leading/trailing whitespace
-2. Свернуть множественные пробелы в один
-3. Убрать markdown-разметку (`**`, `*`, `` ` ``)
-4. Привести к lowercase
-5. Таблицы: сравнивать по содержимому ячеек, игнорируя форматирование `|---|`
+1. Remove leading/trailing whitespace
+2. Collapse multiple spaces into one
+3. Remove markdown formatting (`**`, `*`, `` ` ``)
+4. Convert to lowercase
+5. Tables: compare by cell content, ignoring `|---|` formatting
 
 ---
 
 ## 6. Structure Rules
 
-| Правило | Критерий | Severity |
-|---------|----------|----------|
-| Пропуск уровня заголовка | H1→H3 (минуя H2) или H2→H4 | CRITICAL |
-| Глубина заголовков | >H4 используется | INFO |
-| Дисбаланс секций | Одна секция >40% от всего файла | WARNING |
-| Пустая секция | Заголовок → следующий заголовок без контента (только пустые строки) | WARNING |
-| Нет TOC | Файл >200 строк без оглавления / table of contents | INFO |
-| Wall-of-text | >20 строк подряд без заголовков/списков/пустых строк/code blocks | WARNING |
-| Длинные строки | Строка >200 символов | INFO |
+| Rule | Criterion | Severity |
+|------|----------|----------|
+| Skipped heading level | H1→H3 (skipping H2) or H2→H4 | CRITICAL |
+| Heading depth | >H4 used | INFO |
+| Section imbalance | One section >40% of the entire file | WARNING |
+| Empty section | Header → next header with no content (only blank lines) | WARNING |
+| No TOC | File >200 lines without table of contents | INFO |
+| Wall-of-text | >20 consecutive lines without headers/lists/blank lines/code blocks | WARNING |
+| Long lines | Line >200 characters | INFO |

@@ -1,17 +1,17 @@
 ---
 description: SKILL: Requirement Analysis & QA Audit (use for /spec-audit)
-globs: "audit/**,specifications/**"
+globs: "*"
 alwaysApply: false
 ---
 # SKILL: REQUIREMENTS ANALYSIS
 
 ## TRIGGER
-Use this when the user asks to analyze specs, find gaps, or audit documentation.
+User explicitly types `/spec-audit` or asks to analyze specifications, find gaps, or audit documentation.
 
-## LOGIC SOURCE
-**EXECUTE the instruction set defined in:** `.claude/skills/spec-audit/SKILL.md`
+## EXECUTION INSTRUCTIONS
+DO NOT guess the audit procedure and DO NOT output anything yet.
+To perform this skill, you MUST dynamically read the instructions using your file-reading capabilities.
 
-@.claude/skills/spec-audit/SKILL.md
-
-## OUTPUT
-Follow the Markdown report format defined in the skill file strictly.
+1. First, read the core agent context: `.claude/qa_agent.md`
+2. Second, read the specific skill protocol: `.claude/skills/spec-audit/SKILL.md`
+3. Execute the audit based STRICTLY on the logic and Markdown report format defined in those files.

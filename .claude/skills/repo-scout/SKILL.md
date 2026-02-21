@@ -1,214 +1,214 @@
 ---
 name: repo-scout
-description: Сканирует бэкенд-репозиторий (Go), каталогизирует API surface, инфраструктуру и тестовое покрытие. Используй при входе в новый репо перед написанием тестов. Не используй для QA-проектов — для них /init-project.
+description: Scans a backend repository (Go), catalogs API surface, infrastructure, and test coverage. Use when entering a new repo before writing tests. Do not use for QA projects — use /init-project for those.
 allowed-tools: "Read Glob Grep Bash(ls*) Bash(wc*)"
 agent: agents/sdet.md
 context: fork
 ---
 
-# /repo-scout — Разведка бэкенд-репозитория
+# /repo-scout — Backend Repository Reconnaissance
 
 <purpose>
-Глубокое сканирование бэкенд-репозитория → структурированный отчёт об API surface, архитектуре,
-инфраструктуре и текущем покрытии тестами. Даёт AI и человеку полную картину сервиса
-перед планированием тестового покрытия.
+Deep scanning of a backend repository → structured report on API surface, architecture,
+infrastructure, and current test coverage. Gives AI and humans a complete picture of the service
+before planning test coverage.
 </purpose>
 
-## Когда использовать
+## When to Use
 
-- Первый вход в новый бэкенд-репозиторий
-- Перед `/test-cases` — для сбора данных
-- Перед `/init-project` — для понимания целевого сервиса
-- Периодический аудит: "что изменилось в API surface?"
+- First entry into a new backend repository
+- Before `/test-cases` — for data collection
+- Before `/init-project` — to understand the target service
+- Periodic audit: "what changed in the API surface?"
 
-## Когда НЕ использовать
+## When NOT to Use
 
-- QA-проекты с тестами (используй `/init-project`)
-- Code review (используй стандартные инструменты)
-- Фронтенд/мобильные репозитории
+- QA projects with tests (use `/init-project`)
+- Code review (use standard tools)
+- Frontend/mobile repositories
 
-## Входные данные
+## Input Data
 
-- Путь к репозиторию (или текущая директория)
-- Не требует CLAUDE.md, qa_agent.md или других AI-файлов
-- Может быть **первым шагом** в новом репо
+- Path to repository (or current directory)
+- Does not require CLAUDE.md, qa_agent.md or other AI files
+- Can be the **first step** in a new repo
 
-## Алгоритм
+## Algorithm
 
 ## Verbosity Protocol
 
-**Structured Output Priority:** Весь analysis идёт в артефакт (MD/HTML), не в чат.
+**Structured Output Priority:** All analysis goes into the artifact (MD/HTML), not into chat.
 
-**Chat output (ограничения):**
-- Brief Summary: max 5 строк (что нашли, сколько, итог)
-- Findings table: max 15 строк (топ по severity)
-- Полный отчёт: `📊 Полный отчёт: {path}` + открыть файл
+**Chat output (constraints):**
+- Brief Summary: max 5 lines (what was found, how many, result)
+- Findings table: max 15 lines (top by severity)
+- Full report: `📊 Full report: {path}` + open file
 
-**Iterative steps:** Не выводить прогресс по каждому файлу. Checkpoint только при:
-- Phase transition (Фаза N → Фаза N+1)
-- Предупреждение обнаружено
-- Завершение (SKILL COMPLETE)
+**Iterative steps:** Do not output progress for each file. Checkpoint only when:
+- Phase transition (Phase N → Phase N+1)
+- Warning detected
+- Completion (SKILL COMPLETE)
 
 **Tools first:**
-- Grep → table → report, без "Now I will grep..."
-- Read → analyze → report, без "The file shows..."
+- Grep → table → report, without "Now I will grep..."
+- Read → analyze → report, without "The file shows..."
 
-**Post-Check:** Inline перед SKILL COMPLETE (5-7 строк checklist), не отдельный файл.
+**Post-Check:** Inline before SKILL COMPLETE (5-7 line checklist), not a separate file.
 
-**Фазы 1-5:** Silent execution. **Фаза 6:** Только Summary table + "Отчёт: audit/repo-scout-report.md".
+**Phases 1-5:** Silent execution. **Phase 6:** Only Summary table + "Report: audit/repo-scout-report.md".
 
-### Перед началом
+### Before Starting
 
-Прочитай `.claude/qa_agent.md` (если есть в рабочем проекте). Выведи:
+Read `.claude/qa_agent.md` (if present in the working project). Output:
 
 ```
 📋 TASK BRIEF
-├─ Target: {repo-name} — разведка бэкенд-сервиса
-├─ Scope: API surface + инфраструктура + тестовое покрытие
-├─ Constraint: Read-only, только Go-паттерны
-└─ Action: Вызываю /repo-scout...
+├─ Target: {repo-name} — backend service reconnaissance
+├─ Scope: API surface + infrastructure + test coverage
+├─ Constraint: Read-only, Go patterns only
+└─ Action: Invoking /repo-scout...
 ```
 
-### Фаза 1: File System Scan
+### Phase 1: File System Scan
 
-**Цель:** Определить язык, билд-систему, структуру директорий.
+**Goal:** Determine language, build system, directory structure.
 
-1. Проверь наличие build-файлов:
+1. Check for build files:
    ```
    go.mod, go.sum, Makefile
    ```
-   Если `go.mod` не найден — выведи: "⚠️ WARNING: go.mod не найден, возможно не Go-проект. Сканирую доступную структуру."
+   If `go.mod` not found — output: "⚠️ WARNING: go.mod not found, possibly not a Go project. Scanning available structure."
 
-2. Извлеки из `go.mod`:
-   - Имя модуля (module path)
-   - Версию Go
-   - Ключевые зависимости (HTTP-фреймворк, gRPC, DB driver, тестовые библиотеки)
+2. Extract from `go.mod`:
+   - Module name (module path)
+   - Go version
+   - Key dependencies (HTTP framework, gRPC, DB driver, test libraries)
 
-3. Определи структуру:
+3. Determine structure:
    ```
-   Glob: cmd/*/main.go → список сервисов
-   Glob: internal/*/ → бизнес-модули
-   Glob: pkg/*/ → публичные пакеты
-   ```
-
-4. Подсчитай размер:
-   ```
-   Количество .go файлов (без *_test.go)
-   Количество *_test.go файлов
+   Glob: cmd/*/main.go → list of services
+   Glob: internal/*/ → business modules
+   Glob: pkg/*/ → public packages
    ```
 
-### Фаза 2: API Surface Discovery
+4. Count size:
+   ```
+   Number of .go files (excluding *_test.go)
+   Number of *_test.go files
+   ```
 
-**Цель:** Найти и каталогизировать ВСЕ API endpoints.
+### Phase 2: API Surface Discovery
+
+**Goal:** Find and catalog ALL API endpoints.
 
 #### 2.1 OpenAPI / Swagger
 
-Ищи файлы:
+Search for files:
 ```
 Glob: **/swagger.json, **/swagger.yaml, **/openapi.json, **/openapi.yaml, **/*.swagger.json
 ```
 
-Для каждого найденного файла:
-- Прочитай файл
-- Извлеки endpoints: Method, Path, Description
-- Отметь наличие/отсутствие response schemas, error codes
+For each found file:
+- Read the file
+- Extract endpoints: Method, Path, Description
+- Note presence/absence of response schemas, error codes
 
 #### 2.2 Protocol Buffers (gRPC)
 
-Ищи файлы:
+Search for files:
 ```
 Glob: **/*.proto
 ```
 
-Для каждого .proto файла:
-- Извлеки services и rpc methods
-- Запиши Request/Response типы
-- Отметь streaming methods (если есть)
+For each .proto file:
+- Extract services and rpc methods
+- Record Request/Response types
+- Note streaming methods (if any)
 
-#### 2.3 Route Registration (из кода)
+#### 2.3 Route Registration (from code)
 
-Прочитай `references/lang-patterns.md` для актуальных паттернов.
+Read `references/lang-patterns.md` for current patterns.
 
-Ищи в Go-файлах паттерны регистрации маршрутов:
+Search Go files for route registration patterns:
 ```
 Grep: r\.HandleFunc|r\.Get\(|r\.Post\(|r\.Put\(|r\.Delete\(|r\.Route\(|\.GET\(|\.POST\(|echo\.
 ```
 
-Для каждого найденного:
-- Файл + строка
-- HTTP метод + путь
-- Handler функция
+For each found:
+- File + line
+- HTTP method + path
+- Handler function
 
-⚠️ **Не дублируй:** Если endpoint уже найден в swagger/proto — не добавляй из кода.
+⚠️ **Do not duplicate:** If endpoint already found in swagger/proto — do not add from code.
 
-#### 2.4 HTTP Client файлы
+#### 2.4 HTTP Client Files
 
 ```
 Glob: **/*.http, **/api.http
 ```
 
-Если найдены — отметь как дополнительный источник примеров.
+If found — note as an additional source of examples.
 
-### Фаза 3: Test Analysis
+### Phase 3: Test Analysis
 
-**Цель:** Оценить текущее тестовое покрытие.
+**Goal:** Assess current test coverage.
 
-1. Найди все тестовые файлы:
+1. Find all test files:
    ```
    Glob: **/*_test.go
    ```
 
-2. Классифицируй по типу:
-   - **Unit:** файлы без `//go:build integration` и без Docker/DB imports
-   - **Integration:** файлы с `//go:build integration` или с sqlmock/testcontainers
-   - **E2E/API:** отдельные тест-репозитории (проверь README на ссылки)
+2. Classify by type:
+   - **Unit:** files without `//go:build integration` and without Docker/DB imports
+   - **Integration:** files with `//go:build integration` or with sqlmock/testcontainers
+   - **E2E/API:** separate test repositories (check README for links)
 
-3. Определи тестовые фреймворки:
+3. Determine test frameworks:
    ```
-   Grep в go.mod: testify, gomock, go-sqlmock, testcontainers
+   Grep in go.mod: testify, gomock, go-sqlmock, testcontainers
    ```
 
-4. Проверь наличие внешних тест-репозиториев:
-   - Ищи в README ссылки на `indrive-api-tests-*` или `*-tests`
-   - Проверь `.dev-platform/` на test runner конфигурации
+4. Check for external test repositories:
+   - Search README for links to `indrive-api-tests-*` or `*-tests`
+   - Check `.dev-platform/` for test runner configurations
 
-### Фаза 4: Infrastructure Scan
+### Phase 4: Infrastructure Scan
 
-**Цель:** Понять инфраструктурный контекст.
+**Goal:** Understand the infrastructure context.
 
 1. **CI/CD:**
    ```
    Glob: .github/workflows/*.yml, .gitlab-ci.yml, Jenkinsfile
    ```
-   Кратко: какие пайплайны, есть ли тесты в CI.
+   Brief: which pipelines, whether tests are in CI.
 
 2. **Docker:**
    ```
    Glob: **/Dockerfile, **/docker-compose.yaml, **/docker-compose.yml
    ```
-   Какие сервисы в compose (DB, Redis, Kafka, etc.)
+   Which services in compose (DB, Redis, Kafka, etc.)
 
 3. **Database:**
    ```
    Glob: migrations/**, **/migrations/**, **/liquibase/**
    ```
-   Тип миграций (Liquibase, goose, Atlas), количество changesets.
+   Migration type (Liquibase, goose, Atlas), number of changesets.
 
-4. **Конфигурация:**
+4. **Configuration:**
    ```
    Glob: config/*.yaml, config/*.yml
    ```
-   Среды (local, dev, prod), внешние сервисы.
+   Environments (local, dev, prod), external services.
 
 5. **Dev-Platform:**
    ```
    Glob: .dev-platform/**
    ```
-   Если есть — отметить shared-сервисы и зависимости.
+   If present — note shared services and dependencies.
 
-### Фаза 5: AI Setup Status
+### Phase 5: AI Setup Status
 
-Проверь наличие AI-файлов:
+Check for AI files:
 ```
 - CLAUDE.md
 - .claude/qa_agent.md
@@ -219,14 +219,14 @@ Glob: **/*.http, **/api.http
 - .github/copilot-instructions.md
 ```
 
-### Фаза 6: Report Generation
+### Phase 6: Report Generation
 
-Собери отчёт и сохрани в `audit/repo-scout-report.md`. Полный шаблон отчёта с примерами — в `references/report-template.md`.
+Compile the report and save to `audit/repo-scout-report.md`. Full report template with examples — in `references/report-template.md`.
 
-**Обязательные секции:**
+**Required sections:**
 1. Repository Profile (module, Go version, service type, dependencies)
-2. API Surface Catalog (REST + gRPC endpoints с Summary)
-3. Specification Inventory (coverage формула)
+2. API Surface Catalog (REST + gRPC endpoints with Summary)
+3. Specification Inventory (coverage formula)
 4. Existing Test Coverage (unit/integration/e2e)
 5. Infrastructure (CI/CD, Docker, DB, Migrations, Queue, Cache)
 6. AI Setup Status (CLAUDE.md, qa_agent.md, skills)
@@ -234,39 +234,39 @@ Glob: **/*.http, **/api.http
 
 ## Quality Gates
 
-- [ ] go.mod найден и распарсен
-- [ ] Все proto файлы прочитаны и RPCs каталогизированы
-- [ ] Все swagger/openapi файлы прочитаны и endpoints каталогизированы
-- [ ] Endpoint counts корректны (показана формула)
-- [ ] Нет placeholder'ов `{xxx}` в финальном отчёте (кроме "нет")
-- [ ] Readiness Assessment заполнен по всем 4 критериям
+- [ ] go.mod found and parsed
+- [ ] All proto files read and RPCs cataloged
+- [ ] All swagger/openapi files read and endpoints cataloged
+- [ ] Endpoint counts are correct (formula shown)
+- [ ] No placeholders `{xxx}` in the final report (except "none")
+- [ ] Readiness Assessment filled for all 4 criteria
 
 ## Self-Check
 
-Перед сохранением отчёта проверь:
+Before saving the report, verify:
 
-- [ ] **Completeness:** Все 7 секций заполнены?
-- [ ] **Accuracy:** Количества endpoints совпадают между секциями 2 и 3?
-- [ ] **No Hallucinations:** Каждый endpoint реально найден в файле (указан источник)?
-- [ ] **Readiness:** Оценка обоснована данными из секций 2-5?
+- [ ] **Completeness:** All 7 sections filled?
+- [ ] **Accuracy:** Endpoint counts match between sections 2 and 3?
+- [ ] **No Hallucinations:** Each endpoint actually found in a file (source specified)?
+- [ ] **Readiness:** Assessment is backed by data from sections 2-5?
 
-## Завершение
+## Completion
 
-После сохранения `audit/repo-scout-report.md` — напечатай блок `SKILL COMPLETE` (формат в qa_agent.md § Skill Completion Protocol).
+After saving `audit/repo-scout-report.md` — print `SKILL COMPLETE` block (format in qa_agent.md § Skill Completion Protocol).
 
-Self-Review для этого скилла **не генерируется** (read-only сканирование, не генерация контента).
+Self-Review for this skill **is not generated** (read-only scanning, not content generation).
 
 ```
 ✅ SKILL COMPLETE: /repo-scout
-├─ Артефакты: audit/repo-scout-report.md
-├─ Self-Review: N/A (сканирование)
+├─ Artifacts: audit/repo-scout-report.md
+├─ Self-Review: N/A (scanning)
 ├─ Compilation: N/A
-├─ Upstream: нет
+├─ Upstream: none
 └─ Endpoints: {N REST} + {M gRPC} = {total}
 ```
 
-## Связанные файлы
+## Related Files
 
-- Паттерны Go: `references/lang-patterns.md`
-- Следующий шаг: `/test-cases` (использует repo-scout-report.md как вход)
-- AI-файлы: `/init-project` → CLAUDE.md, `/init-agent` → qa_agent.md
+- Go patterns: `references/lang-patterns.md`
+- Next step: `/test-cases` (uses repo-scout-report.md as input)
+- AI files: `/init-project` → CLAUDE.md, `/init-agent` → qa_agent.md

@@ -2,16 +2,16 @@
 
 ## Why this is bad
 
-Тесты без очистки данных:
-- Засоряют БД тысячами тестовых записей
-- Создают flaky тесты (конфликты уникальности)
-- Делают невозможным параллельный запуск
-- Усложняют отладку на staging/dev окружениях
+Tests without data cleanup:
+- Pollute the DB with thousands of test records
+- Create flaky tests (uniqueness conflicts)
+- Make parallel execution impossible
+- Complicate debugging on staging/dev environments
 
 ## Bad Example
 
 ```kotlin
-// ❌ BAD: Данные остаются в БД навсегда
+// ❌ BAD: Data stays in DB forever
 @Test
 fun `user can register`() {
     val payload = RegisterRequest(
@@ -20,14 +20,14 @@ fun `user can register`() {
 
     val response = ApiHelper.apiClient.execute { RegisterRequest(payload) }
     assertEquals(201, response.code, "Registration should succeed")
-    // Тест закончился, юзер остался в БД
+    // Test finished, user remains in DB
 }
 ```
 
 ## Good Example
 
 ```kotlin
-// ✅ GOOD: try-finally гарантирует cleanup
+// ✅ GOOD: try-finally guarantees cleanup
 @Test
 fun `user can register`() {
     var userId: String? = null
@@ -44,17 +44,17 @@ fun `user can register`() {
 }
 ```
 
-## Рекомендованная стратегия: Cleanup-First
+## Recommended Strategy: Cleanup-First
 
-**Cleanup в `@BeforeEach` (не `@AfterEach`)** — рекомендованный подход для integration-тестов.
+**Cleanup in `@BeforeEach` (not `@AfterEach`)** — the recommended approach for integration tests.
 
-**Почему Cleanup-First лучше Cleanup-After:**
-- При падении теста данные **сохраняются** в БД для отладки
-- Следующий запуск **сам очистит** перед собой (идемпотентно)
-- `@AfterEach` может не выполниться при crash/timeout JVM
+**Why Cleanup-First is better than Cleanup-After:**
+- On test failure, data is **preserved** in DB for debugging
+- The next run **cleans up** before itself (idempotent)
+- `@AfterEach` may not execute on JVM crash/timeout
 
 ```kotlin
-// ✅ RECOMMENDED: Cleanup-First в @BeforeEach
+// ✅ RECOMMENDED: Cleanup-First in @BeforeEach
 @BeforeEach
 fun cleanup() {
     runCatching { ApiHelper.apiClient.execute { DeleteUserByEmailRequest(testEmail) } }
@@ -68,7 +68,7 @@ fun `user can register`() {
 ```
 
 ```kotlin
-// ✅ GOOD: Cleanup-First inline (для одиночных тестов)
+// ✅ GOOD: Cleanup-First inline (for individual tests)
 @Test
 fun `user can register`() {
     runCatching { ApiHelper.apiClient.execute { DeleteUserByEmailRequest(testEmail) } }
@@ -78,18 +78,18 @@ fun `user can register`() {
 }
 ```
 
-**Когда использовать какой подход:**
+**When to use which approach:**
 
-| Стратегия | Когда |
-|-----------|-------|
-| **Cleanup-First (`@BeforeEach`)** | Integration-тесты, shared DB, нужна отладка при падении |
-| **try-finally** | Тест создаёт уникальный ресурс, который нужно удалить сразу |
-| **Cleanup-After (`@AfterEach`)** | Только если Cleanup-First невозможен (нет idempotent DELETE) |
+| Strategy | When |
+|----------|------|
+| **Cleanup-First (`@BeforeEach`)** | Integration tests, shared DB, need debugging on failure |
+| **try-finally** | Test creates a unique resource that must be deleted immediately |
+| **Cleanup-After (`@AfterEach`)** | Only if Cleanup-First is not possible (no idempotent DELETE) |
 
 ## What to look for in code review
 
-- Отсутствие `finally` блока, `@BeforeEach` cleanup или `@AfterEach`
-- "Уникальные префиксы" как единственная стратегия изоляции
-- Тесты, которые падают при повторном запуске
-- `@AfterEach` вместо `@BeforeEach` cleanup без обоснования
-- Cleanup-операции, которые не идемпотентны (падают если ресурс не существует)
+- Missing `finally` block, `@BeforeEach` cleanup, or `@AfterEach`
+- "Unique prefixes" as the only isolation strategy
+- Tests that fail on re-run
+- `@AfterEach` instead of `@BeforeEach` cleanup without justification
+- Cleanup operations that are not idempotent (fail if resource does not exist)

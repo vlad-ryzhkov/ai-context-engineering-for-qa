@@ -1,8 +1,8 @@
-# Anti-Pattern: runBlocking без явного Unit Type
+# Anti-Pattern: runBlocking Without Explicit Unit Type
 
 ## Problem
 
-`fun test() = runBlocking {}` возвращает Unit вместо void → JUnit 5 пропускает тест.
+`fun test() = runBlocking {}` returns Unit instead of void → JUnit 5 skips the test.
 
 ## Bad Example
 
@@ -14,7 +14,7 @@ fun `should return 200`() = runBlocking {
 }
 ```
 
-**Symptom:** "No tests found for given includes" — JUnit не распознаёт метод как тест.
+**Symptom:** "No tests found for given includes" — JUnit does not recognize the method as a test.
 
 ## Good Example
 
@@ -57,10 +57,10 @@ fun `should return 200`() = runTest {
 
 ## Why
 
-- JUnit 5 требует `void` return type для `@Test` методов
-- `= runBlocking {}` без `: Unit` имеет inferred type `Unit`, который не соответствует `void`
-- Явный `: Unit` или block body решают проблему
-- `runTest` из kotlinx-coroutines-test возвращает `TestResult` который совместим с JUnit
+- JUnit 5 requires `void` return type for `@Test` methods
+- `= runBlocking {}` without `: Unit` has inferred type `Unit`, which does not match `void`
+- Explicit `: Unit` or block body solves the problem
+- `runTest` from kotlinx-coroutines-test returns `TestResult` which is compatible with JUnit
 
 ## Detection
 

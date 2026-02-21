@@ -23,25 +23,25 @@
 
 - If `CLAUDE.md` conflicts with any other instruction, `CLAUDE.md` WINS.
 - Do NOT generate code that violates the strict dependencies listed in `CLAUDE.md`.
-- All documentation and skill content must be written in **Russian**, unless explicitly stated otherwise.
+- All documentation and skill content must be written in **English**, unless explicitly stated otherwise.
 
 ## AVAILABLE SKILLS
 
 Invoke with `$skill-name` or via the skill selector:
 
-| Skill               | Назначение                                   |
+| Skill               | Purpose                                      |
 |---------------------|----------------------------------------------|
-| `$repo-scout`       | Сканирование репозитория                     |
-| `$spec-audit`       | QA-аудит требований                          |
-| `$test-cases`       | Тест-кейсы из спецификации                  |
-| `$api-tests`        | API автотесты (Kotlin)                       |
-| `$screenshot-analyze` | Анализ скриншотов на L10N дефекты          |
-| `$doc-lint`         | Аудит документации                           |
-| `$skill-audit`      | Аудит SKILL.md файлов                       |
-| `$init-skill`       | Создание нового скилла                       |
-| `$init-agent`       | Создание qa_agent.md                         |
-| `$init-project`     | Инициализация CLAUDE.md проекта             |
-| `$update-ai-setup`  | Обновление реестра AI-сетапа                |
-| `$output-review`    | Независимый аудит результата скилла         |
+| `$repo-scout`       | Repository scanning                          |
+| `$spec-audit`       | QA audit of requirements                     |
+| `$test-cases`       | Test cases from specification                |
+| `$api-tests`        | API automated tests (Kotlin)                 |
+| `$screenshot-analyze` | Screenshot analysis for L10N defects       |
+| `$doc-lint`         | Documentation audit                          |
+| `$skill-audit`      | SKILL.md files audit                         |
+| `$init-skill`       | New skill creation                           |
+| `$init-agent`       | qa_agent.md creation                         |
+| `$init-project`     | CLAUDE.md project initialization             |
+| `$update-ai-setup`  | AI setup registry update                     |
+| `$output-review`    | Independent skill output audit               |
 
 **Recommended Workflow:** `$repo-scout` → `$spec-audit` → `$test-cases` → `$api-tests`

@@ -1,30 +1,30 @@
 # L10N Domain Rules
 
-> **Lazy Load:** Читай этот файл ТОЛЬКО при выполнении `/screenshot-analyze`.
-> НЕ загружай превентивно в агента.
+> **Lazy Load:** Read this file ONLY when executing `/screenshot-analyze`.
+> DO NOT preload into the agent.
 
 ## Core Mindset
 
-| Принцип | Суть |
-|---------|------|
-| **CLDR Compliance** | Форматы дат, валют, чисел по стандарту региона |
+| Principle | Essence |
+|-----------|---------|
+| **CLDR Compliance** | Date, currency, number formats per regional standard |
 | **Cultural Sensitivity** | False friends, offensive content, taboo |
-| **Non-Translateables Respect** | Адреса, POI, бренды, номера авто не переводятся |
-| **Evidence-Based** | Каждый баг с точной локацией элемента на экране |
+| **Non-Translateables Respect** | Addresses, POI, brands, license plates are not translated |
+| **Evidence-Based** | Every bug with exact element location on screen |
 
 ## Domain Rules
 
-| Правило | Описание |
-|---------|----------|
-| Currency ≠ Locale | Валюта определяется регионом (BR → R$), не языком UI |
-| False Positive на POI | Адреса с карт и POI не переводятся — это не баг |
-| Vague descriptions | Запрещено. Конкретика: "Button truncated at 'Регистрац...'" |
-| Missing translation | Для не-русских текстов добавлять перевод: `"بخيل" (Скупой)` |
+| Rule | Description |
+|------|-------------|
+| Currency ≠ Locale | Currency is determined by region (BR → R$), not by UI language |
+| False Positive on POI | Map addresses and POI are not translated — this is not a bug |
+| Vague descriptions | FORBIDDEN. Be specific: "Button truncated at 'Регистрац...'" |
+| Missing translation | For non-Russian texts add a translation: `"بخيل" (Скупой)` |
 
 ## LQA Severity
 
-| Тип | Severity |
-|-----|----------|
+| Type | Severity |
+|------|----------|
 | False Friends | 🔴 CRITICAL |
 | Wrong Context | 🔴 CRITICAL |
 | Offensive/Taboo | 🔴 CRITICAL |
@@ -32,10 +32,10 @@
 | Transliteration Error | 🟠 MAJOR |
 | Ambiguous | 🟠 MAJOR |
 
-## Визуальный анализ: правила
+## Visual Analysis: Rules
 
-- Никогда не выдумывай находки — только видимое на изображении
-- Никогда не копируй примеры пользователя как реальные находки
-- Если не уверен в том, что показано — скажи об этом явно
-- Регион определяется из имени файла (`en_BR.png` → Brazil)
-- ТОП-10 ошибок, 1 таблица, переводы на русский для не-русских текстов
+- Never fabricate findings — only what is visible in the image
+- Never copy user examples as real findings
+- If unsure about what is shown — state it explicitly
+- Region is determined from the filename (`en_BR.png` → Brazil)
+- TOP-10 issues, 1 table, translations to Russian for non-Russian texts

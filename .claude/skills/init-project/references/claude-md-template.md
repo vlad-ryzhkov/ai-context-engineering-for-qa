@@ -1,99 +1,99 @@
-# CLAUDE.md — Шаблон онбординга проекта
+# CLAUDE.md — Project Onboarding Template
 
-> **Назначение:** Wiki проекта для AI. Первый день нового сотрудника — какой язык, где конфиги, как форматируем код.
+> **Purpose:** Project wiki for the AI. First day for a new employee — what language, where are configs, how we format code.
 
 ---
 
-## Шаблон
+## Template
 
 ```markdown
 # [Project Name]
 
 ## Context
-- **Project:** [Что тестируем/разрабатываем]
+- **Project:** [What we test/develop]
 - **Role:** Senior QA Automation Engineer
 - **Language:** [Kotlin/Python/TypeScript]
 
 ## Tech Stack (LOCKED)
 
-| Компонент | Технология | BANNED |
+| Component | Technology | BANNED |
 |-----------|------------|--------|
 | HTTP Client | [common-test-libs ApiClient/requests/axios] | [alternatives] |
 | Serialization | [Jackson/Pydantic/zod] | [alternatives] |
-| Assertions | [assertEquals с message/pytest/Jest] | [alternatives] |
+| Assertions | [assertEquals with message/pytest/Jest] | [alternatives] |
 | Test Framework | [JUnit 5/pytest/Jest] | [alternatives] |
 | Reporting | [Allure] | — |
 
 ## Project Structure
 
 ```text
-[Реальная структура проекта]
+[Actual project structure]
 ```
 
 ## Commands
 
-| Действие | Команда |
-|----------|---------|
+| Action | Command |
+|--------|---------|
 | Build | `[command]` |
 | Test | `[command]` |
 | Single test | `[command]` |
 
 ## Safety Protocols
 
-⛔ **FORBIDDEN:** `git reset --hard`, `git clean -fd`, удаление веток
-✅ **MANDATORY:** Backup перед деструктивными операциями
-⚠️ **OVERRIDE:** Требуется слово **DESTROY**
+⛔ **FORBIDDEN:** `git reset --hard`, `git clean -fd`, branch deletion
+✅ **MANDATORY:** Backup before destructive operations
+⚠️ **OVERRIDE:** Requires the word **DESTROY**
 
 ## Token Economy
 
-- PAUSE при задаче > 20,000 токенов
-- Полное сканирование только по **FULL_SCAN**
+- PAUSE on tasks > 20,000 tokens
+- Full scan only with **FULL_SCAN**
 
 ## Workflow
 
-Для задач > 3 файлов: Analysis → Plan → Execute → Verify
+For tasks > 3 files: Analysis → Plan → Execute → Verify
 
-<!-- СЕКЦИЯ: Architecture — только для infra/backend-проектов (нет src/test/) -->
+<!-- SECTION: Architecture — only for infra/backend projects (no src/test/) -->
 ## Architecture
 
-[Нарратив о key design decisions: компоненты, схема взаимодействия, нетривиальные конфигурации]
+[Narrative about key design decisions: components, interaction schema, non-trivial configurations]
 
-<!-- СЕКЦИЯ: Key Values — если есть нетривиальные дефолты в values.yaml / application.yml / .env -->
+<!-- SECTION: Key Values — if non-trivial defaults exist in values.yaml / application.yml / .env -->
 ## Key Values
 
-### [Подсекция по компоненту]
-- `[ключ]` — [что делает, почему важно]
+### [Subsection by component]
+- `[key]` — [what it does, why it matters]
 
-<!-- СЕКЦИЯ: CI/CD Flow — если найдены .github/workflows/, .gitlab-ci.yml, Jenkinsfile -->
+<!-- SECTION: CI/CD Flow — if .github/workflows/, .gitlab-ci.yml, Jenkinsfile found -->
 ## CI/CD Flow
 
 ```
-[pipeline диаграмма: шаг → шаг → шаг]
+[pipeline diagram: step → step → step]
 ```
 
-<!-- СЕКЦИЯ: QA Skills — только если в проекте существует .claude/skills/ -->
+<!-- SECTION: QA Skills — only if .claude/skills/ exists in the project -->
 ## QA Skills
 
-| Skill | Назначение |
-|-------|------------|
-| `/spec-audit` | QA-аудит требований |
-| `/test-cases` | Тест-кейсы из спецификации |
-| `/api-tests` | API автотесты |
+| Skill | Purpose |
+|-------|---------|
+| `/spec-audit` | QA audit of requirements |
+| `/test-cases` | Test cases from specification |
+| `/api-tests` | API automated tests |
 
 **Workflow:** `/spec-audit` → `/test-cases` → `/api-tests`
 ```
 
 ---
 
-## Tech Stack по языкам
+## Tech Stack by Languages
 
 ### Kotlin
 ```
-| Компонент | Технология | BANNED |
+| Component | Technology | BANNED |
 |-----------|------------|--------|
 | HTTP | common-test-libs ApiClient + ApiRequestBaseJson<T> | Custom HTTP wrappers |
 | JSON | Jackson (SNAKE_CASE) | Gson |
-| Assertions | assertEquals с message + Hamcrest checkAll | Assertions без message |
+| Assertions | assertEquals with message + Hamcrest checkAll | Assertions without message |
 | Polling | Awaitility (await.atMost().until {}) | Thread.sleep(), delay() |
 | Framework | JUnit 5 | TestNG |
 | Code Style | ktlint | — |
@@ -101,7 +101,7 @@
 
 ### Python
 ```
-| Компонент | Технология | BANNED |
+| Component | Technology | BANNED |
 |-----------|------------|--------|
 | HTTP | httpx / requests | urllib |
 | JSON | Pydantic | manual parsing |
@@ -111,7 +111,7 @@
 
 ### TypeScript
 ```
-| Компонент | Технология | BANNED |
+| Component | Technology | BANNED |
 |-----------|------------|--------|
 | HTTP | axios / fetch | request |
 | Validation | zod | manual |
@@ -121,7 +121,7 @@
 
 ### Infrastructure (Helm / Kubernetes / Terraform)
 ```
-| Компонент | Технология | BANNED |
+| Component | Technology | BANNED |
 |-----------|------------|--------|
 | Package Manager | Helm 3 | Kustomize, raw kubectl apply |
 | Service Mesh | Istio / Linkerd | — |
@@ -133,15 +133,15 @@
 
 ---
 
-## Расположение файла
+## File Location
 
 ```
 project-root/
-└── CLAUDE.md    # В корне проекта
+└── CLAUDE.md    # In the project root
 ```
 
 ---
 
-## Полный гайд
+## Full Guide
 
-`docs/ai-files-handbook.md` → Часть 1: CLAUDE.md
+`docs/ai-files-handbook.md` → Part 1: CLAUDE.md

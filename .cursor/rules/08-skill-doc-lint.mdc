@@ -6,12 +6,11 @@ alwaysApply: false
 # SKILL: DOC LINT
 
 ## TRIGGER
-Use this when auditing documentation quality — size, structure, duplicates, SSOT violations.
+User explicitly types `/doc-lint` or asks to audit documentation quality — size, structure, duplicates, SSOT violations.
 
-## LOGIC SOURCE
-**EXECUTE the instruction set defined in:** `.claude/skills/doc-lint/SKILL.md`
+## EXECUTION INSTRUCTIONS
+DO NOT guess the procedure and DO NOT output anything yet.
+To perform this skill, you MUST dynamically read the instructions using your file-reading capabilities.
 
-@.claude/skills/doc-lint/SKILL.md
-
-## KEY CONSTRAINT
-- Do NOT use for code review or source code analysis.
+1. Read the specific skill protocol: `.claude/skills/doc-lint/SKILL.md`
+2. Execute based STRICTLY on the logic and output format defined in that file.

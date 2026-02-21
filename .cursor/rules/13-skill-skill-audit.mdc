@@ -6,12 +6,11 @@ alwaysApply: false
 # SKILL: SKILL AUDIT
 
 ## TRIGGER
-Use this when auditing SKILL.md files and qa_agent.md for bloat, duplication, and harmful patterns.
+User explicitly types `/skill-audit` or asks to audit SKILL.md files and qa_agent.md for bloat, duplication, or harmful patterns.
 
-## LOGIC SOURCE
-**EXECUTE the instruction set defined in:** `.claude/skills/skill-audit/SKILL.md`
+## EXECUTION INSTRUCTIONS
+DO NOT guess the procedure and DO NOT output anything yet.
+To perform this skill, you MUST dynamically read the instructions using your file-reading capabilities.
 
-@.claude/skills/skill-audit/SKILL.md
-
-## KEY CONSTRAINT
-- Do NOT use for documentation audit — use /doc-lint for that.
+1. Read the specific skill protocol: `.claude/skills/skill-audit/SKILL.md`
+2. Execute based STRICTLY on the logic and output format defined in that file.

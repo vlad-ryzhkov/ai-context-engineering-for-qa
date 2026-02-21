@@ -2,34 +2,34 @@
 
 ## Why this is bad
 
-Assertions без сообщений:
-- При падении непонятно, что именно проверялось
-- Сложно отлаживать в CI (только stack trace)
-- Нужно открывать код чтобы понять причину
-- Отчёты Allure становятся бесполезными
+Assertions without messages:
+- On failure it is unclear what exactly was being checked
+- Hard to debug in CI (only stack trace)
+- Need to open the code to understand the cause
+- Allure reports become useless
 
 ## Bad Example
 
 ```kotlin
-// ❌ BAD: Что упало? Почему?
+// ❌ BAD: What failed? Why?
 @Test
 fun `user registration flow`() {
     val response = ApiHelper.apiClient.execute { RegisterRequest(payload) }
 
     assertEquals(201, response.code)           // AssertionError: expected 201 but was 400
-    assertNotNull(response.body.userId)        // Какой userId? Почему null?
+    assertNotNull(response.body.userId)        // Which userId? Why null?
     assertEquals("PENDING", response.body.status)
 }
 
-// В логах CI:
+// In CI logs:
 // AssertionError: expected:<201> but was:<400>
-// 🤷 Что пошло не так?
+// 🤷 What went wrong?
 ```
 
 ## Good Example
 
 ```kotlin
-// ✅ GOOD: assertEquals с message
+// ✅ GOOD: assertEquals with message
 @Test
 fun `user registration flow`() {
     val response = ApiHelper.apiClient.execute { RegisterRequest(payload) }
@@ -39,7 +39,7 @@ fun `user registration flow`() {
     assertEquals("PENDING", response.body.status, "New user should have PENDING status until OTP verification")
 }
 
-// ✅ GOOD: Hamcrest checkAll для множественных проверок
+// ✅ GOOD: Hamcrest checkAll for multiple assertions
 @Test
 fun `user registration flow`() {
     val response = ApiHelper.apiClient.execute { RegisterRequest(payload) }
@@ -51,7 +51,7 @@ fun `user registration flow`() {
     }
 }
 
-// ✅ GOOD: Allure step с контекстом
+// ✅ GOOD: Allure step with context
 @Test
 fun `user registration flow`() {
     step("Register new user") {
@@ -70,7 +70,7 @@ fun `user registration flow`() {
 
 ## What to look for in code review
 
-- `assertEquals`, `assertNotNull` без message параметра
-- Несколько assertions подряд без контекста
-- Отсутствие Allure `step()` в integration тестах
-- Assertions на вложенные поля без пояснения структуры
+- `assertEquals`, `assertNotNull` without a message parameter
+- Multiple assertions in a row without context
+- Missing Allure `step()` in integration tests
+- Assertions on nested fields without explanation of the structure

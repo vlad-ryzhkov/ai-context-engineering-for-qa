@@ -4,20 +4,20 @@
 
 ## Why this is bad
 
-Дефолтная конфигурация HTTP-клиента в тестах:
-- Дефолтный timeout (бесконечный или слишком большой) вешает CI
-- Redirect following скрывает реальные проблемы (301/302)
-- Отсутствие connection pool лимитов приводит к resource exhaustion
+Default HTTP client configuration in tests:
+- Default timeout (infinite or too large) hangs CI
+- Redirect following hides real problems (301/302)
+- Missing connection pool limits leads to resource exhaustion
 
 ## Bad Example
 
 ```kotlin
-// ❌ BAD: Дефолтный клиент без таймаутов
+// ❌ BAD: Default client without timeouts
 object ApiHelper {
     val apiClient = ApiClient(Config.BASE_URL)
 }
 
-// ❌ BAD: Таймаут задан в каждом тесте по-разному
+// ❌ BAD: Timeout set differently in each test
 @Test
 fun `slow endpoint`() {
     apiClient.setReadTimeout(30000)
@@ -29,7 +29,7 @@ fun `slow endpoint`() {
 ## Good Example
 
 ```kotlin
-// ✅ GOOD: Централизованная конфигурация в Config
+// ✅ GOOD: Centralized configuration in Config
 object ApiHelper {
     val apiClient = ApiClient(Config.BASE_URL).apply {
         setConnectTimeout(Config.CONNECT_TIMEOUT_MS)
@@ -47,7 +47,7 @@ object Config {
 
 ## What to look for in code review
 
-- `ApiClient()` без явных таймаутов
-- `setReadTimeout` / `setConnectTimeout` в теле тестов (а не в config)
-- Разные таймауты в разных тестах для одного сервиса
-- `followRedirects = true` (скрывает redirect-баги)
+- `ApiClient()` without explicit timeouts
+- `setReadTimeout` / `setConnectTimeout` in test bodies (not in config)
+- Different timeouts in different tests for the same service
+- `followRedirects = true` (hides redirect bugs)

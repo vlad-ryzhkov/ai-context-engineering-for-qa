@@ -1,9 +1,9 @@
 Gemini-3-fast:
-> Создаёт только 4 примеров тестов
-> Не находит противоречия в требованиях
+> Creates only 4 test examples
+> Does not find contradictions in requirements
 
 Haiku
-> Думает 8 минут
-> Расходует 60k токенов
-> Создаёт менее половины необходимых тестов
-> Не находит противоречия в требованиях
+> Thinks for 8 minutes
+> Spends 60k tokens
+> Creates less than half of the required tests
+> Does not find contradictions in requirements

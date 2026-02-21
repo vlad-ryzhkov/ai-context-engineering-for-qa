@@ -6,12 +6,12 @@ alwaysApply: false
 # SKILL: TEST CASES
 
 ## TRIGGER
-Use this when generating test scenarios matrix from API specification.
+User explicitly types `/test-cases` or asks to generate a test scenarios matrix from an API specification.
 
-## LOGIC SOURCE
-**EXECUTE the instruction set defined in:** `.claude/skills/test-cases/SKILL.md`
+## EXECUTION INSTRUCTIONS
+DO NOT guess the procedure and DO NOT output anything yet.
+To perform this skill, you MUST dynamically read the instructions using your file-reading capabilities.
 
-@.claude/skills/test-cases/SKILL.md
-
-## OUTPUT
-Output: `audit/test-scenarios.md`
+1. First, read the core agent context: `.claude/qa_agent.md`
+2. Second, read the specific skill protocol: `.claude/skills/test-cases/SKILL.md`
+3. Execute based STRICTLY on the logic and output format defined in those files.

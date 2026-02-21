@@ -1,283 +1,283 @@
 ---
 name: init-skill
-description: Генерирует новые skills с интерактивным workflow, контрольными точками и итеративной доработкой. Используй когда нужно создать новый skill, стандартизировать QA-процесс или автоматизировать рутинные проверки. Не используй для редактирования существующих skills.
+description: Generates new skills with interactive workflow, checkpoints, and iterative refinement. Use when you need to create a new skill, standardize a QA process, or automate routine checks. Do not use for editing existing skills.
 allowed-tools: "Read Write Edit Glob Grep Bash"
 agent: agents/sdet.md
 context: fork
 ---
 
-# /init-skill — Генератор новых Skills
+# /init-skill — New Skill Generator
 
 <purpose>
-Интерактивное создание нового skill с пошаговым workflow, контрольными точками и циклом доработки.
-Фокус: QA-задачи (тестирование, анализ, автоматизация).
+Interactive creation of a new skill with step-by-step workflow, checkpoints, and a refinement cycle.
+Focus: QA tasks (testing, analysis, automation).
 </purpose>
 
-## Перед началом
+## Before Starting
 
-Прочитай `.claude/qa_agent.md` и `.claude/agents/sdet.md`.
+Read `.claude/qa_agent.md` and `.claude/agents/sdet.md`.
 
-## Когда использовать
+## When to Use
 
-- Создание нового инструмента для повторяющейся QA-задачи
-- Стандартизация процесса в команде
-- Автоматизация рутинных проверок
+- Creating a new tool for a recurring QA task
+- Standardizing a process within the team
+- Automating routine checks
 
 ---
 
-## Принцип Progressive Disclosure
+## Progressive Disclosure Principle
 
-YAML-заголовок (всегда в промпте) → Тело SKILL.md (при активации) → scripts/references (по запросу).
+YAML header (always in the prompt) → SKILL.md body (on activation) → scripts/references (on demand).
 
-Полная диаграмма: `references/skill-template.md` → секция "Progressive Disclosure".
+Full diagram: `references/skill-template.md` → section "Progressive Disclosure".
 
-## Стиль написания
+## Writing Style
 
-Используй **императивный/инфинитивный стиль** в инструкциях skill:
+Use **imperative style** in skill instructions:
 
-| Правильно | Неправильно |
-|-----------|-------------|
-| Сгенерируй тест-кейсы | Вы должны сгенерировать тест-кейсы |
-| Проверь входные данные | Следует проверить входные данные |
-| Прочитай спецификацию | Нужно прочитать спецификацию |
+| Correct | Incorrect |
+|---------|-----------|
+| Generate test cases | You should generate test cases |
+| Validate input data | It is recommended to validate input data |
+| Read the specification | One needs to read the specification |
 
 ---
 
 ## Verbosity Protocol
 
-**Structured Output Priority:** Весь analysis идёт в артефакт (MD/HTML), не в чат.
+**Structured Output Priority:** All analysis goes into the artifact (MD/HTML), not into chat.
 
-**Chat output (ограничения):**
-- Brief Summary: max 5 строк (что нашли, сколько, итог)
-- Findings table: max 15 строк (топ по severity)
-- Полный отчёт: `📊 Полный отчёт: {path}` + открыть файл
+**Chat output (constraints):**
+- Brief Summary: max 5 lines (what was found, how many, result)
+- Findings table: max 15 lines (top by severity)
+- Full report: `📊 Full report: {path}` + open file
 
-**Iterative steps:** Не выводить прогресс по каждому файлу. Checkpoint только при:
-- Phase transition (Фаза N → Фаза N+1)
-- Blocker обнаружен
-- Завершение (SKILL COMPLETE)
+**Iterative steps:** Do not output progress for each file. Checkpoint only on:
+- Phase transition (Phase N → Phase N+1)
+- Blocker detected
+- Completion (SKILL COMPLETE)
 
 **Tools first:**
-- Grep → table → report, без "Now I will grep..."
-- Read → analyze → report, без "The file shows..."
+- Grep → table → report, no "Now I will grep..."
+- Read → analyze → report, no "The file shows..."
 
-**Post-Check:** Inline перед SKILL COMPLETE (5-7 строк checklist), не отдельный файл.
+**Post-Check:** Inline before SKILL COMPLETE (5-7 line checklist), not a separate file.
 
 ---
 
-# ИНТЕРАКТИВНЫЙ WORKFLOW
+# INTERACTIVE WORKFLOW
 
-## Фаза 1: Определение назначения
+## Phase 1: Define Purpose
 
-### Шаг 1.1: Спроси назначение
-
-```
-Что должен делать новый skill?
-
-Примеры для QA:
-- Генерировать тест-кейсы для [область]
-- Анализировать [что] на [что искать]
-- Создавать автотесты для [тип API/UI]
-- Проверять [артефакт] на соответствие [стандарт]
-```
-
-### Шаг 1.2: Определи категорию
-
-Категории: **Analysis** (отчёт), **Generation** (код/документ), **Validation** (pass/fail), **Transformation** (конвертация).
-
-Полная таблица с примерами: `references/skill-template.md` → секция "Категории skills".
-
-### Шаг 1.3: Собери конкретные примеры использования
-
-Попроси пользователя привести **2-3 конкретных примера**:
+### Step 1.1: Ask for the purpose
 
 ```
-Прежде чем проектировать skill, мне нужны конкретные примеры:
+What should the new skill do?
 
-1. **Trigger-фразы** — что скажет пользователь, чтобы вызвать skill?
-   Пример: "проверь скриншот на L10N баги", "сгенерируй тесты для /api/v1/users"
-
-2. **Use cases** — опиши 2-3 реальных сценария использования:
-   - Какие входные данные?
-   - Какой ожидаемый результат?
-   - Какой контекст (проект, стадия, команда)?
-
-3. **Анти-примеры** — когда skill НЕ должен использоваться?
+Examples for QA:
+- Generate test cases for [area]
+- Analyze [what] for [what to look for]
+- Create automated tests for [API/UI type]
+- Validate [artifact] against [standard]
 ```
 
-**Зачем:** Конкретные примеры определяют scope скилла точнее, чем абстрактное описание. Trigger-фразы помогут написать точный YAML description.
+### Step 1.2: Determine the category
 
-### ✅ CHECKPOINT 1: Подтверждение назначения
+Categories: **Analysis** (report), **Generation** (code/document), **Validation** (pass/fail), **Transformation** (conversion).
+
+Full table with examples: `references/skill-template.md` → section "Skill Categories".
+
+### Step 1.3: Collect specific use case examples
+
+Ask the user for **2-3 specific examples**:
 
 ```
-Понял задачу так:
-- Назначение: [что делает]
-- Категория: [Analysis/Generation/Validation/Transformation]
-- Название: /[skill-name]
+Before designing the skill, I need specific examples:
 
-Примеры использования:
+1. **Trigger phrases** — what will the user say to invoke the skill?
+   Example: "check the screenshot for L10N bugs", "generate tests for /api/v1/users"
+
+2. **Use cases** — describe 2-3 real usage scenarios:
+   - What input data?
+   - What expected output?
+   - What context (project, stage, team)?
+
+3. **Anti-examples** — when should the skill NOT be used?
+```
+
+**Why:** Specific examples define the skill scope more precisely than an abstract description. Trigger phrases help write an accurate YAML description.
+
+### ✅ CHECKPOINT 1: Purpose Confirmation
+
+```
+Understood the task as:
+- Purpose: [what it does]
+- Category: [Analysis/Generation/Validation/Transformation]
+- Name: /[skill-name]
+
+Use case examples:
 1. [use case 1]
 2. [use case 2]
 
-Trigger-фразы: "[фраза 1]", "[фраза 2]"
+Trigger phrases: "[phrase 1]", "[phrase 2]"
 
-Всё верно? (да / нет, уточню)
+Is this correct? (yes / no, I'll clarify)
 ```
 
-**⚠️ НЕ ПРОДОЛЖАЙ без подтверждения пользователя!**
+**⚠️ DO NOT CONTINUE without user confirmation!**
 
 ---
 
-## Фаза 2: Проектирование структуры
+## Phase 2: Design Structure
 
-### Шаг 2.1: Предложи структуру на основе категории
+### Step 2.1: Propose structure based on category
 
-Предложения зависят от категории skill (Analysis/Generation/Validation/Transformation).
+Proposals depend on the skill category (Analysis/Generation/Validation/Transformation).
 
-Полный список вопросов для каждой категории — в `references/interaction-guide.md` → секция "Структурные предложения по категориям"
+Full list of questions for each category — in `references/interaction-guide.md` → section "Structural Proposals by Category"
 
-### Шаг 2.2: Определи файловую структуру
+### Step 2.2: Define file structure
 
 ```
 .claude/skills/{skill-name}/
-├── SKILL.md              # Обязательно (case-sensitive!)
-├── scripts/              # Executable — автоматизация и утилиты
+├── SKILL.md              # Mandatory (case-sensitive!)
+├── scripts/              # Executable — automation and utilities
 │   └── [name].py/.sh
-├── references/           # Loaded into context — справочники, чек-листы
+├── references/           # Loaded into context — references, checklists
 │   └── [name].md/.json
-└── assets/               # Used in output, NOT loaded — шаблоны, иконки
+└── assets/               # Used in output, NOT loaded — templates, icons
     └── [name].md/.png
 ```
 
 **Critical rules:**
-- Папка: только kebab-case (`my-skill` ✅, `My_Skill` ❌)
-- Файл: точно `SKILL.md` (case-sensitive, не `skill.md`)
-- **НЕ создавай README.md внутри skill папки** — вся документация в SKILL.md или references/
+- Directory: only kebab-case (`my-skill` ✅, `My_Skill` ❌)
+- File: exactly `SKILL.md` (case-sensitive, not `skill.md`)
+- **DO NOT create README.md inside the skill directory** — all documentation goes in SKILL.md or references/
 
-### ✅ CHECKPOINT 2: Подтверждение структуры
+### ✅ CHECKPOINT 2: Structure Confirmation
 
 ```
-Структура skill:
-- Основной файл: SKILL.md
-- Scripts: [да/нет] — [назначение]
-- References: [да/нет] — [назначение]
-- Assets: [да/нет] — [назначение]
+Skill structure:
+- Main file: SKILL.md
+- Scripts: [yes/no] — [purpose]
+- References: [yes/no] — [purpose]
+- Assets: [yes/no] — [purpose]
 
-Дополнительные фичи:
-- [список выбранных опций]
+Additional features:
+- [list of selected options]
 
-Продолжаем? (да / изменить)
+Continue? (yes / change)
 ```
 
-**⚠️ НЕ ПРОДОЛЖАЙ без подтверждения пользователя!**
+**⚠️ DO NOT CONTINUE without user confirmation!**
 
 ---
 
-## Фаза 3: Создание YAML-заголовка
+## Phase 3: Create YAML Header
 
-Прочитай `references/yaml-reference.md` для полного справочника по полям, ограничениям и примерам.
+Read `references/yaml-reference.md` for the full reference on fields, constraints, and examples.
 
-### Шаг 3.1: Сгенерируй name и description
+### Step 3.1: Generate name and description
 
-**Ключевые правила:**
-- `name`: kebab-case, совпадает с именем папки, без "claude"/"anthropic"
-- `description`: формула `[Что делает]. [Когда использовать]`, < 1024 символов, без XML тегов
+**Key rules:**
+- `name`: kebab-case, matches the directory name, no "claude"/"anthropic"
+- `description`: formula `[What it does]. [When to use]`, < 1024 characters, no XML tags
 
-**Используй trigger-фразы из Checkpoint 1** для формулировки "Когда использовать".
+**Use trigger phrases from Checkpoint 1** to formulate "When to use".
 
-### ✅ CHECKPOINT 3: Подтверждение YAML frontmatter
+### ✅ CHECKPOINT 3: YAML Frontmatter Confirmation
 
 ```
-YAML Frontmatter (будет виден в системном промпте):
+YAML Frontmatter (will be visible in the system prompt):
 
 ---
 name: [skill-name]
-description: [твой вариант]
+description: [your variant]
 ---
 
-Устраивает? (да / предложи свой вариант)
+Acceptable? (yes / suggest your variant)
 ```
 
-**⚠️ НЕ ПРОДОЛЖАЙ без подтверждения пользователя!**
+**⚠️ DO NOT CONTINUE without user confirmation!**
 
 ---
 
-## Фаза 4: Подготовка ресурсов (scripts, references, assets)
+## Phase 4: Prepare Resources (scripts, references, assets)
 
-Создай выбранные в Checkpoint 2 ресурсы:
-- **scripts/** — исполняемые утилиты (Python/Bash)
-- **references/** — справочники, загружаемые в контекст
-- **assets/** — шаблоны для вывода (НЕ загружаются в контекст)
+Create the resources selected in Checkpoint 2:
+- **scripts/** — executable utilities (Python/Bash)
+- **references/** — references loaded into context
+- **assets/** — templates for output (NOT loaded into context)
 
-**✅ CHECKPOINT 4:** Подтверди список созданных файлов перед переходом к SKILL.md
-
----
-
-## Фаза 5: Написание тела SKILL.md
-
-### Шаг 5.1: Сгенерируй полный SKILL.md
-
-Прочитай и используй шаблон из `references/skill-template.md` → секция "Шаблон".
-
-**Стиль:** императивный (см. "Стиль написания" выше).
-
-При написании инструкций **ссылайся на реальные ресурсы**, подготовленные в Фазе 4:
-- `Прочитай references/checklist.md` — а не абстрактное "используй чек-лист"
-- `Запусти scripts/validate.sh` — а не "провалидируй"
-
-### ✅ CHECKPOINT 5: Ревью SKILL.md
-
-Покажи полный SKILL.md и предложи опции редактирования (см. `references/interaction-guide.md` → "Опции редактирования").
-
-**⚠️ ОБЯЗАТЕЛЬНО покажи файл и дождись выбора!**
+**✅ CHECKPOINT 4:** Confirm the list of created files before proceeding to SKILL.md
 
 ---
 
-## Фаза 6: Итеративная доработка
+## Phase 5: Write SKILL.md Body
 
-Цикл доработки описан в `references/interaction-guide.md` → "Цикл доработки"
+### Step 5.1: Generate the full SKILL.md
+
+Read and use the template from `references/skill-template.md` → section "Template".
+
+**Style:** imperative (see "Writing Style" above).
+
+When writing instructions, **reference the actual resources** prepared in Phase 4:
+- `Read references/checklist.md` — not an abstract "use the checklist"
+- `Run scripts/validate.sh` — not "validate"
+
+### ✅ CHECKPOINT 5: SKILL.md Review
+
+Show the full SKILL.md and offer editing options (see `references/interaction-guide.md` → "Editing Options").
+
+**⚠️ You MUST show the file and wait for the user's choice!**
 
 ---
 
-## Фаза 7: Сохранение и валидация
+## Phase 6: Iterative Refinement
 
-### ✅ CHECKPOINT 6: Финальное подтверждение
+The refinement cycle is described in `references/interaction-guide.md` → "Refinement Cycle"
+
+---
+
+## Phase 7: Save and Validate
+
+### ✅ CHECKPOINT 6: Final Confirmation
 
 ```
-Готово к сохранению:
+Ready to save:
 
 .claude/skills/[skill-name]/
 ├── SKILL.md ✅
-├── scripts/[name].* ✅ (если есть)
-├── references/[name].* ✅ (если есть)
-└── assets/[name].* ✅ (если есть)
+├── scripts/[name].* ✅ (if any)
+├── references/[name].* ✅ (if any)
+└── assets/[name].* ✅ (if any)
 
-Сохранить? (да / вернуться к редактированию)
+Save? (yes / return to editing)
 ```
 
-**⚠️ НЕ СОХРАНЯЙ без подтверждения пользователя!**
+**⚠️ DO NOT SAVE without user confirmation!**
 
-### Шаг 7.1: Сохрани файлы
+### Step 7.1: Save files
 
-Создай директорию и все файлы.
+Create the directory and all files.
 
-**Совет:** Используй `scripts/init_skill.sh` для генерации шаблонной структуры:
+**Tip:** Use `scripts/init_skill.sh` to generate the template structure:
 ```bash
 bash .claude/skills/init-skill/scripts/init_skill.sh [skill-name]
 ```
 
-### Шаг 7.2: Валидация и завершение
+### Step 7.2: Validation and completion
 
-- Пройди `references/validation-checklist.md`
-- Если SKILL.md > 500 строк — предложи разбиение
-- Покажи результат: путь к skill, команду вызова
-- Предложи цикл улучшений после первого использования (см. `references/interaction-guide.md`)
+- Go through `references/validation-checklist.md`
+- If SKILL.md > 500 lines — suggest splitting
+- Show the result: path to skill, invocation command
+- Suggest a refinement cycle after first use (see `references/interaction-guide.md`)
 
 ---
 
-## Связанные файлы
+## Related Files
 
-- Init-скрипт: `.claude/skills/init-skill/scripts/init_skill.sh`
-- Шаблон: `references/skill-template.md`
-- Полный гайд: `docs/ai-files-handbook.md`
-- Примеры: `.claude/skills/*/SKILL.md`
+- Init script: `.claude/skills/init-skill/scripts/init_skill.sh`
+- Template: `references/skill-template.md`
+- Full guide: `docs/ai-files-handbook.md`
+- Examples: `.claude/skills/*/SKILL.md`

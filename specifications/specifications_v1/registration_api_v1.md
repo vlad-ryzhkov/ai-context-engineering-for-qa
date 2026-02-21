@@ -1,34 +1,34 @@
-# Спецификация: API Регистрации Пользователей v1
+# Specification: User Registration API v1
 
-## Эндпоинт
+## Endpoint
 
 `POST /api/v1/users/register`
 
-## Описание
+## Description
 
-Создает новую учетную запись. Публичный метод.
+Creates a new account. Public method.
 
-## Бизнес-логика (Business Rules)
+## Business Rules
 
-1. **Уникальность:** Email должен быть уникальным в системе.
-2. **2FA Flow:** После валидации данных **система отправляет SMS с OTP кодом** для активации аккаунта.
-3. **Безопасность пароля (NIST Guidelines):**
-    - Минимум 8 символов.
-    - Должен содержать цифры и спецсимволы.
-    - **ЗАПРЕЩЕНО:** Использовать в пароле части своего **email**, **имени** или **фамилии** (защита от социальной инженерии).
-4. **Локализация:** Поддержка UTF-8 имен.
+1. **Uniqueness:** Email must be unique in the system.
+2. **2FA Flow:** After data validation, **the system sends an SMS with an OTP code** for account activation.
+3. **Password Security (NIST Guidelines):**
+    - Minimum 8 characters.
+    - Must contain digits and special characters.
+    - **FORBIDDEN:** Using parts of your **email**, **first name**, or **last name** in the password (social engineering protection).
+4. **Localization:** UTF-8 name support.
 
-## Тело запроса (JSON Body)
+## Request Body (JSON Body)
 
-| Поле        | Тип | Обязательно | Ограничения | Описание                       |
-|-------------|---|---|---|--------------------------------|
-| `email`     | string | Да | Valid email | Логин пользователя.            |
-| `password`  | string | Да | Мин. 8 символов | См. правила безопасности выше. |
-| `full_name` | string | Да | Макс. 100 симв. | ФИО пользователя.              |
+| Field       | Type | Required | Constraints | Description                    |
+|-------------|------|----------|-------------|--------------------------------|
+| `email`     | string | Yes | Valid email | User login.                    |
+| `password`  | string | Yes | Min. 8 characters | See security rules above.     |
+| `full_name` | string | Yes | Max. 100 chars | User full name.               |
 
-## Пример запроса (Example Payload)
+## Example Request (Example Payload)
 >
-> **Warning:** Используйте этот пример как эталон для автотестов.
+> **Warning:** Use this example as a reference for automated tests.
 
 ```json
 {
@@ -39,14 +39,14 @@
 }
 ```
 
-## Исключено из скоупа тестирования (Test Scope Reduction)
+## Excluded from Test Scope (Test Scope Reduction)
 
-Следующие аспекты **не тестируются** на уровне этого эндпоинта:
+The following aspects are **not tested** at this endpoint level:
 
-| Сценарий | Владелец | Что тестируем вместо |
-|---|---|---|
-| **Валидация форматов** (`email`, `phone`, `full_name`): Regex, спецсимволы | Middleware (Zod/Pydantic) | Только наличие поля: отсутствие → 400 |
-| **Уникальность (Race Condition)**: параллельные запросы с одним email/phone | Unique Index в БД | Только 409 при конфликте (последовательные запросы) |
-| **Логика PII (подстроки, токены)**: комбинации "имя в пароле" | Unit-тесты shared-library | Только базовый happy/sad path на уровне API |
-| **Гарантия доставки SMS**: факт получения OTP пользователем | Notification Service | Только 201 при успешной постановке в очередь; 503 при недоступности шлюза |
-| **Граничные значения длин** (напр. 101 символ в `full_name`) | Уровень БД | — |
+| Scenario | Owner | What to test instead |
+|----------|-------|----------------------|
+| **Format validation** (`email`, `phone`, `full_name`): Regex, special characters | Middleware (Zod/Pydantic) | Field presence only: missing → 400 |
+| **Uniqueness (Race Condition)**: parallel requests with same email/phone | Unique Index in DB | Only 409 on conflict (sequential requests) |
+| **PII Logic (substrings, tokens)**: "name in password" combinations | Unit tests of shared-library | Only basic happy/sad path at API level |
+| **SMS Delivery Guarantee**: user actually receiving the OTP | Notification Service | Only 201 on successful queue submission; 503 when gateway is unavailable |
+| **Boundary value lengths** (e.g. 101 characters in `full_name`) | DB level | — |

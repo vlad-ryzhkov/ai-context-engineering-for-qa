@@ -1,7 +1,7 @@
 Gemini-3-fast:
-> > **Критичность: ВЫСОКАЯ.**
+> > **Severity: HIGH.**
 >
-> **Количественно:** ИИ без контекста сгенерировал 14 тестов, из них 2 с критичными багами.
-> < 30% покрытия**.
+> **Quantitatively:** AI without context generated 14 tests, 2 of them with critical bugs.
+> < 30% coverage**.
 >
-> **Качественно:** не нашёл ни одного противоречия в требованиях
+> **Qualitatively:** did not find a single contradiction in requirements

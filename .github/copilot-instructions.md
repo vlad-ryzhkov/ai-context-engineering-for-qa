@@ -7,54 +7,54 @@ If the user asks for a specific task (like "analyze" or "test"), **YOU MUST** as
 
 ## Context
 
-- **Проект:** Mobile/Backend QA Automation Workshop
-- **Роль:** Senior QA Automation Engineer
-- **Языки:** Kotlin, Markdown
-- **Документация:** на русском языке
+- **Project:** Mobile/Backend QA Automation Workshop
+- **Role:** Senior QA Automation Engineer
+- **Languages:** Kotlin, Markdown
+- **Documentation:** in English
 
-> **Tech Stack, Core Principles, Safety Protocols:** см. `CLAUDE.md` в корне репозитория (SSOT)
+> **Tech Stack, Core Principles, Safety Protocols:** see `CLAUDE.md` at the repository root (SSOT)
 
 ## Anti-Patterns (BANNED)
 
-| Проблема | Что делать вместо |
-|----------|-------------------|
-| `Thread.sleep()` в тестах | Polling с таймаутом (Awaitility) |
-| `Map<String, Any>` для API | Типизированные DTO с `@JsonNaming(SnakeCaseStrategy::class)` |
-| HTTP-вызовы прямо в тесте | Слой Client (абстракция) |
-| PII в тестовых данных | Faker или маскированные значения |
-| Assertion без сообщения | `assertEquals` с описанием контекста |
+| Problem | What to do instead |
+|---------|--------------------|
+| `Thread.sleep()` in tests | Polling with timeout (Awaitility) |
+| `Map<String, Any>` for API | Typed DTOs with `@JsonNaming(SnakeCaseStrategy::class)` |
+| HTTP calls directly in test | Client layer (abstraction) |
+| PII in test data | Faker or masked values |
+| Assertion without message | `assertEquals` with context description |
 
-## Skills (Как применять)
+## Skills (How to Use)
 
-GitHub Copilot не читает инструкции автоматически. Чтобы выполнить задачу:
+GitHub Copilot does not read instructions automatically. To execute a task:
 
-1. **Аудит спецификации:**
-   - Напиши в чат: `@workspace Прочитай .claude/skills/spec-audit/SKILL.md и выполни аудит для файла specifications/api.yaml`
+1. **Specification audit:**
+   - Type in chat: `@workspace Read .claude/skills/spec-audit/SKILL.md and perform audit for file specifications/api.yaml`
 
-2. **Генерация тестов:**
-   - Открой файл `src/test/kotlin/MyTest.kt`
-   - Открой файл `.claude/skills/api-tests/SKILL.md`
-   - Напиши: "Сгенерируй тесты на основе открытого SKILL файла"
+2. **Test generation:**
+   - Open file `src/test/kotlin/MyTest.kt`
+   - Open file `.claude/skills/api-tests/SKILL.md`
+   - Type: "Generate tests based on the open SKILL file"
 
-| Команда (alias) | Какой файл подключить в контекст | Назначение |
-|-----------------|----------------------------------|------------|
-| Spec Audit      | `.claude/skills/spec-audit/SKILL.md` | QA-аудит спецификации |
-| Тест-кейсы      | `.claude/skills/test-cases/SKILL.md` | Тест-кейсы из спецификации |
-| API Тесты       | `.claude/skills/api-tests/SKILL.md` | API автотесты (JUnit 5, Allure) |
-| Screenshot      | `.claude/skills/screenshot-analyze/SKILL.md` | L10N и UI дефекты |
+| Command (alias) | Which file to add to context | Purpose |
+|-----------------|------------------------------|---------|
+| Spec Audit      | `.claude/skills/spec-audit/SKILL.md` | QA audit of specification |
+| Test Cases      | `.claude/skills/test-cases/SKILL.md` | Test cases from specification |
+| API Tests       | `.claude/skills/api-tests/SKILL.md` | API automated tests (JUnit 5, Allure) |
+| Screenshot      | `.claude/skills/screenshot-analyze/SKILL.md` | L10N and UI defects |
 
-**Workflow:** Аудит → Тест-кейсы → API Тесты
+**Workflow:** Audit → Test Cases → API Tests
 
 ## Project Structure
 
 ```text
-CLAUDE.md                        # Полный контекст проекта (Single Source of Truth)
+CLAUDE.md                        # Full project context (Single Source of Truth)
 .claude/qa_agent.md              # Mindset + Anti-Patterns + Protocols
-.claude/skills/                  # Детальные инструкции по задачам
-specifications/                  # Спецификации API для анализа
-src/test/kotlin/                 # API автотесты
-audit/                           # Результаты аудита требований
+.claude/skills/                  # Detailed instructions per task
+specifications/                  # API specifications for analysis
+src/test/kotlin/                 # API automated tests
+audit/                           # Requirements audit results
 ```
 
-> Полный контекст проекта: см. `CLAUDE.md` в корне репозитория.
-> QA-агент и анти-паттерны: см. `.claude/qa_agent.md`.
+> Full project context: see `CLAUDE.md` at the repository root.
+> QA agent and anti-patterns: see `.claude/qa_agent.md`.

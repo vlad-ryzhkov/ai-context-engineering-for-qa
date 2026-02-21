@@ -6,12 +6,11 @@ alwaysApply: false
 # SKILL: SCREENSHOT ANALYSIS
 
 ## TRIGGER
-Use this when an image is attached or referenced for UI review.
+User explicitly types `/screenshot-analyze` or attaches/references an image for UI review.
 
-## LOGIC SOURCE
-**EXECUTE the instruction set defined in:** `.claude/skills/screenshot-analyze/SKILL.md`
+## EXECUTION INSTRUCTIONS
+DO NOT guess the procedure and DO NOT output anything yet.
+To perform this skill, you MUST dynamically read the instructions using your file-reading capabilities.
 
-@.claude/skills/screenshot-analyze/SKILL.md
-
-## OUTPUT
-Provide a structured list of UI/UX defects, localization issues, and layout bugs.
+1. Read the specific skill protocol: `.claude/skills/screenshot-analyze/SKILL.md`
+2. Execute based STRICTLY on the logic and output format defined in that file.

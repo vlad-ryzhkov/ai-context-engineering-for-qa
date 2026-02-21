@@ -1,58 +1,58 @@
 # YAML Frontmatter Reference
 
-## Обязательные поля
+## Required Fields
 
 ### name
-- **Формат:** kebab-case
-- **Ограничения:**
-  - Только строчные буквы, цифры, дефисы
-  - Должно совпадать с именем папки скилла
-  - Без префиксов "claude", "anthropic"
-  - Уникально в пределах проекта
-- **Примеры:**
+- **Format:** kebab-case
+- **Constraints:**
+  - Lowercase letters, digits, hyphens only
+  - MUST match the skill folder name
+  - No "claude", "anthropic" prefixes
+  - Unique within the project
+- **Examples:**
   - ✅ `test-cases`, `api-tests`, `screenshot-analyze`
   - ❌ `TestPlan`, `api_tests`, `claude-helper`
 
 ### description
-- **Формат:** `[Что делает]. [Когда использовать]. [Когда НЕ использовать]`
-- **Ограничения:**
-  - Максимум 1024 символа
-  - Без XML тегов (<>, &lt;, &gt;)
-  - Без переносов строк (однострочный)
-  - Используй trigger-фразы из примеров использования
-- **Структура:**
-  1. Что делает (1-2 предложения)
-  2. Когда использовать (конкретные сценарии)
-  3. Когда НЕ использовать (anti-use-cases)
-- **Примеры:**
-  - ✅ `Генерирует тест-кейсы из спецификации API. Используй после /spec-audit для покрытия endpoints тестами. Не используй для UI тестирования.`
-  - ❌ `Полезный инструмент для тестирования` (слишком общее)
+- **Format:** `[What it does]. [When to use]. [When NOT to use]`
+- **Constraints:**
+  - Maximum 1024 characters
+  - No XML tags (<>, &lt;, &gt;)
+  - No line breaks (single line)
+  - Use trigger phrases from usage examples
+- **Structure:**
+  1. What it does (1-2 sentences)
+  2. When to use (specific scenarios)
+  3. When NOT to use (anti-use-cases)
+- **Examples:**
+  - ✅ `Generates test cases from API specification. Use after /spec-audit for endpoint test coverage. Do not use for UI testing.`
+  - ❌ `A useful tool for testing` (too generic)
 
-## Опциональные поля
+## Optional Fields
 
 ### allowed-tools
-- **Формат:** Строка с перечислением через пробел
-- **Примеры:**
+- **Format:** Space-separated string
+- **Examples:**
   - `"Read Write Edit Glob Grep"`
   - `"Read Write Bash(wc*) Bash(git*)"`
-- **Wildcards:** Bash команды можно ограничить паттерном: `Bash(ls*)` разрешает только `ls`
+- **Wildcards:** Bash commands can be restricted by pattern: `Bash(ls*)` allows only `ls`
 
 ### agent
-- **Формат:** Путь к файлу агента относительно `.claude/`
-- **Пример:** `agents/sdet.md`, `agents/auditor.md`
+- **Format:** Path to agent file relative to `.claude/`
+- **Example:** `agents/sdet.md`, `agents/auditor.md`
 
 ### context
-- **Варианты:**
-  - `fork` — изолированный контекст (Process Isolation)
-  - `inherit` — унаследованный контекст (по умолчанию)
+- **Options:**
+  - `fork` — isolated context (Process Isolation)
+  - `inherit` — inherited context (default)
 
-## Примеры готовых YAML
+## Ready-made YAML Examples
 
 ### Analysis Skill
 ```yaml
 ---
 name: spec-audit
-description: Аудит OpenAPI/Proto спецификации на полноту и корректность. Используй перед /testcases для валидации endpoints. Не используй для code review.
+description: Audits OpenAPI/Proto specification for completeness and correctness. Use before /testcases for endpoint validation. Do not use for code review.
 allowed-tools: "Read Write Edit Glob Grep"
 agent: agents/auditor.md
 context: fork
@@ -63,7 +63,7 @@ context: fork
 ```yaml
 ---
 name: api-tests
-description: Генерирует Kotlin автотесты из тест-кейсов. Используй после /testcases для автоматизации. Не используй без готовых test cases.
+description: Generates Kotlin automated tests from test cases. Use after /testcases for automation. Do not use without prepared test cases.
 allowed-tools: "Read Write Edit Glob Grep Bash"
 agent: agents/sdet.md
 context: fork
@@ -74,18 +74,18 @@ context: fork
 ```yaml
 ---
 name: lint-tests
-description: Проверяет автотесты на соответствие стандартам. Используй после /api-tests для контроля качества. Не используй для production кода.
+description: Validates automated tests against standards. Use after /api-tests for quality control. Do not use for production code.
 allowed-tools: "Read Glob Grep"
 agent: agents/auditor.md
 context: fork
 ---
 ```
 
-## Валидация
+## Validation
 
-После написания YAML проверь:
-- [ ] `name` = имя директории скилла
-- [ ] `description` содержит все 3 части (что/когда/не когда)
-- [ ] `description` < 1024 символов
-- [ ] Нет XML символов в `description`
-- [ ] YAML синтаксически корректен (triple-dash начало и конец)
+After writing YAML, verify:
+- [ ] `name` = skill directory name
+- [ ] `description` contains all 3 parts (what/when/not when)
+- [ ] `description` < 1024 characters
+- [ ] No XML characters in `description`
+- [ ] YAML is syntactically correct (triple-dash opening and closing)

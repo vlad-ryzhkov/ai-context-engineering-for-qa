@@ -2,16 +2,16 @@
 
 ## Why this is bad
 
-HTTP-вызовы напрямую в тестах:
-- При смене URL нужно править 100+ тестов
-- Дублирование кода настройки клиента
-- Сложно добавить логирование/retry/auth
-- Тесты знают слишком много о реализации API
+HTTP calls directly in tests:
+- When a URL changes, 100+ tests need fixing
+- Duplication of client configuration code
+- Hard to add logging/retry/auth
+- Tests know too much about API implementation
 
 ## Bad Example
 
 ```kotlin
-// ❌ BAD: Raw HTTP напрямую в каждом тесте
+// ❌ BAD: Raw HTTP directly in each test
 @Test
 fun `user can register`() {
     val response = httpClient.post("https://api.example.com/api/v1/users/register") {
@@ -25,7 +25,7 @@ fun `user can register`() {
 
 @Test
 fun `registration fails with invalid email`() {
-    // Тот же boilerplate снова...
+    // Same boilerplate again...
     val response = httpClient.post("https://api.example.com/api/v1/users/register") {
         contentType(ContentType.Application.Json)
         header("X-Api-Key", "secret-key")
@@ -37,7 +37,7 @@ fun `registration fails with invalid email`() {
 ## Good Example
 
 ```kotlin
-// ✅ GOOD: Request class инкапсулирует HTTP
+// ✅ GOOD: Request class encapsulates HTTP
 class RegisterRequest(
     request: FeatureRequest
 ) : ApiRequestBaseJson<FeatureResponse>(FeatureResponse::class.java) {
@@ -47,7 +47,7 @@ class RegisterRequest(
     }
 }
 
-// Тесты чистые и читаемые
+// Tests are clean and readable
 @Test
 fun `user can register`() {
     val response = ApiHelper.apiClient.execute { RegisterRequest(validPayload) }
@@ -57,8 +57,8 @@ fun `user can register`() {
 
 ## What to look for in code review
 
-- Raw HTTP вызовы (`httpClient.post()`, `httpClient.get()`) напрямую в `@Test` методах
-- Дублирование URL, headers, contentType
-- Отсутствие Request classes extending `ApiRequestBaseJson<T>`
-- Хардкод URL в тестах (`"https://..."`)
-- Custom `ApiClient`/`ApiResponse` wrappers вместо common-test-libs
+- Raw HTTP calls (`httpClient.post()`, `httpClient.get()`) directly in `@Test` methods
+- Duplication of URL, headers, contentType
+- Missing Request classes extending `ApiRequestBaseJson<T>`
+- Hardcoded URLs in tests (`"https://..."`)
+- Custom `ApiClient`/`ApiResponse` wrappers instead of common-test-libs

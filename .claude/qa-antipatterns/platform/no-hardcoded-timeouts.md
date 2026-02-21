@@ -4,21 +4,21 @@
 
 ## Why this is bad
 
-Захардкоженные таймауты в Awaitility или HTTP-клиенте:
-- Ломаются на медленном CI (timeout слишком маленький)
-- Тратят время на быстром окружении (timeout слишком большой)
-- Невозможно переопределить для разных окружений (dev/staging/prod)
+Hardcoded timeouts in Awaitility or HTTP client:
+- Break on slow CI (timeout too small)
+- Waste time on fast environments (timeout too large)
+- Impossible to override for different environments (dev/staging/prod)
 
 ## Bad Example
 
 ```kotlin
-// ❌ BAD: Magic numbers разбросаны по тестам
+// ❌ BAD: Magic numbers scattered across tests
 await()
     .atMost(5, TimeUnit.SECONDS)
     .pollInterval(500, TimeUnit.MILLISECONDS)
     .until { getStatus(id) == "ACTIVE" }
 
-// ❌ BAD: Разные таймауты в каждом тесте
+// ❌ BAD: Different timeouts in each test
 await().atMost(3, TimeUnit.SECONDS).until { ... }
 await().atMost(10, TimeUnit.SECONDS).until { ... }
 await().atMost(30, TimeUnit.SECONDS).until { ... }
@@ -27,7 +27,7 @@ await().atMost(30, TimeUnit.SECONDS).until { ... }
 ## Good Example
 
 ```kotlin
-// ✅ GOOD: Таймауты в Config, переиспользуются
+// ✅ GOOD: Timeouts in Config, reused
 object PollingConfig {
     val DEFAULT_TIMEOUT = Duration.ofSeconds(
         System.getenv("POLL_TIMEOUT_SEC")?.toLongOrNull() ?: 10
@@ -43,6 +43,6 @@ await()
 
 ## What to look for in code review
 
-- `atMost(N, TimeUnit.SECONDS)` с literal числами в тестах
-- Разные таймауты для одинаковых операций в разных тестах
-- Отсутствие централизованного polling config
+- `atMost(N, TimeUnit.SECONDS)` with literal numbers in tests
+- Different timeouts for identical operations in different tests
+- Missing centralized polling config

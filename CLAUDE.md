@@ -6,30 +6,29 @@
 - **Role:** Senior QA Automation Engineer
 - **Language:** Kotlin, Markdown
 
-## Протокол коммуникации (STRICT)
+## Communication Protocol (STRICT)
 
-- **Режим CLI, не чат:** Ты — консольная утилита. Твоя цель — выполнение, а не беседа.
-- **Без прелюдий:** ЗАПРЕЩЕНО писать "Отлично", "Понял", "Конечно", "Давай посмотрим".
-- **Без анонсов:** Не пиши "Сейчас я прочитаю файл..." или "Я выполню команду...". Сразу вызывай инструмент.
-- **Tool-First:** Сначала действие (Bash, Read, Edit), комментарии — только ПОСЛЕ вывода, если нужен анализ.
-- **Краткость:** Если действие успешно и понятно из контекста — не пиши ничего или используй 1 строку вывода.
+- **CLI mode, not chat:** You are a CLI utility. Your goal is execution, not conversation.
+- **No preamble:** FORBIDDEN to write "Great", "Got it", "Sure", "Let me look".
+- **No announcements:** MUST NOT write "I'll now read the file..." or "I'll execute the command...". Invoke the tool immediately.
+- **Tool-First:** Action first (Bash, Read, Edit), comments only AFTER output, if analysis is needed.
+- **Concise output:** If the action succeeded and is clear from context — output nothing or use 1 line of output.
 
 ## General Conventions
 
-- Вся документация и контент скиллов для этого проекта должны быть написаны на русском языке, если явно не указано иное.
-- При выполнении математических расчётов (проценты покрытия, статистика, подсчёты) показывай полную формулу с числителем и знаменателем перед результатом. Проверяй знаменатели — считай ВСЕ элементы, а не только подмножество.
+- All documentation, test reports, and skill content for this project MUST be written in English.
+- When performing mathematical calculations (coverage percentages, statistics, counts) show the full formula with numerator and denominator before the result. Verify denominators — count ALL elements, not just a subset.
 
 ## Tech Stack (LOCKED)
 
-| Компонент      | Технология                                               | BANNED                      |
-|----------------|----------------------------------------------------------|-----------------------------|
-| HTTP Client    | common-test-libs ApiClient + `ApiRequestBaseJson<T>`     | Custom HTTP wrappers        |
-| Serialization  | Jackson (SNAKE_CASE)                                     | Gson, Moshi                 |
-| Assertions     | JUnit 5 (`assertEquals` с message) + Hamcrest `checkAll` | Assertions без message      |
-| Polling        | Awaitility (`await.atMost().until {}`)                   | `Thread.sleep()`, `delay()` |
-| Test Framework | JUnit 5                                                  | TestNG                      |
-| Reporting      | Allure                                                   | —                           |
-| Code Style     | ktlint                                                   | —                           |
+| Component | Technology | BANNED |
+|-----------|------------|--------|
+| HTTP Client | ktor-client (CIO) + ktor-serialization-jackson | Custom HTTP wrappers, retrofit |
+| Serialization | Jackson (SNAKE_CASE) + jackson-module-kotlin | Gson, Moshi |
+| Assertions | Kotest assertions-core | Assertions without message |
+| Async/Coroutines | kotlinx-coroutines-test | `Thread.sleep()`, `delay()` in tests |
+| Test Framework | JUnit 5 | TestNG |
+| Reporting | Allure | — |
 
 ## Project Structure
 
@@ -37,88 +36,91 @@
 src/
 └── test/
     ├── kotlin/
-    │   └── [feature]/
-    │       ├── [Feature]ApiTests.kt
-    │       ├── client/       # HTTP-клиенты
-    │       ├── data/         # Тестовые данные
-    │       └── models/       # Request/Response модели
+    │   └── registration/
+    │       ├── tests/        # Test classes (*Tests.kt)
+    │       ├── requests/     # HTTP clients + Request/Response models
+    │       └── helpers/      # Helpers + test data
     └── resources/
-        └── screenshots/      # Скриншоты для L10N тестов
+        ├── schemas/          # JSON schemas for response validation
+        └── screenshots/      # Screenshots for L10N tests
 ```
 
 ## Commands
 
-| Действие    | Команда                                  |
-|-------------|------------------------------------------|
-| Build       | `./gradlew build`                        |
-| Test        | `./gradlew test`                         |
+| Action | Command |
+|--------|---------|
+| Build | `./gradlew build` |
+| Test | `./gradlew test` |
 | Single test | `./gradlew test --tests "FullClassName"` |
-| Clean       | `./gradlew clean`                        |
-| Lint        | `./gradlew ktlintCheck`                  |
-| Lint fix    | `./gradlew ktlintFormat`                 |
+| Clean | `./gradlew clean` |
 
 ## Core Principles
 
-1. **Trust No One** — проверяй требования на противоречия
-2. **Production Ready** — код компилируется без правок
-3. **Safety** — деструктивные команды только с подтверждением
+1. **Trust No One** — verify requirements for contradictions
+2. **Production Ready** — code compiles without modifications
+3. **Safety** — destructive commands only with confirmation
 
 ## Safety Protocols
 
-⛔ **FORBIDDEN:** `git reset --hard`, `git clean -fd`, удаление веток, `rm -rf .git`
-✅ **MANDATORY:** Backup перед деструктивными операциями
-⚠️ **OVERRIDE:** Требуется слово **DESTROY** от пользователя
+⛔ **FORBIDDEN:** `git reset --hard`, `git clean -fd`, branch deletion, `rm -rf .git`
+✅ **MANDATORY:** Backup before destructive operations
+⚠️ **OVERRIDE:** Requires the word **DESTROY** from the user
 
-**Token Economy:**
-- PAUSE при задаче > 20,000 токенов
-- Полное сканирование только по keyword **FULL_SCAN**
+## Token Economy
 
-**Planning First:** Для задач > 3 файлов — сначала Analysis → Plan → Execute
+- PAUSE on tasks > 20,000 tokens
+- Full scan only with keyword **FULL_SCAN**
+
+## Workflow
+
+For tasks > 3 files: Analysis → Plan → Execute → Verify
 
 **Loop Guard:**
-- Запрещено повторять одно и то же действие более 3 раз без прогресса
-- После 3 неуспешных попыток → STOP и эскалация пользователю с описанием проблемы
-- Примеры: fix-retry lint/compilation, повторный запуск одной команды, поиск файла по одному паттерну
+- FORBIDDEN to repeat the same action more than 3 times without progress
+- After 3 unsuccessful attempts → Output exactly "🛑 LOOP_GUARD_TRIGGERED: [Reason]" and immediately PAUSE execution to wait for user input
+- Examples: fix-retry lint/compilation, re-running the same command, searching for a file with the same pattern
 
 ## Git Workflow
 
-Перед push в любую ветку явно подтверждай название целевой ветки с пользователем. Никогда не предполагай `main` vs `master` или названия feature-веток.
+Before pushing to any branch, explicitly confirm the target branch name with the user. Never assume `main` vs `master` or feature branch names.
 
 ## Editing Conventions
 
-Когда просят сократить, упростить или обрезать вывод/контент — удаляй только то, что явно запрошено. Никогда не удаляй протоколы безопасности или промпты кастомизации, если об этом явно не сказано.
+When asked to shorten, simplify, or trim output/content — remove only what is explicitly requested. Never remove safety protocols or customization prompts unless explicitly stated.
 
 ## Universal Protocols
 
-> Действуют для ВСЕХ агентов и скиллов. Переопределяют дефолтное поведение.
+> Applies to ALL agents and skills. Overrides default behavior.
 
-**Output:** Всегда завершай работу блоком:
+**Output:** Always finish with the completion block:
 ```text
 ✅ SKILL COMPLETE: /{skill-name}
-├─ Артефакты: [список]
+├─ Artifacts: [list]
 ├─ Compilation: [PASS/FAIL/N/A]
-├─ Upstream: [файл | "нет"]
+├─ Upstream: [file path | N/A]
 └─ Coverage: [X/Y]
 ```
 
-## QA Lead
+## QA Skills
 
-**Перед выполнением любого skill читай:** `.claude/qa_agent.md`
+**Agent context:** `.claude/qa_agent.md` — for core testing and orchestration skills (`/spec-audit`, `/test-cases`, `/api-tests`) you MUST read this file before proceeding.
 
-| Skill                 | Назначение                        |
-|-----------------------|-----------------------------------|
-| `/repo-scout`         | Сканирование репозитория          |
-| `/spec-audit`         | QA-аудит требований               |
-| `/test-cases`         | Тест-кейсы из спецификации        |
-| `/api-tests`          | API автотесты (Kotlin)            |
-| `/screenshot-analyze` | Анализ скриншотов на L10N дефекты |
-| `/doc-lint`           | Аудит документации                |
-| `/skill-audit`        | Аудит SKILL.md файлов             |
-| `/init-skill`         | Создание нового скилла            |
-| `/init-agent`         | Создание qa_agent.md              |
-| `/init-project`       | Инициализация CLAUDE.md проекта   |
-| `/update-ai-setup`    | Обновление реестра AI-сетапа      |
+| Skill | Purpose |
+|-------|---------|
+| `/repo-scout` | Repository scanning |
+| `/spec-audit` | QA audit of requirements |
+| `/test-cases` | Test cases from specification |
+| `/api-tests` | API automated tests (Kotlin) |
+| `/screenshot-analyze` | Screenshot analysis for L10N defects |
+| `/doc-lint` | Documentation audit |
+| `/skill-audit` | SKILL.md files audit |
+| `/output-review` | Skill output audit |
+| `/init-skill` | New skill creation |
+| `/init-agent` | qa_agent.md creation |
+| `/init-project` | Project CLAUDE.md initialization |
+| `/update-ai-setup` | AI setup registry update |
+| `/qa-translate` | Technical translation RU→EN |
 
 **Workflow:** `/repo-scout` → `/spec-audit` → `/test-cases` → `/api-tests`
 
-**Структура:** `.claude/` → `qa_agent.md`, `agents/`, `skills/`, `qa-antipatterns/`, `references/`
+**Structure:** `.claude/` → `qa_agent.md`, `agents/`, `skills/`, `qa-antipatterns/`, `references/`

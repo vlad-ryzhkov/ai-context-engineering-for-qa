@@ -1,158 +1,198 @@
 ---
 name: api-tests
-description: Генерирует Production-Ready API автотесты на Kotlin (JUnit5, Allure). Используй когда нужно покрыть REST endpoint тестами из test-scenarios.md или спецификации. Не используй для генерации тест-кейсов — для этого /test-cases.
+description: Generates production-ready API automated tests in Kotlin (JUnit5, Allure). Use when you need to cover REST endpoints with tests from test-scenarios.md or specification. Do not use for test case generation — use /test-cases for that.
 allowed-tools: "Read Write Edit Glob Grep Bash(./gradlew*)"
 agent: agents/sdet.md
 context: fork
 ---
 
+## Recommended Flow
+
+For best results: `/spec-audit` → `/test-cases` → `/api-tests`. Running directly on a specification also works — the skill will generate tests without a scenario matrix, but traceability `@Link` annotations will reference the spec instead of scenario IDs.
+
+---
+
 ## 🔒 SYSTEM REQUIREMENTS
 
-Перед выполнением агент ОБЯЗАН загрузить: `.claude/protocols/gardener.md`
+Before execution the agent MUST load: `.claude/protocols/gardener.md`
 
 ---
 
 # SDET: API Automation (Kotlin)
 
 <purpose>
-Генерирует полный набор Kotlin-автотестов для REST API: модели, HTTP-клиент, хелперы, тесты.
-Источник сценариев — `audit/test-scenarios.md` (результат /test-cases) или спецификация напрямую.
+Generates a complete set of Kotlin automated tests for REST API: models, HTTP client, helpers, tests.
+Scenario source — `audit/test-scenarios.md` (result of /test-cases) or specification directly.
 </purpose>
 
-## Когда использовать
+## When to Use
 
-- Есть `audit/test-scenarios.md` с матрицей сценариев — покрыть их автотестами
-- Нужно написать тесты для нового endpoint с нуля
-- Ревью существующих тестов на соответствие стандартам (`review` arg)
+- There is `audit/test-scenarios.md` with a scenario matrix — cover them with automated tests
+- Need to write tests for a new endpoint from scratch
+- Review existing tests for standards compliance (`review` arg)
+
+## Input Context (Process Isolation)
+
+`context: fork` — you cannot see chat history before your invocation.
+
+**Allowed inputs:** `audit/test-scenarios.md`, specification, `CLAUDE.md`, `build.gradle.kts`, existing `src/` (style reference only).
+**Forbidden:** Assumptions from "previous agent context", inventing endpoint contracts.
 
 ## Protocol
-1. **Stack:** HTTP-клиент = Ktor `HttpClient(CIO)` инициализируется в `requests/` слое (не в тестах) через `by lazy(LazyThreadSafetyMode.SYNCHRONIZED)`. JUnit5 + `@ParameterizedTest` (`junit-jupiter-params`), Awaitility, Ktor Logging (`LogLevel.ALL`), JSON Schema Validator, Faker (генерация данных в TestData).
-2. **BANNED:** `Thread.sleep`, `delay`, `runBlocking` (используй `runTest`), `HttpClient(` в `*Tests.kt` (inline HTTP в тестах), manual `@AllureId`, `shouldBe` (use `assertEquals`), comments.
-3. **Security Headers Rule:** Каждый POS-тест (POST/PUT/DELETE с 2xx) обязан проверять `Content-Type`, `X-Content-Type-Options`, `Strict-Transport-Security` через `assertEquals` на `response.headers`.
+1. **Stack:** HTTP client = Ktor `HttpClient(CIO)` initialized in the `requests/` layer (not in tests) via `by lazy(LazyThreadSafetyMode.SYNCHRONIZED)`. JUnit5 + `@ParameterizedTest` (`junit-jupiter-params`), Awaitility, Ktor Logging (`LogLevel.ALL`), JSON Schema Validator, Faker (data generation in TestData).
+2. **BANNED:** `Thread.sleep`, `delay`, `runBlocking` (use `runTest`), `HttpClient(` in `*Tests.kt` (inline HTTP in tests), manual `@AllureId`, `shouldBe` (use `assertEquals`), `LocalDateTime.now()` in strict assertions. **Zero-comment policy:** `//` and `/* */` in generated code are FORBIDDEN.
+2a. **Coroutine Tests:** Preferred: `fun test(): Unit = runTest { }` from `kotlinx-coroutines-test`. If `runBlocking` is unavoidable — explicit return type required: `fun test(): Unit = runBlocking { }`. FORBIDDEN: `delay()` as timing substitute — use Awaitility.
+2b. **Test Lifecycle:** `@BeforeEach`/`@AfterEach` for setup/teardown. `lateinit var` for resources requiring cleanup. **FORBIDDEN:** `@TestInstance(PER_CLASS)` with field initialization — JUnit skips class init on constructor failure.
+3. **Security Headers Rule:** Every positive test (POST/PUT/DELETE with 2xx) MUST verify `Content-Type`, `X-Content-Type-Options`, `Strict-Transport-Security` via `assertEquals` on `response.headers`.
 4. **Structure:**
-   - `requests/`: DTOs (`@JsonNaming`) + Request-объекты.
+   - `requests/`: DTOs (`@JsonNaming`) + Request objects.
    - `helpers/`: `@Step` annotated flows.
-   - `tests/`: `@Epic` (из названия фичи/пакета), `@Feature` (из названия эндпоинта), `@Severity`, `@DisplayName`. `@AllureId` — **НЕ генерируется**: проставляется вручную или через утилиту после привязки к TMS.
+   - `tests/`: `@Epic` (from feature/package name), `@Feature` (from endpoint name), `@Severity`, `@DisplayName`. `@AllureId` — **NOT generated**: assigned manually or via utility after TMS binding. **MANDATORY TAGS:** Analyze business logic — add `@Tag("CRITICAL")` + `@Severity(SeverityLevel.CRITICAL)` for Money flows, Security/Auth, or Data integrity endpoints; add `@Tag("REGRESSION")` for all others.
+   - **External Integrations:** If the endpoint under test calls 3rd-party services (payments, SMS, email providers), the test MUST configure a WireMock stub in `@BeforeEach`. Do not make real HTTP calls to external domains.
 4. **Gates:** `compileTestKotlin`, `ktlintCheck`.
 
 ## Input Source Strategy
 
-**Primary Source:** `audit/test-scenarios.md` — результат /test-cases. Каждая строка таблицы → автотест.
-**Secondary Source:** Спецификация напрямую — если test-scenarios.md отсутствует.
+**Primary Source:** `audit/test-scenarios.md` — result of /test-cases. Each table row → automated test.
+**Secondary Source:** Specification directly — if test-scenarios.md is missing.
 
 ## Input Validation (Mandatory Check)
 
-**КРИТИЧНО:** Перед началом генерации выполни 2-фазную проверку.
+**CRITICAL:** Before starting generation, perform a 2-phase validation.
 
-### Фаза 1: Проверка наличия test-scenarios (Primary Source)
+### Phase 1: Check test-scenarios availability (Primary Source)
 
 ```bash
 [ -f audit/test-scenarios.md ] || echo "WARNING"
 ```
 
-**Если файл отсутствует:**
+**If the file is missing:**
 ```
-⚠️ WARNING: audit/test-scenarios.md не найден. Продолжаю без pre-built сценариев.
+⚠️ WARNING: audit/test-scenarios.md not found. Continuing without pre-built scenarios.
 ```
 
-### Фаза 2: Проверка наличия строк таблицы (защита от пустого файла)
+### Phase 2: Check for table rows (protection against empty file)
 
 ```bash
 grep -q "^|" audit/test-scenarios.md || echo "WARNING"
 ```
 
-**Если строки таблицы не найдены:**
+**If no table rows found:**
 ```
-⚠️ WARNING: test-scenarios.md существует, но не содержит строк таблицы. Продолжаю с пустой базой.
+⚠️ WARNING: test-scenarios.md exists but contains no table rows. Continuing with empty base.
 ```
 
-### Если все проверки пройдены:
+### If all checks pass:
 
-- Read `audit/test-scenarios.md` — извлеки все строки таблицы (каждая строка = один автотест)
-- Прочитай `audit/test-plan.md` (если существует) для приоритизации порядка генерации (P0 → P1 → P2)
+- Read `audit/test-scenarios.md` — extract all table rows (each row = one automated test)
+- Read `audit/test-plan.md` (if exists) for generation order prioritization (P0 → P1 → P2)
 
 ### Parsing test-scenarios.md
 
-1. Читай `audit/test-scenarios.md`
-2. Для каждой строки таблицы извлекай: ID, Type, Scenario, Input, Expected
-3. BVA-значения из колонки Input → переноси в автотест ТОЧНО
-4. Порядок генерации: по приоритету из `audit/test-plan.md` (если есть) или строка за строкой
+1. Read `audit/test-scenarios.md`
+2. For each table row extract: ID, Type, Scenario, Input, Expected
+3. BVA values from the Input column → transfer to the automated test EXACTLY
+4. Generation order: by priority from `audit/test-plan.md` (if available) or row by row
 
-**Если User запрашивает endpoint без сценариев в таблице:**
+**If User requests an endpoint without scenarios in the table:**
 ```
-⚠️ WARNING: No scenarios for {endpoint} in audit/test-scenarios.md. Продолжаю без сценариев для этого endpoint.
+⚠️ WARNING: No scenarios for {endpoint} in audit/test-scenarios.md. Continuing without scenarios for this endpoint.
 ```
 
 ## Verbosity Protocol
 
-**Code first, talk later:** Генерация → Compilation → Post-Check → SKILL COMPLETE. Нет промежуточных explanation.
+**Code first, talk later:** Generation → Compilation → Post-Check → SKILL COMPLETE. No intermediate explanations.
 
-**Запрещено:**
-- "I will now create..." — просто Create
-- "The test covers..." — покрытие идёт в SKILL COMPLETE метрику
-- "Let me fix..." — просто Fix и Compile
-- Explanation после каждого файла — группируй все файлы → один compilation attempt
+**FORBIDDEN:**
+- "I will now create..." — just Create
+- "The test covers..." — coverage goes into SKILL COMPLETE metrics
+- "Let me fix..." — just Fix and Compile
+- Explanation after each file — group all files → one compilation attempt
 
-**Разрешено:**
-- Compilation errors — показывай stderr, не описание
-- SKILL COMPLETE — метрики (Coverage, Compilation status)
+**Allowed:**
+- Compilation errors — show stderr, not description
+- SKILL COMPLETE — metrics (Coverage, Compilation status)
 
-**Post-Check:** Inline (5 строк), проверка против BANNED list и Quality Gates.
+**Post-Check:** Inline (5 lines), verification against BANNED list and Quality Gates.
 
 **Mandatory Checks:**
 ```bash
-grep -r "Thread.sleep\|delay(\|runBlocking\|shouldBe\|//\|body<\|@AllureId(" src/test/kotlin/
+grep -r "Thread.sleep\|delay(\|runBlocking\|shouldBe\|//\|body<\|@AllureId(\|LocalDateTime.now()" src/test/kotlin/
 grep -rl "HttpClient(" src/test/kotlin/ | grep "Tests\.kt$"
 grep -r "Map<String, Any>" src/test/kotlin/
 ```
-⛔ Любой match → FAIL, применить anti-pattern fix:
+⛔ Any match → FAIL. **Lazy Load Anti-Pattern Fix:**
+1. Read `.claude/qa-antipatterns/_index.md` — find `{category}/{name}` matching the problem
+2. Read `.claude/qa-antipatterns/{category}/{name}.md` → apply Good Example → cite `(ref: {category}/{name}.md)`
+3. If not found → BLOCKER, do not guess the fix
 
-| Pattern | ref |
-|---------|-----|
-| `Thread.sleep` / `delay(` | `platform/flaky-sleep-tests.md` |
-| `runBlocking` | `platform/coroutine-test-return-type.md` |
-| `shouldBe` | `common/assertion-without-message.md` |
-| `HttpClient(` в `*Tests.kt` | `api/inline-http-calls.md` — перенести в `requests/` |
-| `body<` | `api/map-instead-of-dto.md` |
-| `@AllureId(` | `sdet.md:131` — только `./gradlew assignAllureIds` |
-| `Map<String, Any>` | `api/map-instead-of-dto.md` |
+**Categories:** `platform/` · `api/` · `common/` · `security/`
 
 **Quality Gates:**
-- Каждый мутирующий POS-тест (POST/PUT/DELETE) содержит проверку **Side Effects**: состояние БД (`DB:`), события в очереди или Cache — через вызов Helper-метода.
-- Все NEG-тесты проверяют не только HTTP-код, но и **бизнес-код ошибки** (`assertEquals(expectedCode, response.body.code, "error code mismatch")`).
-- **No duplication:** логика создания сущностей — только в Helpers; логика данных — только в TestData/FakerService. Inline-строки в тестах запрещены.
+- Every mutating positive test (POST/PUT/DELETE) MUST contain a **Side Effects** check: DB state (`DB:`), queue events, or Cache — via Helper method call.
+- All negative tests MUST verify not only the HTTP code but also the **business error code** (`assertEquals(expectedCode, response.body.code, "error code mismatch")`).
+- **No duplication:** entity creation logic — only in Helpers; data logic — only in TestData/FakerService. Inline strings in tests are FORBIDDEN.
+- **Time/Date Assertions:** Never use exact match for timestamps. Use relative matchers: `assertTrue(ChronoUnit.SECONDS.between(expected, actual) < 5, "timestamp drift")`. Never use `LocalDateTime.now()` in assertions.
+- **Anti-Pattern "The Giant":** One `@Test` method MUST NOT exceed 30 lines. Extract setup into `@Step`-annotated Helper methods.
+- **Anti-Pattern "The Liar":** Every `@Test` MUST contain at least one `assertEquals` or `assertTrue` evaluating the response body or side-effects.
 
 ## Workflow
 0. **Input Check (MANDATORY):**
-   - Выполни 2-фазную проверку test-scenarios (см. Input Validation выше)
-   - Если любая фаза FAIL → выведи ⚠️ WARNING и продолжи с доступными данными
-   - Если все проверки PASS → Read `audit/test-scenarios.md`
+   - Perform 2-phase test-scenarios validation (see Input Validation above)
+   - If any phase FAILs → output ⚠️ WARNING and continue with available data
+   - If all checks PASS → Read `audit/test-scenarios.md`
 1. **Discovery:**
    - Read `CLAUDE.md`, `build.gradle.kts`.
-   - Read `audit/test-scenarios.md` (Primary Source) → извлеки все строки таблицы.
-   - Glob `src/**/*Test*.kt`, `src/**/requests/**/*.kt` (для контекста уже существующих паттернов).
-   - Прочитай `audit/test-plan.md` (если существует) — только для определения приоритетов P0/P1/P2.
-   - **Style Analysis:** Glob `src/**/models/**/*.kt`. Если поля уже используют snake_case без `@JsonNaming` → НЕ добавляй `@JsonNaming` в генерируемые модели. Прочитай `src/**/TestBase.kt` — используй те же суперклассы, аннотации уровня класса и import-ы.
-   - Print Summary: N сценариев найдено, M endpoint-ов в плане, стиль моделей: [SnakeCase/Native].
+   - Read `audit/test-scenarios.md` (Primary Source) → extract all table rows.
+   - Glob `src/**/*Test*.kt`, `src/**/requests/**/*.kt` (for context of existing patterns).
+   - Read `audit/test-plan.md` (if exists) — only for determining P0/P1/P2 priorities.
+   - **Style Analysis:** Glob `src/**/models/**/*.kt`. If fields already use snake_case without `@JsonNaming` → DO NOT add `@JsonNaming` to generated models. Read `src/**/TestBase.kt` — use the same superclasses, class-level annotations, and imports.
+   - Print Summary: N scenarios found, M endpoints in plan, model style: [SnakeCase/Native].
 2. **Plan & Gen:**
-   - **Источник сценариев:** строки таблицы из `audit/test-scenarios.md`.
-   - Порядок: по приоритету из test-plan.md (P0 → P1 → P2). Если test-plan.md отсутствует — строка за строкой.
+   - **Scenario source:** table rows from `audit/test-scenarios.md`.
+   - Order: by priority from test-plan.md (P0 → P1 → P2). If test-plan.md is missing — row by row.
    - Check `references/api-patterns.md` for specific logic (Auth/CRUD/Page).
-   - Для каждой строки таблицы генерируй один автотест:
-     - Реализуй Input как параметры HTTP-запроса
-     - Реализуй Expected как assertions (HTTP status + logic)
-     - Перенеси BVA-значения из колонки Input ТОЧНО (граничные значения нельзя округлять или менять)
-     - Добавь `@Link(name = "Scenario {ID}", url = "file://audit/test-scenarios.md")` — обязательно
+   - For each table row generate one automated test:
+     - Implement Input as HTTP request parameters
+     - Implement Expected as assertions (HTTP status + logic)
+     - Transfer BVA values from the Input column EXACTLY (boundary values MUST NOT be rounded or modified)
+     - Add `@Link(name = "Scenario {ID}", url = "file://audit/test-scenarios.md")` — mandatory
    - **Phase 1:** Stateless (Validation, Auth fail).
    - **Phase 2:** 1-step setup (CRUD, simple flows).
    - **Phase 3:** Multi-step (Helpers, State transitions).
-3. **Translation & Grouping:** Применяй маппинг из `references/api-patterns.md#translation-rules`. Группировку NEG/BVA — из `api-patterns.md#grouping-strategy`.
-4. **Compile:** `./gradlew compileTestKotlin && ./gradlew ktlintCheck`. Если > 1 неудачных компиляций → ESCALATION (см. ниже)
-5. **Verify:** Grep BANNED patterns (см. Post-Check выше). Fix violations → re-compile.
+3. **Translation & Grouping:** Apply mapping from `references/api-patterns.md#translation-rules`. NEG/BVA grouping — from `api-patterns.md#grouping-strategy`.
+4. **Compile:** `./gradlew compileTestKotlin && ./gradlew ktlintCheck`. If > 1 failed compilations → ESCALATION (see below)
+5. **Verify:** Grep BANNED patterns (see Post-Check above). Fix violations → re-compile.
 
 ### Escalation (3-Strike Rule)
 
-**Если > 1 неудачных компиляций на одном endpoint:** Активируй **Escalation Protocol** (определён в Agent Prompt). EXIT с `⚠️ SKILL PARTIAL`.
+**If > 1 failed compilations on a single endpoint:**
+
+1. STOP generation for this item. Do NOT attempt workarounds (`Map<String, Any>`, reflection, custom HTTP client).
+2. Output the following block:
+
+```
+🚨 ESCALATION: Item #{N} ({METHOD} {endpoint}) UNIMPLEMENTABLE
+
+Problem: {specific description of technical blocker}
+
+Attempts:
+- Attempt 1: Compilation FAIL — {specific compiler error}
+- Attempt 2: Compilation FAIL — {specific compiler error}
+
+Decision required from QA Lead:
+1. Exclude {endpoint} from scope (if non-critical)
+2. Supplement specification with missing DTOs/schemas
+3. Update project dependencies (if version conflict)
+
+⏸️ Awaiting QA Lead decision.
+
+Status of remaining items:
+- Item #{M} ({endpoint}): ✅ DONE (X tests)
+- Item #{K} ({endpoint}): ⏩ SKIPPED (pending blocker resolution)
+```
+
+3. EXIT with `⚠️ SKILL PARTIAL` (see Completion Contract below).
 
 ## Review Mode (`review` arg)
 1. Read `src/test/**/*.kt`.
@@ -170,12 +210,12 @@ grep -r "Map<String, Any>" src/test/kotlin/
 
 ```
 ✅ SKILL COMPLETE: /api-tests
-├─ Артефакты: src/main/kotlin/**/ (requests, helpers, config) + src/test/kotlin/autotests/**/ (tests)
+├─ Artifacts: src/main/kotlin/**/ (requests, helpers, config) + src/test/kotlin/autotests/**/ (tests)
 ├─ Compilation: PASS
-├─ Source: audit/test-scenarios.md (N сценариев)
-├─ Context: audit/test-plan.md (P0: X endpoints, P1: Y endpoints) | "нет"
-├─ Coverage: N/M сценариев реализовано (NN%)
-├─ Traceability: @Link(scenario ID) в N/N тестах (100% обязательно)
+├─ Source: audit/test-scenarios.md (N scenarios)
+├─ Context: audit/test-plan.md (P0: X endpoints, P1: Y endpoints) | "none"
+├─ Coverage: N/M scenarios implemented (NN%)
+├─ Traceability: @Link(scenario ID) in N/N tests (100% mandatory)
 └─ BANNED check: PASS
 ```
 
@@ -183,16 +223,16 @@ grep -r "Map<String, Any>" src/test/kotlin/
 
 ```
 ⚠️ SKILL PARTIAL: /api-tests
-├─ Артефакты: [{file1}.kt (✅), {file2}.kt (❌)]
+├─ Artifacts: [{file1}.kt (✅), {file2}.kt (❌)]
 ├─ Compilation: PARTIAL (X/Y files)
-├─ Source: audit/test-scenarios.md (N сценариев)
-├─ Coverage: X/N сценариев реализовано (NN%)
-├─ Blockers: 1 UNIMPLEMENTABLE (см. ESCALATION выше)
-├─ Traceability: @Link присутствует в X/Y успешных автотестах
-└─ Status: BLOCKED, требуется решение Orchestrator
+├─ Source: audit/test-scenarios.md (N scenarios)
+├─ Coverage: X/N scenarios implemented (NN%)
+├─ Blockers: 1 UNIMPLEMENTABLE (see ESCALATION above)
+├─ Traceability: @Link present in X/Y successful automated tests
+└─ Status: BLOCKED, Orchestrator decision required
 ```
 
-**Когда использовать SKILL PARTIAL:**
-- После 3 неудачных компиляций на одном endpoint (Escalation)
-- Техническая блокировка (библиотека не поддерживает feature)
-- Неполная спецификация для одного endpoint (остальные покрыты)
+**When to use SKILL PARTIAL:**
+- After 3 failed compilations on a single endpoint (Escalation)
+- Technical blocker (library does not support the feature)
+- Incomplete specification for one endpoint (the rest are covered)

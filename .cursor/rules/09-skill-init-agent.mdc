@@ -6,12 +6,11 @@ alwaysApply: false
 # SKILL: INIT AGENT
 
 ## TRIGGER
-Use this when creating a new qa_agent.md — AI job description with QA culture, principles and anti-patterns.
+User explicitly types `/init-agent` or asks to create a new qa_agent.md.
 
-## LOGIC SOURCE
-**EXECUTE the instruction set defined in:** `.claude/skills/init-agent/SKILL.md`
+## EXECUTION INSTRUCTIONS
+DO NOT guess the procedure and DO NOT output anything yet.
+To perform this skill, you MUST dynamically read the instructions using your file-reading capabilities.
 
-@.claude/skills/init-agent/SKILL.md
-
-## KEY CONSTRAINT
-- Do NOT use to edit an existing qa_agent.md — edit it manually.
+1. Read the specific skill protocol: `.claude/skills/init-agent/SKILL.md`
+2. Execute based STRICTLY on the logic and output format defined in that file.

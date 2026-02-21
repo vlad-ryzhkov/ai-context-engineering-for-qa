@@ -6,12 +6,11 @@ alwaysApply: false
 # SKILL: INIT PROJECT
 
 ## TRIGGER
-Use this when setting up AI-assisted workflow for a new QA project without CLAUDE.md.
+User explicitly types `/init-project` or asks to set up AI-assisted workflow for a new QA project.
 
-## LOGIC SOURCE
-**EXECUTE the instruction set defined in:** `.claude/skills/init-project/SKILL.md`
+## EXECUTION INSTRUCTIONS
+DO NOT guess the procedure and DO NOT output anything yet.
+To perform this skill, you MUST dynamically read the instructions using your file-reading capabilities.
 
-@.claude/skills/init-project/SKILL.md
-
-## KEY CONSTRAINT
-- Do NOT use if CLAUDE.md is already configured — edit it manually.
+1. Read the specific skill protocol: `.claude/skills/init-project/SKILL.md`
+2. Execute based STRICTLY on the logic and output format defined in that file.

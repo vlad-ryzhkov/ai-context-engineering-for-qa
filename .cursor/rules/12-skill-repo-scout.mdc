@@ -6,12 +6,11 @@ alwaysApply: false
 # SKILL: REPO SCOUT
 
 ## TRIGGER
-Use this when entering a new backend repository (Go) before writing tests to catalog API surface, infrastructure and test coverage.
+User explicitly types `/repo-scout` or asks to scan a backend repository before writing tests.
 
-## LOGIC SOURCE
-**EXECUTE the instruction set defined in:** `.claude/skills/repo-scout/SKILL.md`
+## EXECUTION INSTRUCTIONS
+DO NOT guess the procedure and DO NOT output anything yet.
+To perform this skill, you MUST dynamically read the instructions using your file-reading capabilities.
 
-@.claude/skills/repo-scout/SKILL.md
-
-## KEY CONSTRAINT
-- Do NOT use for QA projects — use /init-project for those.
+1. Read the specific skill protocol: `.claude/skills/repo-scout/SKILL.md`
+2. Execute based STRICTLY on the logic and output format defined in that file.

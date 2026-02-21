@@ -1,65 +1,65 @@
 ---
 name: doc-lint
-description: Аудит качества документации — размер, структура, дубликаты между файлами, нарушения SSOT. Используй для контроля качества human-readable файлов, поиска дублирования и проверки структуры. Не используй для code review или анализа исходного кода.
+description: Documentation quality audit — size, structure, cross-file duplicates, SSOT violations. Use for quality control of human-readable files, finding duplication, and structure verification. Do not use for code review or source code analysis.
 allowed-tools: "Read Write Edit Glob Grep Bash(wc*)"
 agent: agents/auditor.md
 context: fork
 ---
 
-# /doc-lint — Аудит качества документации
+# /doc-lint — Documentation Quality Audit
 
 <purpose>
-Сканирует все human-readable файлы проекта, находит проблемы с размером, структурой, дубликатами между файлами и нарушения SSOT (Single Source of Truth). Генерирует отчёт с приоритизированными findings и планом рефакторинга.
+Scans all human-readable project files, finds issues with size, structure, cross-file duplicates, and SSOT (Single Source of Truth) violations. Generates a report with prioritized findings and a refactoring plan.
 </purpose>
 
-## Перед началом
+## Before Starting
 
-Прочитай `.claude/qa_agent.md` и `.claude/agents/auditor.md`.
+Read `.claude/qa_agent.md` and `.claude/agents/auditor.md`.
 
-## Когда использовать
+## When to Use
 
-- После добавления нового документа или skill
-- При подозрении на дублирование контента между файлами
-- Для периодического аудита документации (раз в спринт)
-- Перед рефакторингом документации
+- After adding a new document or skill
+- When cross-file content duplication is suspected
+- For periodic documentation audit (once per sprint)
+- Before documentation refactoring
 
-## Входные данные
+## Input
 
-| Параметр | Обязательность | Описание |
-|----------|:--------------:|----------|
-| Scope | Опционально | Конкретные файлы/директории. По умолчанию — весь проект |
-| Focus | Опционально | Только определённые фазы (size, structure, duplicates) |
+| Parameter | Required | Description |
+|-----------|:--------:|-------------|
+| Scope | Optional | Specific files/directories. Default — entire project |
+| Focus | Optional | Specific phases only (size, structure, duplicates) |
 
 ---
 
-## Алгоритм (6 фаз)
+## Algorithm (6 Phases)
 
 ## Verbosity Protocol (STRICT)
 
 **SILENT MODE ENFORCED:**
-1.  **NO CHAT TABLES:** Никогда не выводи таблицы (Inventory, Findings, Stats) в чат. Только в файл отчёта.
-2.  **NO LISTS:** Не перечисляй проверенные файлы в чате.
-3.  **ONLY STATUS:** В чат выводить **только** финальный блок `SKILL COMPLETE` и путь к отчёту.
+1.  **NO CHAT TABLES:** Never output tables (Inventory, Findings, Stats) to chat. Only to the report file.
+2.  **NO LISTS:** Do not list checked files in chat.
+3.  **ONLY STATUS:** Output to chat **only** the final `SKILL COMPLETE` block and the report path.
 
-**Пример единственного допустимого вывода в чат:**
+**Example of the only acceptable chat output:**
 > 📝 Audit Complete.
 > 📊 Report: `audit/doc-lint-report.md`
 > 📉 Health Score: 78/100
 > 💡 Action: Run `bash audit/safe-fix.sh` to apply safe fixes.
 
-### Фазы 1-7: Детальный алгоритм
+### Phases 1-7: Detailed Algorithm
 
-Полное описание всех фаз (Discovery, Size Analysis, Structure Analysis, Cross-File Duplicate Detection, Content Hygiene, Report Generation, Safe-Fix Script) — в `references/phases.md`.
+Full description of all phases (Discovery, Size Analysis, Structure Analysis, Cross-File Duplicate Detection, Content Hygiene, Report Generation, Safe-Fix Script) — in `references/phases.md`.
 
 ---
 
 ## Severity Model
 
-| Severity | Критерии |
+| Severity | Criteria |
 |----------|----------|
-| **CRITICAL** | Фактическое превышение лимитов (>700 generic, >500 SKILL); Битые ссылки (файл не найден) |
-| **WARNING** | Приближение к лимиту (90% от порога); Дубликаты >10 строк; Wall-of-text >30 строк |
-| **INFO** | TODO маркеры; Мелкие дубликаты (3-5 строк); Stale dates; Formatting issues |
+| **CRITICAL** | Actual limit exceeded (>700 generic, >500 SKILL); Broken links (file not found) |
+| **WARNING** | Approaching limit (90% of threshold); Duplicates >10 lines; Wall-of-text >30 lines |
+| **INFO** | TODO markers; Minor duplicates (3-5 lines); Stale dates; Formatting issues |
 
 ---
 
@@ -67,182 +67,182 @@ context: fork
 
 Start Score: 100.
 
-**Deductions (вычитание):**
-- CRITICAL: -15 баллов (за каждый finding)
-- WARNING: -5 баллов
-- INFO: -0.5 балла (снижаем вес мусора)
+**Deductions:**
+- CRITICAL: -15 points (per finding)
+- WARNING: -5 points
+- INFO: -0.5 points (reduced weight for noise)
 
 **Formula:** `MAX(0, 100 - (Count_Crit * 15) - (Count_Warn * 5) - (Count_Info * 0.5))`
 
-*Бонусных баллов за "хорошее поведение" не начислять.*
+*No bonus points for "good behavior".*
 
-| Диапазон | Оценка | Интерпретация |
-|----------|--------|---------------|
-| 90-100 | Excellent | Документация в отличном состоянии |
-| 70-89 | Good | Есть незначительные проблемы |
-| 50-69 | Needs attention | Требуется рефакторинг |
-| <50 | Refactoring needed | Срочный рефакторинг документации |
+| Range | Rating | Interpretation |
+|-------|--------|----------------|
+| 90-100 | Excellent | Documentation is in excellent condition |
+| 70-89 | Good | Minor issues present |
+| 50-69 | Needs attention | Refactoring required |
+| <50 | Refactoring needed | Urgent documentation refactoring |
 
-**Формула должна быть показана с подстановкой значений:**
+**Formula MUST be shown with substituted values:**
 ```
 Score = 100 - (2 × 15) - (5 × 5) - (8 × 0.5) = 100 - 30 - 25 - 4 = 41/100
 ```
 
 ---
 
-## Формат вывода
+## Output Format
 
-### Артефакт: `audit/doc-lint-report.md`
+### Artifact: `audit/doc-lint-report.md`
 
 ```markdown
 # Doc-Lint Report
 
-> Дата: {YYYY-MM-DD}
-> Scope: {описание scope}
-> Health Score: {N}/100 ({оценка})
+> Date: {YYYY-MM-DD}
+> Scope: {scope description}
+> Health Score: {N}/100 ({rating})
 
 ## Summary
 
-| Метрика | Значение |
-|---------|----------|
-| Файлов просканировано | N |
+| Metric | Value |
+|--------|-------|
+| Files scanned | N |
 | CRITICAL | N |
 | WARNING | N |
 | INFO | N |
 | Health Score | N/100 |
-| Кластеров дубликатов | N |
+| Duplicate clusters | N |
 
 ## File Inventory
 
-| # | Файл | Строк | Тип | Size Status |
-|---|------|------:|-----|-------------|
+| # | File | Lines | Type | Size Status |
+|---|------|------:|------|-------------|
 | 1 | ... | ... | ... | OK/WARNING/CRITICAL |
 
 ## CRITICAL Findings
 
-| # | Файл | Фаза | Описание | Рекомендация |
-|---|------|------|----------|--------------|
+| # | File | Phase | Description | Recommendation |
+|---|------|-------|-------------|----------------|
 
 ## WARNING Findings
 
-| # | Файл | Фаза | Описание | Рекомендация |
-|---|------|------|----------|--------------|
+| # | File | Phase | Description | Recommendation |
+|---|------|-------|-------------|----------------|
 
 ## INFO Findings
 
-| # | Файл | Фаза | Описание | Рекомендация |
-|---|------|------|----------|--------------|
+| # | File | Phase | Description | Recommendation |
+|---|------|-------|-------------|----------------|
 
 ## Duplicate Map
 
-### Кластер D-1: {название паттерна}
-- **Тип:** Exact / Near-duplicate / Conceptual
-- **SSOT Owner:** {файл}
-- **Найдено в:** {список файлов с номерами строк}
-- **Рекомендация:** Оставить в {Owner}, в остальных заменить ссылкой
+### Cluster D-1: {pattern name}
+- **Type:** Exact / Near-duplicate / Conceptual
+- **SSOT Owner:** {file}
+- **Found in:** {list of files with line numbers}
+- **Recommendation:** Keep in {Owner}, replace with link in the rest
 
-### Кластер D-N: ...
+### Cluster D-N: ...
 
 ## SSOT Refactoring Plan
 
-| # | Действие | Файл | Что сделать |
-|---|----------|------|-------------|
-| 1 | REMOVE | file.md:10-25 | Удалить копию Tech Stack, добавить ссылку |
+| # | Action | File | What to do |
+|---|--------|------|------------|
+| 1 | REMOVE | file.md:10-25 | Remove Tech Stack copy, add link |
 
 ## Statistics
 
-- Общий объём документации: {N} строк в {M} файлах
-- Средний размер файла: {N/M} строк
-- Файлов в пределах нормы: {X}/{M} = {%}
-- Health Score: {формула с подстановкой}
+- Total documentation volume: {N} lines in {M} files
+- Average file size: {N/M} lines
+- Files within limits: {X}/{M} = {%}
+- Health Score: {formula with substitution}
 ```
 
 ### Post-Check Scorecard
 
-Формат Post-Check — аналогично `/spec-audit` (см. qa_agent.md § Skill Completion Protocol, qa_agent.md § Quality Gates).
+Post-Check format — same as `/spec-audit` (see qa_agent.md § Skill Completion Protocol, qa_agent.md § Quality Gates).
 
 **Post-Check Scorecard:**
 
 ```markdown
 ## Scorecard
 
-| Критерий | Результат |
-|----------|-----------|
-| Все файлы просканированы | X/Y = NN% |
-| Line counts верифицированы | ✅/❌ |
-| Cross-file detection выполнен | ✅/❌ |
-| Каждый finding имеет severity + рекомендацию | X/Y = NN% |
-| Нет placeholder {xxx} | ✅/❌ |
-| SSOT owner назначен для каждого кластера | X/Y = NN% |
-| Формулы с числителем/знаменателем | ✅/❌ |
+| Criterion | Result |
+|-----------|--------|
+| All files scanned | X/Y = NN% |
+| Line counts verified | ✅/❌ |
+| Cross-file detection completed | ✅/❌ |
+| Every finding has severity + recommendation | X/Y = NN% |
+| No placeholder {xxx} | ✅/❌ |
+| SSOT owner assigned for every cluster | X/Y = NN% |
+| Formulas with numerator/denominator | ✅/❌ |
 
-### Итоговый Score: NN%
+### Final Score: NN%
 ```
 
 ---
 
 ## Quality Gates
 
-- [ ] Все файлы в scope отсканированы (Glob + count verification)
-- [ ] Line counts верифицированы через `wc -l`
-- [ ] Cross-file duplicate detection выполнен (Фаза 4)
-- [ ] Каждый finding имеет severity + рекомендацию
-- [ ] Нет placeholder `{xxx}` в отчёте
-- [ ] SSOT owner назначен для каждого кластера дубликатов
-- [ ] Формулы показаны с числителем и знаменателем (CLAUDE.md requirement)
-- [ ] Health Score рассчитан и показан с подстановкой
+- [ ] All files in scope scanned (Glob + count verification)
+- [ ] Line counts verified via `wc -l`
+- [ ] Cross-file duplicate detection completed (Phase 4)
+- [ ] Every finding has severity + recommendation
+- [ ] No placeholder `{xxx}` in the report
+- [ ] SSOT owner assigned for every duplicate cluster
+- [ ] Formulas shown with numerator and denominator (CLAUDE.md requirement)
+- [ ] Health Score calculated and shown with substitution
 
 ---
 
 ## Anti-Patterns (BANNED)
 
-### False Positive на одинаковых заголовках
+### False Positive on Identical Headers
 
 ```
-❌ Flagging таблиц с одинаковыми заголовками но разными данными как "duplicate"
-✅ Сравнивать содержимое ячеек, не только headers
+❌ Flagging tables with identical headers but different data as "duplicate"
+✅ Compare cell content, not just headers
 ```
 
 ### Phantom Findings
 
 ```
-❌ Генерировать findings на основе предположений без чтения файла
-✅ Каждый finding подтверждён содержимым файла (строка, фрагмент)
+❌ Generating findings based on assumptions without reading the file
+✅ Every finding confirmed by file content (line, excerpt)
 ```
 
 ### Missing Context
 
 ```
 ❌ "File is too long"
-✅ "CLAUDE.md: 305 строк > порог CRITICAL (300). Рекомендация: вынести секцию X в qa_agent.md"
+✅ "CLAUDE.md: 305 lines > CRITICAL threshold (300). Recommendation: extract section X to qa_agent.md"
 ```
 
 ### Over-flagging Intentional Repetition
 
 ```
-❌ Flagging ссылок на паттерны как дубликатов (ссылки — не дубликаты)
-✅ Отличать полное копирование от ссылок и краткого упоминания
+❌ Flagging pattern references as duplicates (references are not duplicates)
+✅ Distinguish full copying from references and brief mentions
 ```
 
 ---
 
-## Связанные файлы
+## Related Files
 
-| Файл | Содержание |
-|------|------------|
-| `references/check-rules.md` | Пороги размеров, сигнатуры дубликатов, SSOT-матрица, Diataxis-маркеры |
-| `references/best-practices.md` | Корпоративные практики: Google, Amazon, Diataxis, Microsoft, GitLab, Stripe |
+| File | Content |
+|------|---------|
+| `references/check-rules.md` | Size thresholds, duplicate signatures, SSOT matrix, Diataxis markers |
+| `references/best-practices.md` | Industry practices: Google, Amazon, Diataxis, Microsoft, GitLab, Stripe |
 
 ---
 
-## Завершение
+## Completion
 
-После создания отчёта и скрипта — напечатай блок `SKILL COMPLETE` (формат в qa_agent.md § Skill Completion Protocol).
+After creating the report and script — output the `SKILL COMPLETE` block (format in qa_agent.md § Skill Completion Protocol).
 
 ```
 ✅ SKILL COMPLETE: /doc-lint
-├─ Артефакты: audit/doc-lint-report.md, audit/safe-fix.sh
+├─ Artifacts: audit/doc-lint-report.md, audit/safe-fix.sh
 ├─ Compilation: N/A
-├─ Upstream: нет
+├─ Upstream: none
 └─ Score: {Health Score}/100
 ```

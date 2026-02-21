@@ -2,22 +2,22 @@
 
 ## Why this is bad
 
-Использование `Map<String, Any>` вместо типизированных моделей:
-- Компилятор не ловит опечатки в названиях полей
-- Нет автодополнения в IDE
-- При рефакторинге API нужно искать строки по всему проекту
-- Невозможно понять структуру данных без документации
+Using `Map<String, Any>` instead of typed models:
+- Compiler does not catch typos in field names
+- No autocomplete in IDE
+- API refactoring requires searching strings across the entire project
+- Data structure is impossible to understand without documentation
 
 ## Bad Example
 
 ```kotlin
-// ❌ BAD: Map — компилятор не поможет
+// ❌ BAD: Map — compiler won't help
 @Test
 fun `user can register`() {
     val payload = mapOf(
         "email" to "test@example.com",
         "phone" to "+79991234567",
-        "pasword" to "Test123!",  // Опечатка! Компилятор молчит
+        "pasword" to "Test123!",  // Typo! Compiler is silent
         "full_name" to "Test User"
     )
 
@@ -30,12 +30,12 @@ fun `user can register`() {
 ## Good Example
 
 ```kotlin
-// ✅ GOOD: Data class с аннотациями
+// ✅ GOOD: Data class with annotations
 @Serializable
 data class RegisterRequest(
     val email: String,
     val phone: String,
-    val password: String,  // Опечатка = ошибка компиляции
+    val password: String,  // Typo = compilation error
     @SerialName("full_name")
     val fullName: String
 )
@@ -45,7 +45,7 @@ fun `user can register`() {
     val payload = RegisterRequest(
         email = "test@example.com",
         phone = "+79991234567",
-        password = "Test123!",  // IDE подсказывает
+        password = "Test123!",  // IDE provides hints
         fullName = "Test User"
     )
 
@@ -55,7 +55,7 @@ fun `user can register`() {
 
 ## What to look for in code review
 
-- `mapOf()`, `mutableMapOf()`, `hashMapOf()` для request/response
-- `Map<String, Any>`, `Map<String, String>` в сигнатурах
-- JSON строки собранные через string interpolation
-- Отсутствие моделей в папке `models/` или `dto/`
+- `mapOf()`, `mutableMapOf()`, `hashMapOf()` for request/response
+- `Map<String, Any>`, `Map<String, String>` in signatures
+- JSON strings assembled via string interpolation
+- Missing models in `models/` or `dto/` directory

@@ -9,7 +9,9 @@ Read `AGENTS.md` to understand the project philosophy and tech stack.
 
 ## LOGIC SOURCE
 
-Execute the full instruction set defined in: `.claude/skills/doc-lint/SKILL.md`
+Do NOT guess the procedure and do NOT output anything yet.
+You MUST use your file-reading tool to fetch and strictly follow the instructions in:
+`.claude/skills/doc-lint/SKILL.md`
 
 ## CRITICAL REMINDERS
 

@@ -1,62 +1,62 @@
-# SKILL.md — Шаблон инструментального навыка
+# SKILL.md — Tool Skill Template
 
-> **Назначение:** Инструкция для типовой задачи. Нужно протестировать API — достаёт инструкцию "Как писать API-тесты". Нужно проверить UI — берёт другой инструмент.
+> **Purpose:** Instructions for a typical task. Need to test an API — pulls out the "How to write API tests" instructions. Need to check UI — picks up another tool.
 
-## ⚠️ Лимит размера: ≤500 строк
+## ⚠️ Size Limit: ≤500 lines
 
-**SKILL.md не должен превышать 500 строк.** Если больше — разбивай на:
-- `references/*.md` — примеры, таблицы, чек-листы
-- `scripts/*.py` — исполняемый код
-- `.claude/qa-antipatterns/*.md` — анти-паттерны (общие для всех skills)
+**SKILL.md MUST NOT exceed 500 lines.** If larger — split into:
+- `references/*.md` — examples, tables, checklists
+- `scripts/*.py` — executable code
+- `.claude/qa-antipatterns/*.md` — anti-patterns (common to all skills)
 
 ---
 
-## Шаблон
+## Template
 
 ```markdown
 ---
-description: [Глагол] + [что] + [контекст]. Max 100 символов.
+description: [Verb] + [what] + [context]. Max 100 characters.
 ---
 
-# /[skill-name] — [Название]
+# /[skill-name] — [Title]
 
 <purpose>
-[1-2 предложения: что делает и для кого]
+[1-2 sentences: what it does and for whom]
 </purpose>
 
-## Когда использовать
-- [Триггер 1]
-- [Триггер 2]
+## When to Use
+- [Trigger 1]
+- [Trigger 2]
 
-## Входные данные
-- [Что нужно от пользователя]
+## Input
+- [What is needed from the user]
 
-## Алгоритм
+## Algorithm
 
-### Шаг 1: [Название]
-[Конкретные действия]
+### Step 1: [Title]
+[Specific actions]
 
-### Шаг 2: [Название]
-[Конкретные действия]
+### Step 2: [Title]
+[Specific actions]
 
-### Шаг N: [Название]
-[Конкретные действия]
+### Step N: [Title]
+[Specific actions]
 
-## Формат вывода
+## Output Format
 
-```[язык]
-[Шаблон результата]
+```[language]
+[Result template]
 ```
 
 ## Quality Gates
 
-- [ ] [Проверка 1]
-- [ ] [Проверка 2]
+- [ ] [Check 1]
+- [ ] [Check 2]
 
-## Связанные файлы (опционально)
+## Related Files (optional)
 
-- `scripts/[name]` — [назначение]
-- `references/[name]` — [назначение]
+- `scripts/[name]` — [purpose]
+- `references/[name]` — [purpose]
 ```
 
 ---
@@ -65,79 +65,79 @@ description: [Глагол] + [что] + [контекст]. Max 100 симво�
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ Уровень 1: YAML-заголовок                              │
-│ → Всегда в системном промпте (< 100 символов)          │
+│ Level 1: YAML header                                    │
+│ → Always in the system prompt (< 100 characters)        │
 ├─────────────────────────────────────────────────────────┤
-│ Уровень 2: Тело SKILL.md                               │
-│ → Загружается при активации skill                      │
+│ Level 2: SKILL.md body                                  │
+│ → Loaded on skill activation                            │
 ├─────────────────────────────────────────────────────────┤
-│ Уровень 3: scripts/ и references/                      │
-│ → Загружается по явному запросу                        │
+│ Level 3: scripts/ and references/                       │
+│ → Loaded on explicit request                            │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Структура директории skill
+## Skill Directory Structure
 
 ```
 .claude/skills/{skill-name}/
-├── SKILL.md              # Уровни 1-2: заголовок + инструкция (≤500 строк)
-├── scripts/              # Уровень 3: исполняемый код (опционально)
+├── SKILL.md              # Levels 1-2: header + instructions (≤500 lines)
+├── scripts/              # Level 3: executable code (optional)
 │   ├── generate.py
 │   └── validate.sh
-└── references/           # Уровень 3: документация (опционально)
+└── references/           # Level 3: documentation (optional)
     ├── checklist.md
     └── examples.json
 ```
 
-### Реальный пример: screenshot-analyze
+### Real Example: screenshot-analyze
 
 ```
 .claude/skills/screenshot-analyze/
-├── SKILL.md                    # 335 строк — core логика
+├── SKILL.md                    # 335 lines — core logic
 └── references/
-    ├── cldr-tables.md          # CLDR справочники (валюты, числа, время)
-    ├── checklists.md           # Полные чек-листы проверок
-    └── html-template.md        # HTML шаблон отчёта
+    ├── cldr-tables.md          # CLDR references (currencies, numbers, time)
+    ├── checklists.md           # Full checklists
+    └── html-template.md        # HTML report template
 ```
 
-**Было:** 1031 строка в одном файле
-**Стало:** 335 строк core + 3 reference файла
+**Before:** 1031 lines in a single file
+**After:** 335 lines core + 3 reference files
 
-**Результат:** AI загружает только нужное по запросу
+**Result:** AI loads only what is needed on demand
 
 ---
 
-## Примеры description
+## Description Examples
 
-**Хорошо:**
+**Good:**
 ```yaml
-description: Генерирует API автотесты на Kotlin с common-test-libs и JUnit 5
-description: Анализирует спецификацию на противоречия и пробелы
-description: Проверяет тесты на соответствие naming convention
+description: Generates API automated tests in Kotlin with common-test-libs and JUnit 5
+description: Analyzes specification for contradictions and gaps
+description: Validates tests for naming convention compliance
 ```
 
-**Плохо:**
+**Bad:**
 ```yaml
-description: Этот навык предназначен для...  # слишком длинно
-description: Помогает с тестированием        # слишком абстрактно
-description: API тесты                        # нет глагола
+description: This skill is designed for...  # too long
+description: Helps with testing             # too abstract
+description: API tests                       # no verb
 ```
 
 ---
 
-## Категории skills
+## Skill Categories
 
-| Категория | Примеры | Типичный вывод |
-|-----------|---------|----------------|
-| **Analysis** | /spec-audit, /security-audit | Отчёт с findings |
-| **Generation** | /testcases, /api-tests | Код или документ |
-| **Validation** | /lint-tests, /check-coverage | Pass/Fail + детали |
-| **Transformation** | /openapi-to-tests | Конвертация форматов |
+| Category | Examples | Typical Output |
+|----------|---------|----------------|
+| **Analysis** | /spec-audit, /security-audit | Report with findings |
+| **Generation** | /testcases, /api-tests | Code or document |
+| **Validation** | /lint-tests, /check-coverage | Pass/Fail + details |
+| **Transformation** | /openapi-to-tests | Format conversion |
 
 ---
 
-## Полный гайд
+## Full Guide
 
-`docs/ai-files-handbook.md` → Часть 3: Skills
+`docs/ai-files-handbook.md` → Part 3: Skills

@@ -14,7 +14,9 @@ Does not question strategy — executes it.
 
 ## LOGIC SOURCE
 
-Adopt the full persona defined in: `.claude/agents/sdet.md`
+Do NOT guess the procedure and do NOT output anything yet.
+You MUST use your file-reading tool to fetch and strictly follow the persona defined in:
+`.claude/agents/sdet.md`
 
 ## CRITICAL REMINDERS
 

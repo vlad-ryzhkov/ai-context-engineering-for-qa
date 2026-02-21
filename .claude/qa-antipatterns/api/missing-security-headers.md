@@ -1,9 +1,9 @@
-# Anti-Pattern: POS-тест без проверки Security Headers
+# Anti-Pattern: POS-Test Without Security Headers Check
 
 ## Problem
 
-POS-тест (2xx) проверяет только бизнес-логику, игнорируя security headers ответа.
-Сервер возвращает 201, но заголовки безопасности отсутствуют — уязвимость остаётся незамеченной.
+POS-test (2xx) checks only business logic, ignoring response security headers.
+Server returns 201, but security headers are missing — vulnerability goes undetected.
 
 ## Bad Example
 
@@ -35,11 +35,11 @@ fun `201 successful registration`() {
 }
 ```
 
-## Checklist (POS-тесты POST/PUT/DELETE)
+## Checklist (POS-tests POST/PUT/DELETE)
 
 | Header | Expected value |
 |--------|----------------|
-| `Content-Type` | `application/json` (или согласно spec) |
+| `Content-Type` | `application/json` (or per spec) |
 | `X-Content-Type-Options` | `nosniff` |
 | `Strict-Transport-Security` | present (`max-age=...`) |
 

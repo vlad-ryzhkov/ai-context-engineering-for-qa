@@ -30,27 +30,27 @@
 - **Key:** POST + Key -> 201. Retry + Same Key -> 200 (Not 201), same body.
 
 ## 5. Architecture
-Полные примеры кода: `references/examples.md`.
+Full code examples: `references/examples.md`.
 
-| Компонент | Правило |
-|-----------|---------|
-| `object Endpoints` | Все URL — `const val` константы. Хардкод путей в клиенте запрещён. |
-| `data class` Request | Все поля `Any?` — поддержка NEG-тестов с невалидными типами |
-| `@JsonNaming` | Определяется из Style Analysis. Не добавляй, если в проекте поля уже snake_case нативно. |
-| `object FeatureHelper` | `@Step` методы. `verify{Entity}InDb` — обязателен для `DB:` сценариев. |
-| `FakerService` | Обёртка над Faker. TestData не хранит статичные строки. |
-| JSON schemas | `src/test/resources/schemas/`. Для `Contract Match` сценариев. |
-| Lazy init | `by lazy(LazyThreadSafetyMode.SYNCHRONIZED)` для HttpClient, Faker. |
+| Component | Rule |
+|-----------|------|
+| `object Endpoints` | All URLs — `const val` constants. Hardcoded paths in client are FORBIDDEN. |
+| `data class` Request | All fields `Any?` — support for negative tests with invalid types |
+| `@JsonNaming` | Determined by Style Analysis. Do not add if the project already uses native snake_case fields. |
+| `object FeatureHelper` | `@Step` methods. `verify{Entity}InDb` — mandatory for `DB:` scenarios. |
+| `FakerService` | Wrapper over Faker. TestData MUST NOT store static strings. |
+| JSON schemas | `src/test/resources/schemas/`. For `Contract Match` scenarios. |
+| Lazy init | `by lazy(LazyThreadSafetyMode.SYNCHRONIZED)` for HttpClient, Faker. |
 
 ## 6. Translation Rules (Parsing Expected Result)
 
-| Keyword в Expected | Генерируемый код |
-|--------------------|-----------------|
+| Keyword in Expected | Generated code |
+|---------------------|----------------|
 | `Contract Match` | `response.validateSchema("schema_name.json")` |
-| `DB:` | `Helper.verify{Entity}InDb(...)` после запроса |
-| `Event published` | Awaitility check в Helper-е (async queue) |
-| `Content-Type` | `assertEquals` на `response.headers["Content-Type"]` |
-| `Cleanup:` | `delete{Entity}` в `@AfterEach` или try-finally |
+| `DB:` | `Helper.verify{Entity}InDb(...)` after request |
+| `Event published` | Awaitility check in Helper (async queue) |
+| `Content-Type` | `assertEquals` on `response.headers["Content-Type"]` |
+| `Cleanup:` | `delete{Entity}` in `@AfterEach` or try-finally |
 
 ## 7. Coverage Matrix
 
@@ -62,7 +62,7 @@
 
 ## 8. Grouping Strategy (Parameterized Tests)
 
-- NEG/BVA сценарии одного endpoint с одинаковым Expected → `@ParameterizedTest` при ≥3 совпадениях.
-- Источник данных: `@MethodSource("provide{EndpointName}ValidationData")`.
-- Параметр: объект `(inputData, expectedField, expectedErrorCode)`.
-- Happy Path (POS) — всегда отдельный `@Test` для наглядности в Allure.
+- NEG/BVA scenarios of the same endpoint with identical Expected → `@ParameterizedTest` when ≥3 matches.
+- Data source: `@MethodSource("provide{EndpointName}ValidationData")`.
+- Parameter: object `(inputData, expectedField, expectedErrorCode)`.
+- Happy Path (POS) — always a separate `@Test` for clarity in Allure.

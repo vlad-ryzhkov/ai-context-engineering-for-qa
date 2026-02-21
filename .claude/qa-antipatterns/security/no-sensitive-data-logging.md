@@ -4,41 +4,41 @@
 
 ## Why this is bad
 
-Логирование чувствительных данных в тестах:
-- Токены и пароли попадают в CI-логи (доступны всей команде)
-- Allure-отчёты с секретами доступны по ссылке
-- Нарушение compliance (GDPR, PCI DSS)
+Logging sensitive data in tests:
+- Tokens and passwords end up in CI logs (accessible to the entire team)
+- Allure reports with secrets are accessible via link
+- Compliance violation (GDPR, PCI DSS)
 
 ## Bad Example
 
 ```kotlin
-// ❌ BAD: Токен в Allure step
+// ❌ BAD: Token in Allure step
 @Step("Auth with token: {token}")
 fun authenticate(token: String): AuthResponse {
     return apiClient.execute { AuthRequest(token) }
 }
 
-// ❌ BAD: Пароль в assertion message
+// ❌ BAD: Password in assertion message
 assertEquals(200, response.code, "Auth failed for password=$password")
 
-// ❌ BAD: Полный response body с токенами в println
+// ❌ BAD: Full response body with tokens in println
 println("Response: ${response.body}")
 ```
 
 ## Good Example
 
 ```kotlin
-// ✅ GOOD: Маскированный токен в step
+// ✅ GOOD: Masked token in step
 @Step("Auth with token: {maskedToken}")
 fun authenticate(token: String): AuthResponse {
     val maskedToken = "${token.take(4)}****"
     return apiClient.execute { AuthRequest(token) }
 }
 
-// ✅ GOOD: Assertion без секретов
+// ✅ GOOD: Assertion without secrets
 assertEquals(200, response.code, "Auth should succeed for test user")
 
-// ✅ GOOD: Логируем только структуру, не значения
+// ✅ GOOD: Log only structure, not values
 @Step("Verify response has required fields")
 fun verifyResponseStructure(response: ApiResponse<UserResponse>) {
     assertNotNull(response.body.id, "Response should contain user ID")
@@ -47,7 +47,7 @@ fun verifyResponseStructure(response: ApiResponse<UserResponse>) {
 
 ## What to look for in code review
 
-- `@Step` с `{token}`, `{password}`, `{secret}` в шаблоне
-- `println` / `logger` с response body (может содержать токены)
-- Assertion messages с interpolated секретами
-- Hardcoded реальные токены/API keys в тестовом коде
+- `@Step` with `{token}`, `{password}`, `{secret}` in template
+- `println` / `logger` with response body (may contain tokens)
+- Assertion messages with interpolated secrets
+- Hardcoded real tokens/API keys in test code

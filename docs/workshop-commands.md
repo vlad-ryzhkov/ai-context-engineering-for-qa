@@ -1,14 +1,14 @@
-# Справочник команд (Cheatsheet)
+# Command Reference (Cheatsheet)
 
-Промпты для демо. Настройка IDE — в секции Адаптация README.md
+Prompts for demo. IDE setup — in the Adaptation section of README.md
 
-## 🔄 Логика конвейера (Quality Pipeline)
+## 🔄 Quality Pipeline Logic
 
-Мы строим связанную цепочку артефактов. Результат каждого этапа становится фундаментом для следующего. Не пропускайте шаги генерации файлов!
+We build a linked chain of artifacts. The result of each step becomes the foundation for the next. Do not skip file generation steps!
 
 ```mermaid
 graph TD
-    Spec[📄 Спецификация]
+    Spec[📄 Specification]
     Audit(🔍 /spec-audit)
     Manual(✍️ /test-cases)
     Auto(🤖 /api-tests)
@@ -20,37 +20,28 @@ graph TD
 
 ---
 
-## Обзор
-
-| Шаг           | Claude Code / OpenCode / Codex | Cursor | VS Code Copilot | IntelliJ Copilot | Generic Chat |
-|---------------|:------------------------------:|:------:|:---------------:|:----------------:|:------------:|
-| 1. Анализ     |               🟢               |   🟢   |       🟡        |        🟡        |      🔴      |
-| 2. Тест-кейсы |               🟢               |   🟢   |       🟡        |        🟡        |      🔴      |
-| 3. API тесты  |               🟢               |   🟢   |       🟡        |        🟡        |      🔴      |
-| 4. UI & L10N  |               🟢               |   🟢   |       🟡        |        🔴        |      🔴      |
-
-🟢 нативно — 🟡 ссылка на файл — 🔴 copy-paste / нет поддержки
+> IDE support matrix — see [README.md — Adapting to Your Environment](../README.md#-adapting-to-your-environment)
 
 ---
 
-## Предусловие
+## Precondition
 
-Переключаемся на ветку без AI-сетапа:
+Switch to the branch without AI setup:
 
 ```bash
 git checkout spec-only
 ```
 
-> **Контекст:** пустой репозиторий — нет `CLAUDE.md`, `qa_agent.md`, `SKILL.md`.
+> **Context:** empty repository — no `CLAUDE.md`, `qa_agent.md`, `SKILL.md`.
 
-В произвольной форме через промпт в чате просим сгенерировать API-тесты:
+In free form via a chat prompt, ask to generate API tests:
 
 ```text
-Ты - Senior QA Engineer, сгенерируй API-тесты на Kotlin + JUnit
-для требований из файла specifications/specifications_v1/registration_api_v1.md
+You are a Senior QA Engineer, generate API tests in Kotlin + JUnit
+for requirements from file specifications/specifications_v1/registration_api_v1.md
 ```
 
-Затем переключаемся на main ветку и тестируем скилы:
+Then switch to the main branch and test the skills:
 ```bash
 git checkout main
 ```
@@ -58,18 +49,18 @@ git checkout main
 <details>
 <summary><b>🟣 Claude Code / 🟢 OpenCode</b></summary>
 
-**Шаг 1. Анализ требований** — `/spec-audit`
-*Цель: Найти противоречия в тексте до начала работы.*
+**Step 1. Requirements analysis** — `/spec-audit`
+*Goal: Find contradictions in the text before starting work.*
 ```bash
 /spec-audit specifications/specifications_v1/registration_api_v1.md
 ```
-💾 **Output:** `audit/spec-audit.md` — отчёт с дефектами и вопросами к PO.
+💾 **Output:** `audit/spec-audit.md` — report with defects and questions for PO.
 
 ---
 
-**Шаг 2. Ручные тест-кейсы** — `/test-cases`
-📥 **Input:** Агент автоматически находит и читает `audit/spec-audit.md`, чтобы учесть риски.
-*Цель: Написать детальные сценарии на Kotlin DSL.*
+**Step 2. Manual test cases** — `/test-cases`
+📥 **Input:** The agent automatically finds and reads `audit/spec-audit.md` to account for risks.
+*Goal: Write detailed scenarios in Kotlin DSL.*
 ```bash
 /test-cases specifications/specifications_v1/registration_api_v1.md
 ```
@@ -77,20 +68,20 @@ git checkout main
 
 ---
 
-**Шаг 3. API автотесты** — `/api-tests`
+**Step 3. API automated tests** — `/api-tests`
 📥 **Input:**
-- **Обязательно:** `audit/spec-audit.md` — основа генерации.
-- **Опционально:** `audit/test-scenarios.md` — если файл есть, агент учитывает сценарии. Отсутствие не блокирует генерацию.
+- **Required:** `audit/spec-audit.md` — generation basis.
+- **Optional:** `audit/test-scenarios.md` — if the file exists, the agent accounts for scenarios. Absence does not block generation.
 
-*Цель: Сгенерировать исполняемый код автотестов.*
+*Goal: Generate executable automated test code.*
 ```bash
 /api-tests specifications/specifications_v1/registration_api_v1.md
 ```
-💾 **Output:** Код автотестов в `src/test/kotlin/`.
+💾 **Output:** Automated test code in `src/test/kotlin/`.
 
 ---
 
-**Шаг 4. Скриншоты L10N** — `/screenshot-analyze`
+**Step 4. L10N screenshots** — `/screenshot-analyze`
 ```bash
 /screenshot-analyze src/test/resources/screenshots/brazil_passenger_main_screen/
 ```
@@ -101,30 +92,30 @@ git checkout main
 <details>
 <summary><b>⚪️ Cursor</b></summary>
 
-**Шаг 1. Анализ требований** — `/spec-audit`
+**Step 1. Requirements analysis** — `/spec-audit`
 ```plaintext
-Проанализируй @specifications/specifications_v1/registration_api_v1.md
-по инструкциям из @.claude/skills/spec-audit/SKILL.md
+Analyze @specifications/specifications_v1/registration_api_v1.md
+following instructions from @.claude/skills/spec-audit/SKILL.md
 ```
 
-**Шаг 2. Тест-кейсы** — `/test-cases`
+**Step 2. Test cases** — `/test-cases`
 ```plaintext
-Сгенерируй тест-кейсы для @specifications/specifications_v1/registration_api_v1.md
-по инструкциям из @.claude/skills/test-cases/SKILL.md
-Учти результаты аудита из @audit/
+Generate test cases for @specifications/specifications_v1/registration_api_v1.md
+following instructions from @.claude/skills/test-cases/SKILL.md
+Account for audit results from @audit/
 ```
 
-**Шаг 3. API автотесты** — `/api-tests`
+**Step 3. API automated tests** — `/api-tests`
 ```plaintext
-Сгенерируй API автотесты для @specifications/specifications_v1/registration_api_v1.md
-по инструкциям из @.claude/skills/api-tests/SKILL.md
-Учти тест-кейсы из @audit/test-scenarios.md
+Generate API automated tests for @specifications/specifications_v1/registration_api_v1.md
+following instructions from @.claude/skills/api-tests/SKILL.md
+Account for test cases from @audit/test-scenarios.md
 ```
 
-**Шаг 4. Скриншоты L10N** — `/screenshot-analyze`
+**Step 4. L10N screenshots** — `/screenshot-analyze`
 ```plaintext
-Проанализируй скриншоты из @src/test/resources/screenshots/brazil_passenger_main_screen/
-по инструкциям из @.claude/skills/screenshot-analyze/SKILL.md
+Analyze screenshots from @src/test/resources/screenshots/brazil_passenger_main_screen/
+following instructions from @.claude/skills/screenshot-analyze/SKILL.md
 ```
 
 
@@ -133,26 +124,26 @@ git checkout main
 <details>
 <summary><b>🔵 VS Code Copilot</b></summary>
 
-**Шаг 1. Анализ требований** — `/spec-audit`
+**Step 1. Requirements analysis** — `/spec-audit`
 ```plaintext
-Выполни QA-аудит файла #file:registration_api_v1.md, строго следуя алгоритму и критериям из #file:SKILL.md.
+Perform QA audit of file #file:registration_api_v1.md, strictly following the algorithm and criteria from #file:SKILL.md.
 
 #file:specifications/specifications_v1/registration_api_v1.md
 #file:.claude/skills/spec-audit/SKILL.md
 ```
 
-**Шаг 2. Тест-кейсы** — `/test-cases`
+**Step 2. Test cases** — `/test-cases`
 ```plaintext
-Сгенерируй ручные тест-кейсы по спецификации, используя инструкции из skill.
+Generate manual test cases from the specification, using instructions from the skill.
 
 #file:.claude/skills/test-cases/SKILL.md
 #file:specifications/specifications_v1/registration_api_v1.md
 ```
 
-**Шаг 3. API автотесты** — `/api-tests`
+**Step 3. API automated tests** — `/api-tests`
 ```plaintext
-Сгенерируй API автотесты по спецификации, используя инструкции из skill.
-Учти тест-кейсы из audit/test-scenarios.md
+Generate API automated tests from the specification, using instructions from the skill.
+Account for test cases from audit/test-scenarios.md
 
 @workspace
 #file:.claude/skills/api-tests/SKILL.md
@@ -160,11 +151,11 @@ git checkout main
 #file:build.gradle.kts
 ```
 
-**Шаг 4. Скриншоты L10N** — `/screenshot-analyze`
+**Step 4. L10N screenshots** — `/screenshot-analyze`
 
-Введите промпт и перетащите изображения в чат:
+Enter the prompt and drag images into the chat:
 ```plaintext
-Проанализируй скриншоты на L10N-дефекты по инструкциям из skill.
+Analyze screenshots for L10N defects following instructions from the skill.
 
 #file:.claude/skills/screenshot-analyze/SKILL.md
 ```
@@ -175,35 +166,35 @@ git checkout main
 <details>
 <summary><b>⚫️ IntelliJ Copilot</b></summary>
 
-**Шаг 1. Анализ требований** — `/spec-audit`
+**Step 1. Requirements analysis** — `/spec-audit`
 
-📂 Открыть в соседних вкладках: `.claude/skills/spec-audit/SKILL.md` + `registration_api_v1.md`
-💡 **Совет:** выдели ключевые блоки в тексте спецификации перед отправкой промпта — IntelliJ лучше подхватывает фокусный контекст.
+📂 Open in adjacent tabs: `.claude/skills/spec-audit/SKILL.md` + `registration_api_v1.md`
+💡 **Tip:** highlight key blocks in the specification text before sending the prompt — IntelliJ picks up focused context better.
 ```plaintext
-Проведи QA-аудит спецификации registration_api_v1.md по инструкциям из .claude/skills/spec-audit/SKILL.md.
+Perform QA audit of specification registration_api_v1.md following instructions from .claude/skills/spec-audit/SKILL.md.
 ```
 
-**Шаг 2. Тест-кейсы** — `/test-cases`
+**Step 2. Test cases** — `/test-cases`
 
-📂 Открыть в соседних вкладках: `.claude/skills/test-cases/SKILL.md` + `registration_api_v1.md`
-💡 **Совет:** выдели сценарии из `audit/spec-audit.md`, которые нужно покрыть — это сфокусирует генерацию.
+📂 Open in adjacent tabs: `.claude/skills/test-cases/SKILL.md` + `registration_api_v1.md`
+💡 **Tip:** highlight scenarios from `audit/spec-audit.md` that need coverage — this focuses generation.
 ```plaintext
-Сгенерируй ручные тест-кейсы для registration_api_v1.md по инструкциям из SKILL.md.
+Generate manual test cases for registration_api_v1.md following instructions from SKILL.md.
 ```
 
-**Шаг 3. API автотесты** — `/api-tests`
+**Step 3. API automated tests** — `/api-tests`
 
-📂 Открыть в соседних вкладках: `.claude/skills/api-tests/SKILL.md` + `registration_api_v1.md` + `build.gradle.kts`
-Для связи с тест-кейсами дополнительно открой `audit/test-scenarios.md`.
+📂 Open in adjacent tabs: `.claude/skills/api-tests/SKILL.md` + `registration_api_v1.md` + `build.gradle.kts`
+To link with test cases, additionally open `audit/test-scenarios.md`.
 ```plaintext
-Сгенерируй API автотесты для registration_api_v1.md по инструкциям из SKILL.md.
-Файлы открыты в редакторе, build.gradle.kts — для контекста зависимостей.
-Учти тест-кейсы из audit/test-scenarios.md (открыт в редакторе).
+Generate API automated tests for registration_api_v1.md following instructions from SKILL.md.
+Files are open in the editor, build.gradle.kts — for dependency context.
+Account for test cases from audit/test-scenarios.md (open in editor).
 ```
 
-**Шаг 4. Скриншоты L10N** — `/screenshot-analyze`
+**Step 4. L10N screenshots** — `/screenshot-analyze`
 
-⚠️ Vision не поддерживается. Используйте другие инструменты.
+⚠️ Vision is not supported. Use other tools.
 
 
 </details>
@@ -211,35 +202,35 @@ git checkout main
 <details>
 <summary><b>💬 Generic Chat (Web)</b></summary>
 
-**Шаг 1. Анализ требований** — `/spec-audit`
+**Step 1. Requirements analysis** — `/spec-audit`
 
-📋 Скопировать: `.claude/skills/spec-audit/SKILL.md` + `registration_api_v1.md`
+📋 Copy: `.claude/skills/spec-audit/SKILL.md` + `registration_api_v1.md`
 ```plaintext
-Вот инструкция (SKILL.md) и спецификация. Проведи QA-аудит по инструкции.
+Here is the instruction (SKILL.md) and the specification. Perform QA audit following the instruction.
 ```
 
-**Шаг 2. Тест-кейсы** — `/test-cases`
+**Step 2. Test cases** — `/test-cases`
 
-📋 Скопировать: `test-cases/SKILL.md` + `registration_api_v1.md` + **результат шага 1** (`audit/spec-audit.md`)
+📋 Copy: `test-cases/SKILL.md` + `registration_api_v1.md` + **step 1 result** (`audit/spec-audit.md`)
 ```plaintext
-Вот инструкция (SKILL.md), спецификация и отчёт аудита (spec-audit.md).
-Сгенерируй ручные тест-кейсы по инструкции, опираясь на найденные риски.
+Here is the instruction (SKILL.md), specification, and audit report (spec-audit.md).
+Generate manual test cases following the instruction, based on the identified risks.
 ```
 
-**Шаг 3. API автотесты** — `/api-tests`
+**Step 3. API automated tests** — `/api-tests`
 
-📋 Скопировать: `api-tests/SKILL.md` + `registration_api_v1.md` + `build.gradle.kts` + **результат шага 2** (`audit/test-scenarios.md`)
+📋 Copy: `api-tests/SKILL.md` + `registration_api_v1.md` + `build.gradle.kts` + **step 2 result** (`audit/test-scenarios.md`)
 ```plaintext
-Вот инструкция (SKILL.md), спецификация, build.gradle.kts и ручные тест-кейсы из шага 2.
-Сгенерируй API автотесты по инструкции, связав их с ручными сценариями.
+Here is the instruction (SKILL.md), specification, build.gradle.kts, and manual test cases from step 2.
+Generate API automated tests following the instruction, linking them with manual scenarios.
 ```
 
-**Шаг 4. Скриншоты L10N** — `/screenshot-analyze`
+**Step 4. L10N screenshots** — `/screenshot-analyze`
 
-📋 Скопировать: `screenshot-analyze/SKILL.md`
-🖼 Прикрепить: `en_BR.png`, `ru_BR.png`, `ar_BR.png`
+📋 Copy: `screenshot-analyze/SKILL.md`
+🖼 Attach: `en_BR.png`, `ru_BR.png`, `ar_BR.png`
 ```plaintext
-Вот инструкция (SKILL.md) и скриншоты. Проанализируй на L10N-дефекты по инструкции.
+Here is the instruction (SKILL.md) and screenshots. Analyze for L10N defects following the instruction.
 ```
 
 

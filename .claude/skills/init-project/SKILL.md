@@ -1,69 +1,69 @@
 ---
 name: init-project
-description: Генерирует CLAUDE.md для QA-проекта: сканирует репозиторий, анализирует tech stack, создаёт онбординг-документ. Используй для нового QA-проекта без CLAUDE.md или настройки AI-assisted workflow. Не используй если CLAUDE.md уже настроен — редактируй вручную.
+description: Generates CLAUDE.md for a QA project — scans the repository, analyzes tech stack, creates an onboarding document. Use for a new QA project without CLAUDE.md or setting up AI-assisted workflow. Do not use if CLAUDE.md is already configured — edit manually.
 agent: agents/sdet.md
 context: fork
 ---
 
-# /init-project — Генератор CLAUDE.md
+# /init-project — CLAUDE.md Generator
 
 <purpose>
-Автоматическое создание CLAUDE.md (онбординг AI в проект) на основе анализа репозитория.
-Фокус: QA-проекты (API тесты, UI тесты, нагрузочное тестирование).
+Automatic creation of CLAUDE.md (AI onboarding into the project) based on repository analysis.
+Focus: QA projects (API tests, UI tests, load testing).
 </purpose>
 
-## Перед началом
+## Before Starting
 
-Прочитай `.claude/qa_agent.md`.
+Read `.claude/qa_agent.md`.
 
-## Когда использовать
+## When to Use
 
-- Новый QA-проект без CLAUDE.md
-- Миграция существующего проекта на AI-assisted workflow
-- Стандартизация CLAUDE.md по команде
+- New QA project without CLAUDE.md
+- Migrating an existing project to AI-assisted workflow
+- Standardizing CLAUDE.md across the team
 
-## Алгоритм выполнения
+## Execution Algorithm
 
 ## Verbosity Protocol
 
-**Structured Output Priority:** Весь analysis идёт в артефакт (MD/HTML), не в чат.
+**Structured Output Priority:** All analysis goes into the artifact (MD/HTML), not into chat.
 
-**Chat output (ограничения):**
-- Brief Summary: max 5 строк (что нашли, сколько, итог)
-- Findings table: max 15 строк (топ по severity)
-- Полный отчёт: `📊 Полный отчёт: {path}` + открыть файл
+**Chat output (constraints):**
+- Brief Summary: max 5 lines (what was found, how many, result)
+- Findings table: max 15 lines (top by severity)
+- Full report: `📊 Full report: {path}` + open file
 
-**Iterative steps:** Не выводить прогресс по каждому файлу. Checkpoint только при:
-- Phase transition (Фаза N → Фаза N+1)
-- Blocker обнаружен
-- Завершение (SKILL COMPLETE)
+**Iterative steps:** Do not output progress for each file. Checkpoint only on:
+- Phase transition (Phase N → Phase N+1)
+- Blocker detected
+- Completion (SKILL COMPLETE)
 
 **Tools first:**
-- Grep → table → report, без "Now I will grep..."
-- Read → analyze → report, без "The file shows..."
+- Grep → table → report, no "Now I will grep..."
+- Read → analyze → report, no "The file shows..."
 
-**Post-Check:** Inline перед SKILL COMPLETE (5-7 строк checklist), не отдельный файл.
+**Post-Check:** Inline before SKILL COMPLETE (5-7 line checklist), not a separate file.
 
-### Шаг 1: Сканирование проекта
+### Step 1: Scan the Project
 
-Найди и проанализируй:
+Find and analyze:
 
 ```
-1. Build файлы:
-   - build.gradle.kts / build.gradle → Kotlin/Java + зависимости
-   - pom.xml → Maven + зависимости
-   - package.json → Node.js + зависимости
-   - requirements.txt / pyproject.toml → Python + зависимости
+1. Build files:
+   - build.gradle.kts / build.gradle → Kotlin/Java + dependencies
+   - pom.xml → Maven + dependencies
+   - package.json → Node.js + dependencies
+   - requirements.txt / pyproject.toml → Python + dependencies
 
-2. Структуру тестов:
-   - src/test/ → стандартная JVM структура
-   - tests/ → Python/JS структура
-   - __tests__/ → Jest структура
+2. Test structure:
+   - src/test/ → standard JVM structure
+   - tests/ → Python/JS structure
+   - __tests__/ → Jest structure
 
-3. Конфигурации:
+3. Configurations:
    - allure.properties → Allure reporting
-   - pytest.ini → pytest конфиг
-   - jest.config.js → Jest конфиг
+   - pytest.ini → pytest config
+   - jest.config.js → Jest config
 
 4. CI/CD:
    - .github/workflows/ → GitHub Actions
@@ -71,100 +71,100 @@ context: fork
    - Jenkinsfile → Jenkins
 ```
 
-### Обработка ошибок Шага 1
+### Step 1 Error Handling
 
-**Build-файлы не найдены** → Спроси пользователя:
+**Build files not found** → Ask the user:
 
 ```
-Не удалось определить tech stack автоматически. Уточни вручную:
-- Язык/рантайм: (Kotlin / Java / Python / JS / Go / другой)
-- HTTP-клиент для тестов:
-- Фреймворк тестирования:
+Could not determine tech stack automatically. Specify manually:
+- Language/runtime: (Kotlin / Java / Python / JS / Go / other)
+- HTTP client for tests:
+- Testing framework:
 - Reporting:
 ```
 
-**Структура тестов нестандартная** (нет `src/test/`, `tests/`) → Попроси указать корневую папку тестов.
+**Non-standard test structure** (no `src/test/`, `tests/`) → Ask to specify the test root directory.
 
-**CI/CD-конфиги отсутствуют** → Пропусти секцию CI в CLAUDE.md, отметь как TODO.
+**CI/CD configs missing** → Skip the CI section in CLAUDE.md, mark as TODO.
 
-### Шаг 1.5: Определение типа проекта
+### Step 1.5: Determine Project Type
 
-На основе Шага 1 определи тип:
+Based on Step 1, determine the type:
 
-| Признак | Тип | Включить в CLAUDE.md |
-|---------|-----|----------------------|
-| `src/test/` существует | **QA-проект** | QA Skills (если `.claude/skills/` есть) |
-| Нет `src/test/`, есть Helm/Terraform/k8s | **Infra-проект** | Architecture, Key Values |
-| Оба признака | **Смешанный** | Все секции |
+| Indicator | Type | Include in CLAUDE.md |
+|-----------|------|----------------------|
+| `src/test/` exists | **QA project** | QA Skills (if `.claude/skills/` exists) |
+| No `src/test/`, has Helm/Terraform/k8s | **Infra project** | Architecture, Key Values |
+| Both indicators | **Mixed** | All sections |
 
-**QA Skills секция:** включать только если в целевом проекте существует `.claude/skills/`. Если `.claude/skills/` отсутствует — секцию не добавлять.
+**QA Skills section:** include only if `.claude/skills/` exists in the target project. If `.claude/skills/` is absent — do not add the section.
 
-**Architecture секция:** включать если проект — infra/backend (нет `src/test/`). Описать key design decisions из кода: компоненты, зависимости между ними, нетривиальные конфигурации.
+**Architecture section:** include if the project is infra/backend (no `src/test/`). Describe key design decisions from the code: components, dependencies between them, non-trivial configurations.
 
-**CI/CD Flow:** включать если найдены CI-конфиги (`.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`). Формат — диаграмма кодовым блоком.
+**CI/CD Flow:** include if CI configs are found (`.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`). Format — diagram as a code block.
 
-### Шаг 2: Определение Tech Stack
+### Step 2: Determine Tech Stack
 
-На основе зависимостей определи:
+Based on dependencies, determine:
 
-| Категория | Что искать | BANNED альтернативы |
-|-----------|------------|---------------------|
+| Category | What to look for | BANNED alternatives |
+|----------|------------------|---------------------|
 | HTTP Client | ktor-client, requests, axios | retrofit, okhttp, urllib |
 | Serialization | jackson, pydantic, zod | gson, moshi |
 | Assertions | kotest, pytest, jest | junit assertEquals, unittest |
 | Test Framework | junit5, pytest, jest | testng, nose |
 | Reporting | allure | — |
 
-### Шаг 3: Генерация CLAUDE.md
+### Step 3: Generate CLAUDE.md
 
-Прочитай и используй шаблон из `references/claude-md-template.md`.
+Read and use the template from `references/claude-md-template.md`.
 
-Заполни все placeholder'ы `[xxx]` данными из Шагов 1-2. Выбери нужный Tech Stack по языку проекта (секция "Tech Stack по языкам" в шаблоне).
+Fill in all `[xxx]` placeholders with data from Steps 1-2. Select the appropriate Tech Stack by project language ("Tech Stack by languages" section in the template).
 
-**Key Values:** если в проекте есть конфигурационные файлы с нетривиальными дефолтами (`values.yaml`, `.env.example`, `application.yml`) — добавь секцию `## Key Values` с объяснением критичных настроек (не очевидных из названия).
+**Key Values:** if the project has configuration files with non-trivial defaults (`values.yaml`, `.env.example`, `application.yml`) — add a `## Key Values` section explaining critical settings (not obvious from the name).
 
-**Architecture (для infra/backend-проектов):** опиши key design decisions — компоненты, схему взаимодействия, нетривиальные детали реализации. Используй prose-формат.
+**Architecture (for infra/backend projects):** describe key design decisions — components, interaction schema, non-trivial implementation details. Use prose format.
 
-### Шаг 4: Валидация
+### Step 4: Validation
 
-Перед сохранением проверь:
+Before saving, verify:
 
-- [ ] Tech Stack соответствует реальным зависимостям
-- [ ] Commands работают (проверь наличие gradlew/npm/pytest)
-- [ ] Structure отражает реальные папки
-- [ ] Нет placeholder'ов вида `[xxx]` или TODO в финальном файле
-- [ ] Нет HTML-комментариев `<!-- -->` из шаблона в финальном файле
-- [ ] Заголовок `#` = имя проекта (не "CLAUDE.md")
-- [ ] QA Skills присутствует **только если** `.claude/skills/` существует
-- [ ] CI/CD Flow присутствует если найдены CI-конфиги
-- [ ] Architecture присутствует для infra/backend-проектов
+- [ ] Tech Stack matches actual dependencies
+- [ ] Commands work (check for gradlew/npm/pytest presence)
+- [ ] Structure reflects actual directories
+- [ ] No `[xxx]` or TODO placeholders in the final file
+- [ ] No HTML comments `<!-- -->` from the template in the final file
+- [ ] Heading `#` = project name (not "CLAUDE.md")
+- [ ] QA Skills present **only if** `.claude/skills/` exists
+- [ ] CI/CD Flow present if CI configs were found
+- [ ] Architecture present for infra/backend projects
 
-## Вывод
+## Output
 
-Сохрани результат в `CLAUDE.md` в корне проекта.
+Save the result to `CLAUDE.md` in the project root.
 
-## Пример диалога
+## Example Dialog
 
 ```
 User: /init-project
 
-AI: Сканирую проект...
+AI: Scanning the project...
 
-Найдено:
+Found:
 - build.gradle.kts → Kotlin 1.9
-- Зависимости: ktor-client, jackson, kotest, allure
-- Структура: src/test/kotlin/
+- Dependencies: ktor-client, jackson, kotest, allure
+- Structure: src/test/kotlin/
 - CI: .github/workflows/test.yml
 
-Генерирую CLAUDE.md...
+Generating CLAUDE.md...
 
-[Показывает сгенерированный файл]
+[Shows the generated file]
 
-Сохранить в ./CLAUDE.md? (y/n)
+Save to ./CLAUDE.md? (y/n)
 ```
 
-## Связанные файлы
+## Related Files
 
-- Шаблон: `.claude/skills/init-project/references/claude-md-template.md`
-- Полный гайд: `docs/ai-files-handbook.md`
-- Примеры: существующий `CLAUDE.md` в проекте (если есть)
+- Template: `.claude/skills/init-project/references/claude-md-template.md`
+- Full guide: `docs/ai-files-handbook.md`
+- Examples: existing `CLAUDE.md` in the project (if any)

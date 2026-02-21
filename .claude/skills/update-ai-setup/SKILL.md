@@ -1,74 +1,74 @@
 ---
 name: update-ai-setup
-description: Сканирует AI-файлы проекта и обновляет реестр docs/ai-setup.md с актуальными данными. Используй для синхронизации реестра после добавления/удаления скиллов, паттернов или конфигов. Не используй для создания реестра с нуля — для этого создай docs/ai-setup.md вручную.
+description: Scans project AI files and updates the docs/ai-setup.md Registry with current data. Use to synchronize the Registry after adding/removing Skills, patterns, or configs. Do not use to create a Registry from scratch — create docs/ai-setup.md manually instead.
 allowed-tools: "Read Write Edit Glob Grep Bash(wc*) Bash(ls*)"
 agent: agents/auditor.md
 context: fork
 ---
 
-# /update-ai-setup — Обновление реестра AI-конфигурации
+# /update-ai-setup — AI Configuration Registry Update
 
 <purpose>
-Автоматическое обновление docs/ai-setup.md — реестра всех AI-паттернов, скиллов и конфигурационных файлов проекта. Сканирует реальное состояние файлов и синхронизирует реестр.
+Automatic update of docs/ai-setup.md — the Registry of all AI patterns, Skills, and configuration files in the project. Scans the actual file state and synchronizes the Registry.
 </purpose>
 
-## Перед началом
+## Prerequisites
 
-Прочитай `.claude/qa_agent.md` и `.claude/agents/auditor.md`.
+Read `.claude/qa_agent.md` and `.claude/agents/auditor.md`.
 
-## Когда использовать
+## When to Use
 
-- После добавления/удаления скилла
-- После изменения qa_agent.md, agents/*.md или CLAUDE.md
-- После добавления/удаления анти-паттернов
-- После изменения плагинов в `.claude/settings.json`
-- После изменения MCP серверов в `.mcp.json`
-- Периодическая проверка актуальности реестра
+- After adding/removing a Skill
+- After changing qa_agent.md, agents/*.md, or CLAUDE.md
+- After adding/removing Anti-patterns
+- After changing plugins in `.claude/settings.json`
+- After changing MCP servers in `.mcp.json`
+- Periodic Registry freshness check
 
-## Входные данные
+## Input
 
-Не требуются. Скилл работает автоматически на основе текущего состояния файлов.
+None required. The Skill runs automatically based on the current file state.
 
-## Алгоритм
+## Algorithm
 
 ## Verbosity Protocol
 
-**Structured Output Priority:** Весь analysis идёт в артефакт (MD/HTML), не в чат.
+**Structured Output Priority:** All analysis goes into the Artifact (MD/HTML), not into chat.
 
-**Chat output (ограничения):**
-- Brief Summary: max 5 строк (что нашли, сколько, итог)
-- Findings table: max 15 строк (топ по severity)
-- Полный отчёт: `📊 Полный отчёт: {path}` + открыть файл
+**Chat output (limits):**
+- Brief Summary: max 5 lines (what was found, how many, result)
+- Findings table: max 15 lines (top by severity)
+- Full report: `📊 Full report: {path}` + open file
 
-**Iterative steps:** Не выводить прогресс по каждому файлу. Checkpoint только при:
-- Phase transition (Фаза N → Фаза N+1)
-- Предупреждение обнаружено
-- Завершение (SKILL COMPLETE)
+**Iterative steps:** Do not output progress per file. Checkpoint only on:
+- Phase transition (Phase N → Phase N+1)
+- Warning detected
+- Completion (SKILL COMPLETE)
 
 **Tools first:**
-- Grep → table → report, без "Now I will grep..."
-- Read → analyze → report, без "The file shows..."
+- Grep → table → report, no "Now I will grep..."
+- Read → analyze → report, no "The file shows..."
 
-**Post-Check:** Inline перед SKILL COMPLETE (5-7 строк checklist), не отдельный файл.
+**Post-Check:** Inline before SKILL COMPLETE (5-7 line checklist), not a separate file.
 
-### Шаг 1: Чтение текущего реестра
+### Step 1: Read Current Registry
 
-Прочитай `docs/ai-setup.md`. Если файл не существует:
-
-```
-⚠️ WARNING: docs/ai-setup.md не найден — создаю новый файл.
-```
-
-Скилл создаёт пустой реестр на основе шаблона `.claude/skills/init-skill/references/skill-template.md` и продолжает сканирование.
-
-Запомни текущие данные: список файлов, строки, количество паттернов, скиллов, анти-паттернов.
-
-### Шаг 2: Сканирование файлов
-
-Выполни Glob по всем AI-файлам:
+Read `docs/ai-setup.md`. If the file does not exist:
 
 ```
-Обязательные:
+⚠️ WARNING: docs/ai-setup.md not found — creating a new file.
+```
+
+The Skill creates an empty Registry based on the template `.claude/skills/init-skill/references/skill-template.md` and continues scanning.
+
+Record current data: file list, line counts, number of patterns, Skills, Anti-patterns.
+
+### Step 2: Scan Files
+
+Run Glob across all AI files:
+
+```
+Required:
   - CLAUDE.md
   - .claude/qa_agent.md
   - .claude/settings.json
@@ -81,88 +81,88 @@ context: fork
   - docs/ai-setup.md
 ```
 
-Для каждого найденного файла подсчитай строки через `wc -l`.
+For each found file, count lines via `wc -l`.
 
-### Шаг 2b: Сканирование плагинов и MCP серверов
+### Step 2b: Scan Plugins and MCP Servers
 
-1. Прочитай `.claude/settings.json` → извлеки ключи из `enabledPlugins`
-2. Прочитай `.mcp.json` → извлеки ключи из `mcpServers`
-3. Сравни с таблицами "Плагины" и "MCP серверы" в `docs/ai-setup.md`
-4. Дельта: добавить новые / удалить отсутствующие / обновить изменённые строки
+1. Read `.claude/settings.json` → extract keys from `enabledPlugins`
+2. Read `.mcp.json` → extract keys from `mcpServers`
+3. Compare with "Plugins" and "MCP Servers" tables in `docs/ai-setup.md`
+4. Delta: add new / remove missing / update changed rows
 
-### Шаг 3: Обнаружение дельты
+### Step 3: Detect Delta
 
-Сравни результаты сканирования с текущим реестром:
+Compare scan results with the current Registry:
 
-| Проверка | Действие |
-|----------|----------|
-| Новый файл (есть на диске, нет в реестре) | Добавить в соответствующую таблицу |
-| Удалённый файл (есть в реестре, нет на диске) | Удалить из таблицы |
-| Изменение размера > 20% | Обновить счётчик строк |
-| Новый скилл | Добавить в таблицу скиллов + проверить CLAUDE.md |
-| Новый анти-паттерн | Добавить в таблицу анти-паттернов |
+| Check | Action |
+|-------|--------|
+| New file (exists on disk, missing from Registry) | Add to the corresponding table |
+| Deleted file (exists in Registry, missing from disk) | Remove from table |
+| Size change > 20% | Update line count |
+| New Skill | Add to Skills table + verify CLAUDE.md |
+| New Anti-pattern | Add to Anti-patterns table |
 
-Если дельты нет — сообщи пользователю и заверши:
+If no delta — notify the user and finish:
 
 ```
-✅ Реестр актуален. Изменений не обнаружено.
+✅ Registry is up to date. No changes detected.
 ```
 
-### Шаг 4: Обновление документа
+### Step 4: Update Document
 
-Обнови `docs/ai-setup.md`:
+Update `docs/ai-setup.md`:
 
-1. **Диаграмма архитектуры** — обновить счётчики строк в слоях
-2. **Таблицы инвентаризации** — добавить/удалить строки, обновить счётчики
-3. **Каталог паттернов** — добавить новые паттерны (если обнаружены), обновить ссылки
+1. **Architecture diagram** — update line counts in layers
+2. **Inventory tables** — add/remove rows, update counts
+3. **Pattern catalog** — add new patterns (if detected), update references
 
-Формат записи Changelog:
+Changelog entry format:
 
 ```markdown
-| YYYY-MM-DD | [Описание: что добавлено/удалено/обновлено] |
+| YYYY-MM-DD | [Description: what was added/removed/updated] |
 ```
 
-### Шаг 5: Валидация и показ diff
+### Step 5: Validation and Diff Display
 
-Перед сохранением:
+Before saving:
 
-1. Проверь Quality Gates (см. ниже)
-2. Покажи пользователю список изменений:
+1. Verify Quality Gates (see below)
+2. Show the user the list of changes:
 
 ```
 📊 DELTA REPORT
-├─ Добавлено: [N файлов/паттернов]
-├─ Удалено: [N файлов/паттернов]
-├─ Обновлено: [N счётчиков строк]
-├─ Health Metrics: [обновлено / нет данных]
-└─ Changelog: [краткое описание записи]
+├─ Added: [N files/patterns]
+├─ Removed: [N files/patterns]
+├─ Updated: [N line counts]
+├─ Health Metrics: [updated / no data]
+└─ Changelog: [brief entry description]
 ```
 
-3. Сохрани обновлённый `docs/ai-setup.md`
+3. Save the updated `docs/ai-setup.md`
 
-## Формат вывода
+## Output Format
 
 ```
 ✅ SKILL COMPLETE: /update-ai-setup
-├─ Артефакты: docs/ai-setup.md
-├─ Дельта: [+N добавлено, -N удалено, ~N обновлено | "нет изменений"]
+├─ Artifacts: docs/ai-setup.md
+├─ Delta: [+N added, -N removed, ~N updated | "no changes"]
 ├─ Quality Gates: PASS
-└─ Changelog: [краткое описание]
+└─ Changelog: [brief description]
 ```
 
 ## Quality Gates
 
-- [ ] Все пути в документе существуют на диске (проверить Glob)
-- [ ] Счётчики строк совпадают с `wc -l`
-- [ ] Нет placeholder'ов `[xxx]` в финальном документе
-- [ ] Changelog содержит новую запись с текущей датой
-- [ ] Количество скиллов в реестре = количеству `.claude/skills/*/SKILL.md`
-- [ ] Количество анти-паттернов в реестре = количеству `.claude/qa-antipatterns/*/*.md` (файлы в подпапках, без `_index.md`)
-- [ ] Количество плагинов в таблице = количеству ключей в `settings.json → enabledPlugins`
-- [ ] Количество MCP серверов в таблице = количеству ключей в `.mcp.json → mcpServers`
+- [ ] All paths in the document exist on disk (verify with Glob)
+- [ ] Line counts match `wc -l`
+- [ ] No placeholders `[xxx]` in the final document
+- [ ] Changelog contains a new entry with the current date
+- [ ] Skill count in Registry = number of `.claude/skills/*/SKILL.md`
+- [ ] Anti-pattern count in Registry = number of `.claude/qa-antipatterns/*/*.md` (files in subdirectories, excluding `_index.md`)
+- [ ] Plugin count in table = number of keys in `settings.json → enabledPlugins`
+- [ ] MCP server count in table = number of keys in `.mcp.json → mcpServers`
 
-## Связанные файлы
+## Related Files
 
-- Реестр: `docs/ai-setup.md`
-- Гайд: `docs/ai-files-handbook.md`
-- Шаблон skill: `.claude/skills/init-skill/references/skill-template.md`
+- Registry: `docs/ai-setup.md`
+- Guide: `docs/ai-files-handbook.md`
+- Skill template: `.claude/skills/init-skill/references/skill-template.md`

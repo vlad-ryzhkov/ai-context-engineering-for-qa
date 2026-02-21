@@ -2,10 +2,10 @@
 
 ## Why this is bad
 
-`Thread.sleep()` / `delay()` создаёт нестабильные тесты:
-- На медленных машинах тест падает (timeout слишком короткий)
-- На быстрых машинах тест тратит время впустую
-- Невозможно предсказать, сколько времени нужно async-операции
+`Thread.sleep()` / `delay()` creates flaky tests:
+- On slow machines the test fails (timeout too short)
+- On fast machines the test wastes time
+- Impossible to predict how much time an async operation needs
 
 ## Bad Example
 
@@ -52,6 +52,6 @@ await()
 ## What to look for in code review
 
 - `Thread.sleep()`, `delay()`, `TimeUnit.SECONDS.sleep()`
-- Магические числа в таймаутах без объяснения
-- Комментарии типа "wait for async operation"
-- Тесты, которые "иногда падают"
+- Magic numbers in timeouts without explanation
+- Comments like "wait for async operation"
+- Tests that "sometimes fail"

@@ -1,26 +1,26 @@
-# Anti-Pattern: Проверка только HTTP-кода без бизнес-кода ошибки
+# Anti-Pattern: Checking Only HTTP Code Without Business Error Code
 
 ## Problem
 
-NEG-тест проверяет только HTTP-статус (`400`, `422`), не проверяя `body.code`.
-Тест зелёный, но реальная ошибка бизнес-логики (неверный `code`) не обнаружена.
+NEG-test checks only HTTP status (`400`, `422`) without checking `body.code`.
+Test is green, but the actual business logic error (wrong `code`) goes undetected.
 
 ## Bad Example
 
 ```kotlin
-// ❌ BAD: проверяем только HTTP статус
+// ❌ BAD: checking only HTTP status
 @Test
 fun `returns 400 for invalid email`() {
     val resp = apiClient.execute { RegisterRequest(TestData.invalidEmail()) }
     assertEquals(400, resp.code)
-    // Бизнес-код не проверен — любой 400 пройдёт
+    // Business code not checked — any 400 will pass
 }
 ```
 
 ## Good Example
 
 ```kotlin
-// ✅ GOOD: проверяем HTTP статус + бизнес-код ошибки
+// ✅ GOOD: checking HTTP status + business error code
 @Test
 fun `returns 400 for invalid email`() {
     val resp = apiClient.execute { RegisterRequest(TestData.invalidEmail()) }
@@ -32,9 +32,9 @@ fun `returns 400 for invalid email`() {
 
 ## Why
 
-- HTTP `400` может приходить по многим причинам (auth, schema, rate limit)
-- Без `body.code` тест не отличает `VALIDATION_ERROR` от `MISSING_FIELD` или `INVALID_FORMAT`
-- Регрессия в бизнес-логике ошибок остаётся незамеченной
+- HTTP `400` can come for many reasons (auth, schema, rate limit)
+- Without `body.code` the test cannot distinguish `VALIDATION_ERROR` from `MISSING_FIELD` or `INVALID_FORMAT`
+- Regression in business error logic goes unnoticed
 
 ## Detection
 
@@ -43,7 +43,7 @@ grep -n "assertEquals(400\|assertEquals(422\|assertEquals(401" src/test/kotlin/ 
   | grep -v "body.code\|body\.error"
 ```
 
-Результат содержит строки → проверь каждый тест на наличие `body.code` assertion.
+Result contains lines → check each test for `body.code` assertion presence.
 
 ## References
 

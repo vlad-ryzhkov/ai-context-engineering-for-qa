@@ -2,7 +2,7 @@
 
 ## Problem
 
-JUnit не может создать экземпляр тестового класса если field initialization падает.
+JUnit cannot create a test class instance if field initialization fails.
 
 ## Bad Example
 
@@ -16,7 +16,7 @@ class MyTests {
 }
 ```
 
-**Symptom:** "No tests found" — JUnit пропускает весь класс.
+**Symptom:** "No tests found" — JUnit skips the entire class.
 
 ## Good Example
 
@@ -41,9 +41,9 @@ class MyTests {
 
 ## Why
 
-- `@BeforeEach` запускается после успешной инициализации класса
-- Ошибки setup изолированы от класса
-- Cleanup гарантирован через `@AfterEach`
+- `@BeforeEach` runs after successful class initialization
+- Setup errors are isolated from the class
+- Cleanup is guaranteed via `@AfterEach`
 
 ## Detection
 

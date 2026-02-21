@@ -6,14 +6,12 @@ alwaysApply: false
 # SKILL: API AUTOMATION
 
 ## TRIGGER
-Use this when writing actual executable API tests in Kotlin.
+User explicitly types `/api-tests` or asks to write executable API tests in Kotlin.
 
-## LOGIC SOURCE
-**EXECUTE the instruction set defined in:** `.claude/skills/api-tests/SKILL.md`
+## EXECUTION INSTRUCTIONS
+DO NOT guess the procedure and DO NOT output anything yet.
+To perform this skill, you MUST dynamically read the instructions using your file-reading capabilities.
 
-@.claude/skills/api-tests/SKILL.md
-
-## CRITICAL REMINDERS
-- Use `ApiRequestBaseJson` wrapper as defined in the skill.
-- Assertions must use JUnit 5 format.
-- Link tests to Allure IDs.
+1. First, read the core agent context: `.claude/qa_agent.md`
+2. Second, read the specific skill protocol: `.claude/skills/api-tests/SKILL.md`
+3. Execute based STRICTLY on the logic and output format defined in those files.

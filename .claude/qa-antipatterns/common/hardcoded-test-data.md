@@ -1,30 +1,30 @@
 # Hardcoded Test Data (Manual Test Cases)
 
-**Applies to:** `/testcases` (мануальные тест-кейсы в Kotlin DSL)
+**Applies to:** `/testcases` (manual test cases in Kotlin DSL)
 
 ## Why this is bad
 
-Захардкоженные данные в мануальных тест-кейсах:
-- Тестировщик копирует значения вместо понимания границ
-- Скрывают логику выбора тестовых данных (почему именно это значение?)
-- При изменении требований нужно искать все места с хардкодом
-- Невозможно переиспользовать тест-кейс для других окружений
+Hardcoded data in manual test cases:
+- Tester copies values instead of understanding boundaries
+- Hides the logic behind test data selection (why this particular value?)
+- When requirements change, all hardcoded locations must be found
+- Impossible to reuse the test case for other environments
 
 ## Bad Example
 
 ```kotlin
-// ❌ BAD: Конкретные значения в expected
-testCase("Успешная регистрация") {
-    precondition("Пользователь не зарегистрирован")
+// ❌ BAD: Specific values in expected
+testCase("Successful registration") {
+    precondition("User is not registered")
 
-    step("Ввести email") {
-        action = "Ввести test@example.com"  // Почему именно этот?
-        expected = "Email отображается"
+    step("Enter email") {
+        action = "Enter test@example.com"  // Why this one?
+        expected = "Email is displayed"
     }
 
-    step("Ввести пароль") {
-        action = "Ввести Password123!"  // Захардкожен конкретный пароль
-        expected = "Пароль принят"
+    step("Enter password") {
+        action = "Enter Password123!"  // Hardcoded specific password
+        expected = "Password accepted"
     }
 }
 ```
@@ -32,33 +32,33 @@ testCase("Успешная регистрация") {
 ## Good Example
 
 ```kotlin
-// ✅ GOOD: Описание класса данных, не конкретное значение
-testCase("Успешная регистрация") {
-    precondition("Пользователь не зарегистрирован")
+// ✅ GOOD: Description of data class, not a specific value
+testCase("Successful registration") {
+    precondition("User is not registered")
 
-    step("Ввести email") {
-        action = "Ввести валидный email (формат user@domain.com)"
-        expected = "Email отображается в поле ввода"
+    step("Enter email") {
+        action = "Enter a valid email (format user@domain.com)"
+        expected = "Email is displayed in the input field"
     }
 
-    step("Ввести пароль") {
-        action = "Ввести пароль, соответствующий требованиям (≥8 символов, буквы + цифры + спецсимвол)"
-        expected = "Пароль принят, индикатор силы — зелёный"
+    step("Enter password") {
+        action = "Enter a password meeting requirements (≥8 characters, letters + digits + special character)"
+        expected = "Password accepted, strength indicator — green"
     }
 }
 
-// ✅ GOOD: Для BVA — указать границу, не конкретное значение
-testCase("Минимальная длина пароля") {
-    step("Ввести пароль") {
-        action = "Ввести пароль длиной ровно 8 символов (минимальная граница)"
-        expected = "Пароль принят"
+// ✅ GOOD: For BVA — specify the boundary, not a specific value
+testCase("Minimum password length") {
+    step("Enter password") {
+        action = "Enter a password exactly 8 characters long (minimum boundary)"
+        expected = "Password accepted"
     }
 }
 ```
 
 ## What to look for in review
 
-- Конкретные email/phone/password в `action` или `expected`
-- Отсутствие пояснения "почему это значение" (граница? valid? invalid?)
-- Одинаковые literal значения в разных тест-кейсах
-- Технические детали вместо бизнес-описания
+- Specific email/phone/password in `action` or `expected`
+- Missing explanation of "why this value" (boundary? valid? invalid?)
+- Identical literal values in different test cases
+- Technical details instead of business description

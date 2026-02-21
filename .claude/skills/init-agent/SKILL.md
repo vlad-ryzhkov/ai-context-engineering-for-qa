@@ -1,140 +1,140 @@
 ---
 name: init-agent
-description: Генерирует qa_agent.md — должностную инструкцию для AI с культурой QA-команды, принципами и anti-patterns. Используй при настройке AI под проект, онбординге новых AI-агентов или стандартизации подходов к тестированию. Не используй для редактирования существующего qa_agent.md — правь вручную.
+description: Generates qa_agent.md — a job description for the AI with QA team culture, principles, and anti-patterns. Use when setting up AI for a project, onboarding new AI agents, or standardizing testing approaches. Do not use for editing existing qa_agent.md — edit manually.
 allowed-tools: "Read Write Edit Glob Grep"
 agent: agents/auditor.md
 context: fork
 ---
 
-# /init-agent — Генератор qa_agent.md
+# /init-agent — qa_agent.md Generator
 
 <purpose>
-Создание "должностной инструкции" для AI: mindset, anti-patterns, quality gates.
-Фокус: QA-инженеры широкого профиля (API, UI, Mobile, Performance).
+Creating a "job description" for the AI: mindset, anti-patterns, quality gates.
+Focus: broad-profile QA engineers (API, UI, Mobile, Performance).
 </purpose>
 
-## Перед началом
+## Before Starting
 
-Прочитай `.claude/qa_agent.md`.
+Read `.claude/qa_agent.md`.
 
-## Когда использовать
+## When to Use
 
-- Настройка AI под культуру конкретной QA-команды
-- Стандартизация подходов к тестированию
-- Онбординг новых AI-агентов в проект
+- Setting up AI for a specific QA team's culture
+- Standardizing testing approaches
+- Onboarding new AI agents into a project
 
-## Алгоритм выполнения
+## Execution Algorithm
 
 ## Verbosity Protocol
 
-**Structured Output Priority:** Весь analysis идёт в артефакт (MD/HTML), не в чат.
+**Structured Output Priority:** All analysis goes into the artifact (MD/HTML), not into chat.
 
-**Chat output (ограничения):**
-- Brief Summary: max 5 строк (что нашли, сколько, итог)
-- Findings table: max 15 строк (топ по severity)
-- Полный отчёт: `📊 Полный отчёт: {path}` + открыть файл
+**Chat output (constraints):**
+- Brief Summary: max 5 lines (what was found, how many, result)
+- Findings table: max 15 lines (top by severity)
+- Full report: `📊 Full report: {path}` + open file
 
-**Iterative steps:** Не выводить прогресс по каждому файлу. Checkpoint только при:
-- Phase transition (Фаза N → Фаза N+1)
-- Blocker обнаружен
-- Завершение (SKILL COMPLETE)
+**Iterative steps:** Do not output progress for each file. Checkpoint only on:
+- Phase transition (Phase N → Phase N+1)
+- Blocker detected
+- Completion (SKILL COMPLETE)
 
 **Tools first:**
-- Grep → table → report, без "Now I will grep..."
-- Read → analyze → report, без "The file shows..."
+- Grep → table → report, no "Now I will grep..."
+- Read → analyze → report, no "The file shows..."
 
-**Post-Check:** Inline перед SKILL COMPLETE (5-7 строк checklist), не отдельный файл.
+**Post-Check:** Inline before SKILL COMPLETE (5-7 line checklist), not a separate file.
 
-### Шаг 1: Определи профиль QA
+### Step 1: Determine QA Profile
 
-Спроси пользователя или определи по проекту:
+Ask the user or determine from the project:
 
 ```
-Какой тип тестирования преобладает?
+What type of testing predominates?
 
-1. API Testing — REST/GraphQL, контрактное тестирование
+1. API Testing — REST/GraphQL, contract testing
 2. UI/E2E Testing — Web (Playwright/Selenium), Mobile (Appium)
-3. Performance Testing — нагрузочное, стресс-тестирование
-4. Security Testing — OWASP, пентест
-5. Mixed — комбинация нескольких типов
+3. Performance Testing — load testing, stress testing
+4. Security Testing — OWASP, pentesting
+5. Mixed — combination of multiple types
 ```
 
-### Обработка ошибок Шага 1
+### Step 1 Error Handling
 
-**`references/qa-profiles.md` не найден** → Используй встроенные принципы из секции "Шаг 4: Quality Gates" и перейди к Шагу 4 напрямую.
+**`references/qa-profiles.md` not found** → Use built-in principles from the "Step 4: Quality Gates" section and proceed to Step 4 directly.
 
-**Профиль неоднозначен** (пользователь ответил размыто) → Уточни одним вопросом:
+**Profile is ambiguous** (user answered vaguely) → Clarify with one question:
 
 ```
-Назови 1-2 типа задач, которые занимают > 70% времени команды:
-REST API тесты / UI автоматизация / Нагрузочное / Пентест
+Name 1-2 task types that take > 70% of the team's time:
+REST API tests / UI automation / Load testing / Pentesting
 ```
 
-**`qa_agent.md` уже существует** → Предупреди: "Файл существует. Перезаписать? (да / нет)". Не перезаписывай без подтверждения.
+**`qa_agent.md` already exists** → Warn: "File already exists. Overwrite? (yes / no)". Do not overwrite without confirmation.
 
-### Шаг 2: Выбери Core Principles
+### Step 2: Select Core Principles
 
-Прочитай `references/qa-profiles.md` и выбери принципы по профилю из Шага 1:
+Read `references/qa-profiles.md` and select principles by profile from Step 1:
 
-- Всегда включай **Универсальные принципы** (5 принципов)
-- Добавь принципы для конкретного профиля (API/UI/Performance/Security)
-- Для Mixed профиля — объедини принципы всех релевантных категорий
+- Always include **Universal principles** (5 principles)
+- Add principles for the specific profile (API/UI/Performance/Security)
+- For Mixed profile — combine principles from all relevant categories
 
-### Шаг 3: Собери Anti-Patterns
+### Step 3: Collect Anti-Patterns
 
-Из `references/qa-profiles.md` выбери релевантные анти-паттерны:
+From `references/qa-profiles.md` select relevant anti-patterns:
 
-- Всегда включай **Универсальные Anti-Patterns** (8 записей)
-- Добавь специфичные для профиля (если применимо)
-- Сформируй единую таблицу для секции "Anti-Patterns (BANNED)"
+- Always include **Universal Anti-Patterns** (8 entries)
+- Add profile-specific ones (if applicable)
+- Build a unified table for the "Anti-Patterns (BANNED)" section
 
-### Шаг 4: Определи Quality Gates
+### Step 4: Define Quality Gates
 
 ```markdown
 ## Quality Gates
 
-### Перед коммитом
-- [ ] Код компилируется без ошибок
-- [ ] Тесты проходят локально
-- [ ] Нет хардкода (ID, email, телефоны)
-- [ ] Cleanup работает
+### Before Commit
+- [ ] Code compiles without errors
+- [ ] Tests pass locally
+- [ ] No hardcoded values (IDs, emails, phone numbers)
+- [ ] Cleanup works
 
-### Перед PR
-- [ ] Тесты изолированы (можно запустить в любом порядке)
-- [ ] Naming convention соблюдён
-- [ ] Нет закомментированного кода
-- [ ] Покрытие критичных сценариев
+### Before PR
+- [ ] Tests are isolated (can run in any order)
+- [ ] Naming convention followed
+- [ ] No commented-out code
+- [ ] Critical scenarios covered
 
-### Перед релизом
-- [ ] Все тесты зелёные в CI
-- [ ] Нет flaky тестов
-- [ ] Performance baseline не деградировал
+### Before Release
+- [ ] All tests green in CI
+- [ ] No flaky tests
+- [ ] Performance baseline not degraded
 ```
 
-### Шаг 5: Генерация qa_agent.md
+### Step 5: Generate qa_agent.md
 
 ```markdown
-# QA Agent: [Профиль]
+# QA Agent: [Profile]
 
 ## Core Mindset
 
-[3-5 принципов из Шага 2]
+[3-5 principles from Step 2]
 
 ## Anti-Patterns (BANNED)
 
-[Таблица из Шага 3]
+[Table from Step 3]
 
 ## Quality Gates
 
-[Чек-листы из Шага 4]
+[Checklists from Step 4]
 
 ## Test Design
 
-### Структура теста (AAA)
-```[язык]
-// Arrange — подготовка
-// Act — действие
-// Assert — проверка
+### Structure (AAA)
+```[language]
+// Arrange — setup
+// Act — action
+// Assert — verification
 ```
 
 ### Naming Convention
@@ -145,56 +145,56 @@ REST API тесты / UI автоматизация / Нагрузочное / �
 
 ## Data Management
 
-### Генерация уникальных данных
-[Пример для выбранного языка]
+### Unique Data Generation
+[Example for the chosen language]
 
 ### Cleanup Pattern
-[Пример try-finally для выбранного языка]
+[try-finally example for the chosen language]
 
 ## Cross-Skill Protocol
 
-1. `/spec-audit` → проверь требования
-2. `/testcases` → напиши тест-кейсы
-3. `/api-tests` → автоматизируй
+1. `/spec-audit` → verify requirements
+2. `/testcases` → write test cases
+3. `/api-tests` → automate
 
-**Не прыгай сразу к коду!**
+**Do not jump straight to code!**
 ```
 
-## Вывод
+## Output
 
-Сохрани в `.claude/qa_agent.md`
+Save to `.claude/qa_agent.md`
 
-## Пример диалога
+## Example Dialog
 
 ```
 User: /init-agent
 
-AI: Какой профиль QA-инженера?
+AI: What QA engineer profile?
 1. API Testing
 2. UI/E2E Testing
 3. Performance Testing
 4. Security Testing
-5. Mixed (универсальный)
+5. Mixed (universal)
 
 User: 5
 
-AI: Генерирую qa_agent.md для универсального QA...
+AI: Generating qa_agent.md for universal QA...
 
-[Показывает файл с принципами из всех категорий]
+[Shows file with principles from all categories]
 
-Сохранить в .claude/qa_agent.md? (y/n)
+Save to .claude/qa_agent.md? (y/n)
 ```
 
-## Self-Check (перед сохранением)
+## Self-Check (before saving)
 
-- [ ] **Core Principles:** 3-5 принципов выбраны и заполнены?
-- [ ] **Anti-Patterns:** Таблица содержит минимум 5 записей?
-- [ ] **Quality Gates:** Все 3 секции (коммит/PR/релиз) присутствуют?
-- [ ] **No placeholders:** Нет оставшихся `[xxx]` в тексте?
-- [ ] **Cross-Skill Protocol:** Секция присутствует с `/spec-audit` → `/testcases` → `/api-tests`?
+- [ ] **Core Principles:** 3-5 principles selected and filled in?
+- [ ] **Anti-Patterns:** Table contains at least 5 entries?
+- [ ] **Quality Gates:** All 3 sections (commit/PR/release) present?
+- [ ] **No placeholders:** No remaining `[xxx]` in the text?
+- [ ] **Cross-Skill Protocol:** Section present with `/spec-audit` → `/testcases` → `/api-tests`?
 
-## Связанные файлы
+## Related Files
 
-- Шаблон: `.claude/skills/init-agent/references/qa-agent-template.md`
-- Профили QA: `.claude/skills/init-agent/references/qa-profiles.md`
-- Полный гайд: `docs/ai-files-handbook.md`
+- Template: `.claude/skills/init-agent/references/qa-agent-template.md`
+- QA profiles: `.claude/skills/init-agent/references/qa-profiles.md`
+- Full guide: `docs/ai-files-handbook.md`

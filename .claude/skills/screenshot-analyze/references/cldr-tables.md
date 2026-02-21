@@ -1,13 +1,13 @@
 # CLDR Reference Tables
 
-> Справочные таблицы для проверки форматов. Используется skill `/screenshot-analyze`.
+> Reference tables for format verification. Used by skill `/screenshot-analyze`.
 
 ---
 
 ## Currency Formats by Region
 
-| Регион | Код | Валюта | Формат | Пример |
-|--------|-----|--------|--------|--------|
+| Region | Code | Currency | Format | Example |
+|--------|------|----------|--------|---------|
 | Brazil | BR | BRL | R$ #.###,## | R$ 1.234,56 |
 | Russia | RU | RUB | # ###,## ₽ | 1 234,56 ₽ |
 | USA | US | USD | $#,###.## | $1,234.56 |
@@ -22,8 +22,8 @@
 
 ## Number Formats by Locale
 
-| Locale | Тысячи | Дробь | Пример |
-|--------|--------|-------|--------|
+| Locale | Thousands | Decimal | Example |
+|--------|-----------|---------|---------|
 | en-US | , | . | 1,234.56 |
 | de-DE | . | , | 1.234,56 |
 | ru-RU | (space) | , | 1 234,56 |
@@ -35,8 +35,8 @@
 
 ## Time Formats by Locale
 
-| Locale | Format | Пример |
-|--------|--------|--------|
+| Locale | Format | Example |
+|--------|--------|---------|
 | en-US | 12h | 2:00 PM |
 | en-GB | 24h | 14:00 |
 | de-DE | 24h | 14:00 Uhr |
@@ -47,8 +47,8 @@
 
 ## Address Formats by Region
 
-| Регион | Формат | Пример |
-|--------|--------|--------|
+| Region | Format | Example |
+|--------|--------|---------|
 | BR | {street}, {number} - {district} | Rua Augusta, 123 - Consolação |
 | RU | {street}, д. {number} | ул. Пушкина, д. 10 |
 | US | {number} {street} | 123 Main Street |
@@ -57,43 +57,43 @@
 
 ---
 
-## Числовые системы (Critical for RTL)
+## Numeral Systems (Critical for RTL)
 
-| Система | Символы | Локали |
-|---------|---------|--------|
-| Западные арабские | 0 1 2 3 4 5 6 7 8 9 | Большинство |
-| Восточно-арабские | ٠ ١ ٢ ٣ ٤ ٥ ٦ ٧ ٨ ٩ | ar-SA, ar-EG |
-| Персидские | ۰ ۱ ۲ ۳ ۴ ۵ ۶ ۷ ۸ ۹ | fa-IR |
+| System | Symbols | Locales |
+|--------|---------|---------|
+| Western Arabic | 0 1 2 3 4 5 6 7 8 9 | Most |
+| Eastern Arabic | ٠ ١ ٢ ٣ ٤ ٥ ٦ ٧ ٨ ٩ | ar-SA, ar-EG |
+| Persian | ۰ ۱ ۲ ۳ ۴ ۵ ۶ ۷ ۸ ۹ | fa-IR |
 
-**ПРАВИЛО: Не смешивать системы на одном экране!**
+**RULE: Do not mix numeral systems on a single screen!**
 
 ---
 
 ## Layout Expansion Reference
 
-| Язык | Типичное расширение vs EN | Типичная проблема |
-|------|---------------------------|-------------------|
-| German (de) | +30-40% | Truncation в кнопках |
-| Russian (ru) | +20-30% | Truncation в labels |
-| Spanish (es) | +20-30% | Overflow в headers |
-| Portuguese (pt) | +20-30% | Overflow в CTA |
-| Arabic (ar) | ~same length | RTL issues, смысловые ошибки |
-| Chinese (zh) | -30-50% shorter | Требует другой line-height |
-| Japanese (ja) | ~same/-10% | Смешение 3 систем письма |
+| Language | Typical expansion vs EN | Typical issue |
+|----------|-------------------------|---------------|
+| German (de) | +30-40% | Truncation in buttons |
+| Russian (ru) | +20-30% | Truncation in labels |
+| Spanish (es) | +20-30% | Overflow in headers |
+| Portuguese (pt) | +20-30% | Overflow in CTA |
+| Arabic (ar) | ~same length | RTL issues, semantic errors |
+| Chinese (zh) | -30-50% shorter | Requires different line-height |
+| Japanese (ja) | ~same/-10% | Mixing 3 writing systems |
 | Korean (ko) | ~same | Spacing issues |
 
 **Layout Stress Test Priority:**
-1. DE (максимальное расширение)
-2. RU, ES, PT-BR (значительное расширение)
-3. AR (RTL + смысловые проблемы)
+1. DE (maximum expansion)
+2. RU, ES, PT-BR (significant expansion)
+3. AR (RTL + semantic issues)
 4. ZH, JA (typography issues)
 
 ---
 
 ## Plural Rules Reference (CLDR)
 
-| Локаль | Формы | Правило | Пример (минуты) |
-|--------|-------|---------|-----------------|
+| Locale | Forms | Rule | Example (minutes) |
+|--------|-------|------|-------------------|
 | en | 2 | one, other | 1 minute, 2 minutes |
 | ru | 3 | one, few, many | 1 минута, 2 минуты, 5 минут |
 | ar | 6 | zero, one, two, few, many, other | دقيقة, دقيقتان, دقائق... |
@@ -101,28 +101,28 @@
 | uk | 3 | one, few, many | 1 хвилина, 2 хвилини, 5 хвилин |
 | zh/ja/ko | 1 | other (no plural) | 1分钟, 5分钟 |
 
-**Типичная ошибка:** `if (n > 1) + "s"` — для русского это даёт "5 минуты" вместо "5 минут".
+**Typical error:** `if (n > 1) + "s"` — for Russian this produces "5 минуты" instead of "5 минут".
 
-**Числа для проверки:** 1, 2, 5, 11, 21, 22, 25 — покрывают все формы.
+**Numbers for testing:** 1, 2, 5, 11, 21, 22, 25 — cover all forms.
 
 ---
 
 ## Quick Reference: RTL Locales
 
-| Код | Язык | Цифры | Особенности |
-|-----|------|-------|-------------|
-| ar-SA | Arabic (Saudi) | ٠١٢٣٤٥٦٧٨٩ или 0123456789 | Полный RTL, восточно-арабские цифры опционально |
-| ar-EG | Arabic (Egypt) | 0123456789 чаще | RTL, западные цифры более распространены |
-| he-IL | Hebrew | 0123456789 | RTL, только западные цифры |
-| fa-IR | Persian | ۰۱۲۳۴۵۶۷۸۹ | RTL, персидские цифры |
-| ur-PK | Urdu | ۰۱۲۳۴۵۶۷۸۹ | RTL, персидские цифры |
+| Code | Language | Digits | Notes |
+|------|----------|--------|-------|
+| ar-SA | Arabic (Saudi) | ٠١٢٣٤٥٦٧٨٩ or 0123456789 | Full RTL, Eastern Arabic digits optional |
+| ar-EG | Arabic (Egypt) | 0123456789 more common | RTL, Western digits more widespread |
+| he-IL | Hebrew | 0123456789 | RTL, Western digits only |
+| fa-IR | Persian | ۰۱۲۳۴۵۶۷۸۹ | RTL, Persian digits |
+| ur-PK | Urdu | ۰۱۲۳۴۵۶۷۸۹ | RTL, Persian digits |
 
 ---
 
 ## Quick Reference: Text Expansion
 
-| Исходный язык | Целевой язык | Expansion Factor |
-|---------------|--------------|------------------|
+| Source language | Target language | Expansion Factor |
+|-----------------|-----------------|------------------|
 | EN | DE | 1.3-1.4x |
 | EN | RU | 1.2-1.3x |
 | EN | ES | 1.2-1.3x |
@@ -132,14 +132,14 @@
 | EN | ZH | 0.5-0.7x |
 | EN | JA | 0.8-1.0x |
 
-**Rule of Thumb:** Если DE перевод НЕ длиннее EN на 30% — проверь на truncation.
+**Rule of Thumb:** If DE translation is NOT 30% longer than EN — check for truncation.
 
 ---
 
 ## Country Code Mapping
 
-| Код | Название | Валюта |
-|-----|----------|--------|
+| Code | Name | Currency |
+|------|------|----------|
 | BR | Brazil | R$ (BRL) |
 | RU | Russia | ₽ (RUB) |
 | SA | Saudi Arabia | SAR |

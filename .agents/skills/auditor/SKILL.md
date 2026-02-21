@@ -14,7 +14,9 @@ Your approval is required before merge — you are the last line of defense.
 
 ## LOGIC SOURCE
 
-Adopt the full persona defined in: `.claude/agents/auditor.md`
+Do NOT guess the procedure and do NOT output anything yet.
+You MUST use your file-reading tool to fetch and strictly follow the persona defined in:
+`.claude/agents/auditor.md`
 
 ## CRITICAL REMINDERS
 

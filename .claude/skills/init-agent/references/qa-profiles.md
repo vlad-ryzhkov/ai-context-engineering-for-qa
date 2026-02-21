@@ -1,17 +1,17 @@
-# QA Профили — Core Principles и Anti-Patterns
+# QA Profiles — Core Principles and Anti-Patterns
 
-> **Назначение:** Справочник принципов и анти-паттернов для разных типов тестирования. Используется в `/init-agent` для генерации qa_agent.md под конкретный профиль.
+> **Purpose:** Reference of principles and anti-patterns for different testing types. Used in `/init-agent` for generating qa_agent.md tailored to a specific profile.
 
 ---
 
-## Универсальные принципы (для всех профилей)
+## Universal Principles (for all profiles)
 
 ```markdown
-1. **Trust No One** — проверяй требования на противоречия
-2. **Isolation First** — тесты не зависят друг от друга
-3. **Cleanup Always** — удаляй созданные данные
-4. **Fail Fast** — падай рано, падай громко
-5. **Evidence-Based** — каждый баг с доказательствами
+1. **Trust No One** — verify requirements for contradictions
+2. **Isolation First** — tests do not depend on each other
+3. **Cleanup Always** — delete created data
+4. **Fail Fast** — fail early, fail loudly
+5. **Evidence-Based** — every bug with evidence
 ```
 
 ---
@@ -21,21 +21,21 @@
 ### Core Principles
 
 ```markdown
-1. **Contract First** — тест проверяет контракт, не реализацию
-2. **Boundary Obsession** — граничные значения важнее happy path
-3. **Negative > Positive** — негативных сценариев больше
-4. **Idempotency Check** — повторный запрос = тот же результат
+1. **Contract First** — test verifies the contract, not the implementation
+2. **Boundary Obsession** — boundary values matter more than happy path
+3. **Negative > Positive** — more negative scenarios than positive
+4. **Idempotency Check** — repeated request = same result
 ```
 
 ### Anti-Patterns
 
 ```markdown
-| ❌ Плохо | ✅ Хорошо | Почему |
-|----------|-----------|--------|
-| Хардкод endpoint URL | Конфигурация через env | Переносимость |
-| Игнорировать статус код | Проверка точного кода | Контракт |
-| Один assert на тест | Структурированные проверки | Полнота |
-| Тестировать реализацию | Тестировать контракт | Гибкость |
+| ❌ Bad | ✅ Good | Why |
+|--------|---------|-----|
+| Hardcoded endpoint URL | Configuration via env | Portability |
+| Ignoring status code | Exact code verification | Contract |
+| Single assert per test | Structured assertions | Completeness |
+| Testing implementation | Testing contract | Flexibility |
 ```
 
 ---
@@ -45,21 +45,21 @@
 ### Core Principles
 
 ```markdown
-1. **User Perspective** — думай как пользователь
-2. **Stable Selectors** — data-testid лучше CSS классов
-3. **Visual Regression** — скриншоты критичных экранов
-4. **Flaky = Bug** — нестабильный тест — это баг теста
+1. **User Perspective** — think like a user
+2. **Stable Selectors** — data-testid is better than CSS classes
+3. **Visual Regression** — screenshots of critical screens
+4. **Flaky = Bug** — an unstable test is a test bug
 ```
 
 ### Anti-Patterns
 
 ```markdown
-| ❌ Плохо | ✅ Хорошо | Почему |
-|----------|-----------|--------|
-| XPath селекторы | data-testid | Стабильность |
-| Хардкод ожиданий | Polling с условием | Синхронизация |
-| Скриншоты везде | Скриншоты критичных мест | Скорость |
-| Один длинный тест | Атомарные сценарии | Отладка |
+| ❌ Bad | ✅ Good | Why |
+|--------|---------|-----|
+| XPath selectors | data-testid | Stability |
+| Hardcoded waits | Polling with condition | Synchronization |
+| Screenshots everywhere | Screenshots of critical areas | Speed |
+| One long test | Atomic scenarios | Debugging |
 ```
 
 ---
@@ -69,21 +69,21 @@
 ### Core Principles
 
 ```markdown
-1. **Baseline First** — сначала измерь, потом оптимизируй
-2. **Realistic Load** — профиль нагрузки из продакшена
-3. **Percentiles > Average** — p95/p99 важнее среднего
-4. **Resource Monitoring** — CPU/RAM/IO во время теста
+1. **Baseline First** — measure first, then optimize
+2. **Realistic Load** — load profile from production
+3. **Percentiles > Average** — p95/p99 matter more than average
+4. **Resource Monitoring** — CPU/RAM/IO during the test
 ```
 
 ### Anti-Patterns
 
 ```markdown
-| ❌ Плохо | ✅ Хорошо | Почему |
-|----------|-----------|--------|
-| Только среднее время | Перцентили p95/p99 | Реальная картина |
-| Константная нагрузка | Постепенное нарастание | Реалистичность |
-| Игнорировать ресурсы | Мониторинг CPU/RAM/IO | Узкие места |
-| Тестировать на laptop | Production-like окружение | Точность |
+| ❌ Bad | ✅ Good | Why |
+|--------|---------|-----|
+| Average time only | Percentiles p95/p99 | Real picture |
+| Constant load | Gradual ramp-up | Realism |
+| Ignoring resources | CPU/RAM/IO monitoring | Bottlenecks |
+| Testing on laptop | Production-like environment | Accuracy |
 ```
 
 ---
@@ -93,36 +93,36 @@
 ### Core Principles
 
 ```markdown
-1. **OWASP Top 10** — минимальный чек-лист
-2. **AuthZ ≠ AuthN** — авторизация и аутентификация разные вещи
-3. **Trust Nothing** — все входные данные потенциально вредоносны
-4. **Least Privilege** — минимум прав для работы
+1. **OWASP Top 10** — minimum checklist
+2. **AuthZ ≠ AuthN** — authorization and authentication are different things
+3. **Trust Nothing** — all input data is potentially malicious
+4. **Least Privilege** — minimum permissions for operation
 ```
 
 ### Anti-Patterns
 
 ```markdown
-| ❌ Плохо | ✅ Хорошо | Почему |
-|----------|-----------|--------|
-| Хардкод credentials | Секреты в vault | Безопасность |
-| Игнорировать SQL injection | Параметризованные запросы | XSS/SQLi |
-| Доверять входным данным | Валидация + санитизация | Injection attacks |
-| Админские токены в тестах | Минимальные права | Least Privilege |
+| ❌ Bad | ✅ Good | Why |
+|--------|---------|-----|
+| Hardcoded credentials | Secrets in vault | Security |
+| Ignoring SQL injection | Parameterized queries | XSS/SQLi |
+| Trusting input data | Validation + sanitization | Injection attacks |
+| Admin tokens in tests | Minimum permissions | Least Privilege |
 ```
 
 ---
 
-## Универсальные Anti-Patterns (для всех профилей)
+## Universal Anti-Patterns (for all profiles)
 
 ```markdown
-| ❌ Плохо | ✅ Хорошо | Почему |
-|----------|-----------|--------|
-| Thread.sleep() | Polling с таймаутом | Flaky тесты |
-| Хардкод ID/email | UUID/timestamp генерация | Коллизии |
-| Общие тестовые данные | Изолированные данные | Зависимости |
-| Игнорировать cleanup | try-finally | Мусор в системе |
-| assertEquals без msg | assertEquals с msg | Отладка в CI |
-| var вместо val | val везде | Иммутабельность |
-| Catch без обработки | Логирование + rethrow | Потеря информации |
-| Магические числа | Именованные константы | Понятность |
+| ❌ Bad | ✅ Good | Why |
+|--------|---------|-----|
+| Thread.sleep() | Polling with timeout | Flaky tests |
+| Hardcoded ID/email | UUID/timestamp generation | Collisions |
+| Shared test data | Isolated data | Dependencies |
+| Ignoring cleanup | try-finally | Garbage in system |
+| assertEquals without msg | assertEquals with msg | Debugging in CI |
+| var instead of val | val everywhere | Immutability |
+| Catch without handling | Logging + rethrow | Information loss |
+| Magic numbers | Named constants | Readability |
 ```

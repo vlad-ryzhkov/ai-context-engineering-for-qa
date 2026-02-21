@@ -1,30 +1,30 @@
-# Шаблон отчёта repo-scout-report.md
+# Report Template repo-scout-report.md
 
 ```markdown
 # Repo Scout Report: {repo-name}
 
-> Сгенерировано: {дата} | Скилл: /repo-scout
+> Generated: {date} | Skill: /repo-scout
 
 ## 1. Repository Profile
 
-| Параметр | Значение |
-|----------|----------|
-| Module | {module path из go.mod} |
-| Go Version | {версия} |
+| Parameter | Value |
+|-----------|-------|
+| Module | {module path from go.mod} |
+| Go Version | {version} |
 | Service Type | {REST API / gRPC / Mixed / CLI / Consumer} |
-| Services | {список из cmd/} |
-| Source Files | {N .go файлов} |
-| Test Files | {N _test.go файлов} |
+| Services | {list from cmd/} |
+| Source Files | {N .go files} |
+| Test Files | {N _test.go files} |
 
-### Ключевые зависимости
+### Key Dependencies
 
-| Категория | Библиотека |
-|-----------|-----------|
+| Category | Library |
+|----------|---------|
 | HTTP | {chi / gin / echo / stdlib} |
-| gRPC | {google.golang.org/grpc / нет} |
+| gRPC | {google.golang.org/grpc / none} |
 | DB | {mysql / postgres / mongo} |
-| Queue | {sarama / segmentio-kafka / нет} |
-| Cache | {go-redis / нет} |
+| Queue | {sarama / segmentio-kafka / none} |
+| Cache | {go-redis / none} |
 
 ## 2. API Surface Catalog
 
@@ -38,34 +38,34 @@
 | # | Service | Method | Request → Response | Streaming |
 |---|---------|--------|--------------------|-----------|
 
-### Дополнительные источники
-- [ ] HTTP client файлы: {путь или "нет"}
-- [ ] Postman коллекции: {путь или "нет"}
+### Additional Sources
+- [ ] HTTP client files: {path or "none"}
+- [ ] Postman collections: {path or "none"}
 
 ## 3. Specification Inventory
 
-| Файл | Формат | Endpoints | Полнота |
-|------|--------|-----------|---------|
-| {путь} | {OpenAPI 3.0 / Swagger 2.0 / Proto3} | {N} | {Complete / Partial / Stale} |
+| File | Format | Endpoints | Completeness |
+|------|--------|-----------|--------------|
+| {path} | {OpenAPI 3.0 / Swagger 2.0 / Proto3} | {N} | {Complete / Partial / Stale} |
 
-**Coverage:** {X}/{total} endpoints имеют спецификацию = {%}
+**Coverage:** {X}/{total} endpoints have specification = {%}
 
-Формула: покрытые endpoints / (REST + gRPC) × 100
+Formula: covered endpoints / (REST + gRPC) × 100
 
 ## 4. Existing Test Coverage
 
-| Тип | Файлов | Расположение | Фреймворк |
-|-----|--------|-------------|-----------|
+| Type | Files | Location | Framework |
+|------|-------|----------|-----------|
 | Unit | {N} | {internal/...} | {testify / stdlib} |
-| Integration | {N} | {путь} | {testify + sqlmock} |
-| E2E/API | {N или "внешний репо"} | {путь или ссылка} | {фреймворк} |
+| Integration | {N} | {path} | {testify + sqlmock} |
+| E2E/API | {N or "external repo"} | {path or link} | {framework} |
 
 ## 5. Infrastructure
 
-| Компонент | Наличие | Детали |
-|-----------|---------|--------|
+| Component | Present | Details |
+|-----------|---------|---------|
 | CI/CD | {✅/❌} | {GitHub Actions / GitLab CI} |
-| Docker | {✅/❌} | {N сервисов в compose} |
+| Docker | {✅/❌} | {N services in compose} |
 | DB | {✅/❌} | {MySQL / PostgreSQL / MongoDB} |
 | Migrations | {✅/❌} | {Liquibase / goose}, {N changesets} |
 | Message Queue | {✅/❌} | {Kafka / RabbitMQ / NATS} |
@@ -74,28 +74,28 @@
 
 ## 6. AI Setup Status
 
-| Файл | Статус |
+| File | Status |
 |------|--------|
-| CLAUDE.md | {✅ есть / ❌ нет} |
+| CLAUDE.md | {✅ present / ❌ absent} |
 | qa_agent.md | {✅ / ❌} |
-| Skills | {N скиллов: список / ❌} |
+| Skills | {N skills: list / ❌} |
 | .agents/ | {✅ / ❌} |
 | .cursor/rules/ | {✅ / ❌} |
 
 ## 7. Readiness Assessment
 
-| Критерий | Статус | Комментарий |
-|----------|--------|-------------|
-| API Specs | {🟢 Complete / 🟡 Partial / 🔴 Missing} | {детали} |
-| Test Infrastructure | {🟢 Ready / 🟡 Needs Setup / 🔴 Missing} | {детали} |
-| Documentation | {🟢 / 🟡 / 🔴} | {детали} |
-| AI Setup | {🟢 / 🟡 / 🔴} | {детали} |
+| Criterion | Status | Comment |
+|-----------|--------|---------|
+| API Specs | {🟢 Complete / 🟡 Partial / 🔴 Missing} | {details} |
+| Test Infrastructure | {🟢 Ready / 🟡 Needs Setup / 🔴 Missing} | {details} |
+| Documentation | {🟢 / 🟡 / 🔴} | {details} |
+| AI Setup | {🟢 / 🟡 / 🔴} | {details} |
 
 ### Blockers
 
-{Список блокеров или "Нет блокеров"}
+{List of blockers or "No blockers"}
 
-### Рекомендуемый следующий шаг
+### Recommended Next Step
 
-{Конкретная рекомендация: /test-cases, /init-project, "получить спецификацию от команды" и т.д.}
+{Specific recommendation: /test-cases, /init-project, "obtain specification from the team", etc.}
 ```

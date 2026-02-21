@@ -1,6 +1,6 @@
 ---
 name: spec-audit
-description: Проводит глубокий QA-аудит спецификации на основе стандартов ISTQB, BABOK и OWASP. Выявляет не только архитектурные дыры, но и логические противоречия между Требованиями, Схемой данных и Примерами (Dry Run). Используй перед написанием тестов, при ревью требований или анализе спецификации на противоречия. Не используй для code review или анализа тестового кода.
+description: Performs a deep QA audit of a specification based on ISTQB, BABOK, and OWASP standards. Identifies not only architectural gaps but also logical contradictions between Requirements, Data schema, and Examples (Dry Run). Use before writing tests, when reviewing requirements, or analyzing a specification for contradictions. Do not use for code review or test code analysis.
 allowed-tools: "Read Write Glob"
 agent: agents/auditor.md
 context: fork
@@ -8,203 +8,222 @@ context: fork
 
 ## 🔒 SYSTEM REQUIREMENTS
 
-Перед выполнением агент ОБЯЗАН:
-1. Загрузить `.claude/protocols/gardener.md`
-2. **ВСЕ выходные артефакты (`.md` файлы, таблицы, заголовки, примеры) — исключительно на русском языке.** Никакого English в report'е. Headers таблиц, названия колонок, примеры — всё по-русски.
+Before execution the agent MUST:
+1. Load `.claude/protocols/gardener.md`
+2. All output artifacts (`.md` files, tables, headers, examples) MUST be written in English. Field names and code identifiers remain as-is.
 
 ---
 
-# /spec-audit — Целостность и анализ рисков спецификации
+# /spec-audit — Specification Integrity and Risk Analysis
 
-## Протокол
+## Protocol
 
-1. **Роль:** Старший инженер & наступательный QA. "Злой тестировщик". Критичный QA-аудитор. Нулевая толерантность к неоднозначности.
-2. **Задача:** Найти причины, по которым реализация этой спецификации приведет к багам, уязвимостям или блокировке разработки.
-3. **Принцип:** "Shift Left Extreme". Мы ищем баги в *тексте*, пока они стоят $1, а не $1000 в продакшене.
-4. **Anti-Hallucination Rule:** Никогда не предполагай наличие поля, если оно явно не указано в таблице или схеме. Если действие (SMS, Push, Email) упомянуто в тексте, а поле (`phone`, `device_token`, `email`) отсутствует в Request Body — это ОШИБКА спецификации, а не повод добавить поле «по памяти» или логическому выводу. Фиксируй как Дефект 10.
+1. **Role:** Senior engineer & offensive QA. "Evil tester". Critical QA auditor. Zero tolerance for Ambiguity.
+2. **Objective:** Find reasons why implementing this specification will lead to bugs, vulnerabilities, or development Blockers.
+3. **Principle:** "Shift Left Extreme". We hunt bugs in *text* while they cost $1, not $1000 in production.
+4. **Anti-Hallucination Rule:** Never assume a field exists unless it is explicitly listed in the table or schema. If an action (SMS, Push, Email) is mentioned in the text but the field (`phone`, `device_token`, `email`) is missing from the Request Body — this is a specification ERROR, not a reason to add a field "from memory" or logical inference. Log as Defect 10.
 
-## Входные данные (Шаг 0 — выполни ПЕРВЫМ, до всего остального)
+## Input Data (Step 0 — execute FIRST, before everything else)
 
-Определи спецификацию по приоритету:
+Determine the specification by Priority:
 
-1. **`$ARGUMENTS`** — если сюда подставлен путь (Claude Code CLI) → прочитай файл инструментом `Read`.
-2. **Сообщение пользователя** — если содержит путь к файлу (`.md`, `.yaml`, `.json`, `.txt`) → прочитай его инструментом `Read`. (Cursor и другие среды, где `$ARGUMENTS` не подставляется.)
-3. **Автопоиск** — если путь не найден → выполни `Glob: specifications/**/*.md`, прочитай первый результат.
-4. **Автопоиск не дал результатов** — выведи `⚠️ WARNING: спецификация не найдена` и продолжи с пустой базой.
+1. **`$ARGUMENTS`** — if a path is provided here (Claude Code CLI) → read the file with the `Read` tool.
+2. **User message** — if it contains a file path (`.md`, `.yaml`, `.json`, `.txt`) → read it with the `Read` tool. (Cursor and other environments where `$ARGUMENTS` is not substituted.)
+3. **Auto-search** — if no path found → run `Glob: specifications/**/*.md`, read the first result.
+4. **Auto-search yielded no results** — output `⚠️ WARNING: specification not found` and continue with an empty base.
 
-## Перед началом
+## Before Starting
 
-Прочитай `.claude/qa_agent.md`.
+Read `.claude/qa_agent.md`.
 
-## Алгоритм Анализа (4 прохода)
+## Analysis Algorithm (4 passes)
 
-Ты должен выполнить анализ в 4 этапа. Не смешивай выводы.
+You MUST perform the analysis in 4 stages. Do not mix conclusions.
 
-### 1. Статический анализ (Deep Cross-Check)
-* **Key-to-Key Mapping (Метод Списков):** Ты ОБЯЗАН физически выписать два отсортированных списка:
-    * **Список A:** все ключи из JSON-примера (построчно, в алфавитном порядке).
-    * **Список B:** все поля из Таблицы параметров (построчно, в алфавитном порядке).
-    Вычисли дельту посимвольно: `A \ B` (в JSON есть, в таблице нет) и `B \ A` (в таблице есть, в JSON нет). Любое непустое множество дельты — **Дефект 9**. Пропустить построение списков нельзя — неполный список делает анализ недействительным.
-* **Constraint Verification:** Возьми каждое значение из Example Payload и проверь его против ВСЕХ ограничений таблицы (min/max длина, тип, формат, regex). Если в таблице `max: 100`, а строка в примере длиннее — **Дефект 9**. Если в тексте «мин. 8 символов», а в примере 7 — **Дефект 9**.
-* **Граничный арифметический тест:** Для каждого поля с ограничением (min/max длина, min/max значение) ты ОБЯЗАН записать уравнение и вычислить результат:
-    * `len("значение_из_примера") = N; min=X, max=Y → PASS` (если X ≤ N ≤ Y)
-    * `len("значение_из_примера") = N; min=X, max=Y → FAIL` (если N < X или N > Y) → **Дефект 9**
-    * Пример: `len("Pass1234") = 8; min=8, max=64 → PASS`
-    Промолчать нельзя: каждое поле с числовым ограничением обязано иметь строку с результатом теста.
-* **Null Matrix (Матрица отсутствия):** Ты ОБЯЗАН создать таблицу для всех полей запроса:
-    | Поле | required | HTTP-ответ при отсутствии поля описан? | Статус |
+### 1. Static Analysis (Deep Cross-Check)
+* **Key-to-Key Mapping (List Method):** You MUST physically write out two sorted lists:
+    * **List A:** all keys from the JSON example (line by line, in alphabetical order).
+    * **List B:** all fields from the Parameters Table (line by line, in alphabetical order).
+    Compute the delta character-by-character: `A \ B` (in JSON but not in table) and `B \ A` (in table but not in JSON). Any non-empty delta set — **Defect 9**. Skipping list construction is not allowed — an incomplete list invalidates the analysis.
+* **Constraint Verification:** Take each value from the Example Payload and verify it against ALL table constraints (min/max length, type, format, regex). If the table says `max: 100` and the string in the example is longer — **Defect 9**. If the text says "min. 8 characters" and the example has 7 — **Defect 9**.
+* **Boundary Arithmetic Test:** For each field with a constraint (min/max length, min/max value) you MUST write out the equation and compute the result:
+    * `len("value_from_example") = N; min=X, max=Y → PASS` (if X ≤ N ≤ Y)
+    * `len("value_from_example") = N; min=X, max=Y → FAIL` (if N < X or N > Y) → **Defect 9**
+    * Example: `len("Pass1234") = 8; min=8, max=64 → PASS`
+    Silence is not allowed: every field with a numeric constraint MUST have a line with the test result.
+* **Null Matrix:** You MUST create a table for all request fields:
+    | Field | required | HTTP response when field is missing described? | Status |
     |---|---|---|---|
     | `email` | true | 400 + `{"error": "email required"}` | PASS |
-    | `phone` | true | не описан | FAIL → Дефект 8 |
-    **Презумпция обязательности:** Если колонка `required` отсутствует в таблице — считай все поля обязательными по умолчанию. Отсутствие самой колонки фиксируй как **Дефект 4-5 (Минорный)** — "Рекомендуется добавить колонку `required` для устранения неоднозначности". Не повышай до Дефект 8, если поведение при отсутствии поля неявно покрыто общим кодом ошибки (напр. `400 VALIDATION_ERROR`). Дефект 8 ставь только если поведение при отсутствии поля **вообще не описано** ни явно, ни через общий обработчик.
-* **Regex Literal Test:** Если в спецификации указан regex-паттерн для поля — ты ОБЯЗАН применить его буквально к значению из Example Payload. Запиши результат явно:
-    * `regex="..."` applied to `"значение"` → MATCH → PASS
-    * `regex="..."` applied to `"значение"` → NO-MATCH → анализируй причину (см. ниже)
-    Если regex указан, но пример не проверен — анализ неполный.
-    **Правило интерпретации несоответствия примера правилу:** Если пример нарушает правило — сначала проверь, не содержит ли само правило неоднозначности. Варианты:
-    1. Правило однозначно, пример явно неверен → **Дефект 9** «Пример нарушает требование».
-    2. Правило неоднозначно (напр. "только Unicode-буквы" vs. пробел как разделитель PII в том же документе) → это противоречие в **спецификации**, а не ошибка примера. Классифицируй как **Дефект 10 (Противоречие)** если правила взаимоисключающие, или **Дефект 7-8** если неоднозначность можно устранить уточнением. Рекомендация должна предлагать исправить правило (или регулярку), а не пример.
-* **Проверка типов:** Подходят ли типы данных? (напр., `money` как float — это риск, нужен decimal/int).
-* **Verb-Data Lineage (Отслеживание данных):** Найди в тексте ВСЕ системные действия (глаголы): отправка SMS, Email, Push, запись в БД, вызов внешнего сервиса. Ты ОБЯЗАН составить таблицу:
-    | Действие | Требуемое поле | Присутствует в Request Body? |
+    | `phone` | true | not described | FAIL → Defect 8 |
+    **Presumption of required:** If the `required` column is absent from the table — treat all fields as required by default. Log the absence of the column itself as **Defect 4-5 (Minor)** — "Adding a `required` column is recommended to eliminate Ambiguity". Do not escalate to Defect 8 if the behavior when a field is missing is implicitly covered by a generic error code (e.g. `400 VALIDATION_ERROR`). Assign Defect 8 only if the behavior when a field is missing is **not described at all** — neither explicitly nor via a generic handler.
+* **Regex Literal Test:** If the specification defines a regex pattern for a field — you MUST apply it literally to the value from the Example Payload. Record the result explicitly:
+    * `regex="..."` applied to `"value"` → MATCH → PASS
+    * `regex="..."` applied to `"value"` → NO-MATCH → analyze the cause (see below)
+    If a regex is specified but the example is not tested — the analysis is incomplete.
+    **Rule for interpreting example-to-rule mismatch:** If the example violates a rule — first check whether the rule itself contains Ambiguity. Variants:
+    1. Rule is unambiguous, example is clearly wrong → **Defect 9** "Example violates Requirement".
+    2. Rule is ambiguous (e.g. "Unicode letters only" vs. space as PII separator in the same document) → this is a Contradiction in the **specification**, not an example error. Classify as **Defect 10 (Contradiction)** if the rules are mutually exclusive, or **Defect 7-8** if the Ambiguity can be resolved with clarification. The Recommendation should propose fixing the rule (or regex), not the example.
+* **Type Checking:** Are the data types appropriate? (e.g. `money` as float — this is a risk, decimal/int is needed).
+* **Verb-Data Lineage (Data Tracing):** Find ALL system actions (verbs) in the text: sending SMS, Email, Push, writing to DB, calling an external service. You MUST compile a table:
+    | Action | Required field | Present in Request Body? |
     |---|---|---|
-    | Отправить SMS | `phone` | НАЙДЕНО / ОТСУТСТВУЕТ |
-    Если статус ОТСУТСТВУЕТ — **Блокер (Data Gap, Приоритет 10)**. Anti-Hallucination Rule: не добавляй поле в таблицу «по памяти».
+    | Send SMS | `phone` | FOUND / MISSING |
+    If status is MISSING — **Blocker (Data Gap, Priority 10)**. Anti-Hallucination Rule: do not add a field to the table "from memory".
 
-### 2. Мысленная песочница (Имитация и фаззинг)
-* **Rule Enforcement (Dry Run):** Возьми Example Payload и «прогони» его через каждое бизнес-правило буквально.
-* **PII Dry Run (обязателен при наличии правил безопасности паролей):** Если есть правило «пароль не должен содержать персональных данных» — выполни механическую проверку:
-    1. Извлеки все токены из `email` (часть до `@` и после `@`) и `full_name`, длина токена > 3 символов.
-    2. Для каждого токена: найди его вхождение в строку `password` (case-insensitive).
-    3. Запиши результат: токен `"ivan"` in `"Ivan2024!"` → MATCH → **Дефект 9** «Нарушение бизнес-логики в примере данных».
-    Покрытие: каждый токен должен быть проверен явно. Пропустить нельзя.
-* **HTTP Status Exhaustion (Покрытие ветвей):** Найди все условные ветки в бизнес-правилах («если», «в случае», «при условии», «иначе»). Ты ОБЯЗАН составить таблицу:
-    | Условие (ветка) | HTTP-статус описан? | Формат тела ошибки описан? |
+### 2. Mental Sandbox (Simulation and Fuzzing)
+* **Rule Enforcement (Dry Run):** Take the Example Payload and "run" it through each Business rule literally.
+* **PII Dry Run (mandatory when password security rules are present):** If a rule states "password MUST NOT contain personal data" — perform a mechanical check:
+    1. Extract all tokens from `email` (part before `@` and after `@`) and `full_name`, token length > 3 characters.
+    2. For each token: find its occurrence in the `password` string (case-insensitive).
+    3. Record the result: token `"ivan"` in `"Ivan2024!"` → MATCH → **Defect 9** "Business logic violation in example data".
+    Coverage: every token MUST be checked explicitly. Skipping is not allowed.
+* **HTTP Status Exhaustion (Branch Coverage):** Find all conditional branches in Business rules ("if", "in case", "when", "otherwise"). You MUST compile a table:
+    | Condition (branch) | HTTP status described? | Error body format described? |
     |---|---|---|
-    | Email уже зарегистрирован | 409 / не указан | `{"error": "..."}` / не указан |
-    Если статус или тело не описаны для любой ветки — **Дефект 8** (Неопределённое поведение).
-* **Прогон счастливого пути:** Прогони пример данных через бизнес-правила шаг за шагом.
-* **Мысленный фаззинг (Самое важное):** Атакуй требования. Придумай 3 граничных сценария, которые сломают логику:
-    * *Null/Пусто:* Что если обязательное поле придет пустым? Описана ли ошибка?
-    * *Граничные значения:* Максимальная длина, отрицательные числа, спецсимволы, emoji.
-    * *Конфликты статуса:* Что если статус уже "Завершен", а мы шлем "Отменить"?
+    | Email already registered | 409 / not specified | `{"error": "..."}` / not specified |
+    If the status or body is not described for any branch — **Defect 8** (Undefined behavior).
+* **Happy Path Dry Run:** Run the example data through the Business rules step by step.
+* **Mental Fuzzing (Most important):** Attack the requirements. Devise 3 boundary scenarios that will break the logic:
+    * *Null/Empty:* What if a required field arrives empty? Is the error described?
+    * *Boundary values:* Maximum length, negative numbers, special characters, emoji.
+    * *Status Conflicts:* What if the status is already "Completed" and we send "Cancel"?
 
-### 3. Архитектура и НФТ (Нефункциональные требования)
-* **Конкурентность:** Что будет при двух одновременных запросах? (Требуется ли Idempotency Key?)
-* **Безопасность (OWASP):**
-    * Есть ли IDOR риски? (userId в URL без проверки прав).
-    * ПДИ: Есть ли чувствительные данные в логах или ответе?
-* **Распределённые системы:** Учтены ли таймауты внешних систем? Что делать, если база ответила, а брокер сообщений упал?
+### 3. Architecture and NFR (Non-Functional Requirements)
+* **Concurrency:** What happens with two simultaneous requests? (Is an Idempotency Key required?)
+* **Security (OWASP):**
+    * Are there IDOR risks? (userId in URL without authorization check).
+    * PII: Is there sensitive data in logs or the response?
+* **Distributed Systems:** Are external system timeouts accounted for? What happens if the database responded but the message broker went down?
 
-### 4. Проверка неоднозначности
-* Ищи слова-паразиты: "быстро", "корректно", "как обычно", "позже". Это признаки техдолга.
+### 4. Ambiguity Check
+* Look for weasel words: "quickly", "correctly", "as usual", "later". These are signs of tech debt.
 
-## Когда использовать
+## When to Use
 
-- Перед написанием тест-кейсов или автотестов для новой фичи
-- При ревью требований от PO/аналитика
-- Когда спецификация содержит неоднозначные или потенциально конфликтующие требования
+- Before writing test cases or automated tests for a new feature
+- When reviewing requirements from PO/analyst
+- When the specification contains ambiguous or potentially conflicting requirements
 
-## Вывод результатов
+## Output Results
 
-**По умолчанию:** сохранить в файл `audit/spec-audit_{YYYY-MM-DD}.md` + вывести SKILL COMPLETE в чат.
+**Default:** save to file `audit/spec-audit_{YYYY-MM-DD}.md` + output SKILL COMPLETE to chat.
 
-При повторном запуске в тот же день — перезаписать.
+On repeated run the same day — overwrite.
 
-## Контракт вывода
+## Output Contract
 
-**Лимит:** Максимум 15 дефектов.
+**Limit:** Maximum 15 Defects.
 
-### 1. Резюме исполнителя
-* **Вердикт:** `Готово для разработки` / `Одобрено с исправлениями` / `Заблокировано`.
-* **Оценка качества спецификации:** (0-100%). Оценка проработки спецификации.
-* **Топ 3 риска:** Кратко, главные проблемы.
+### 1. Executive Summary
+* **Verdict:** `Ready for development` / `Approved with corrections` / `Blocked`.
+* **Specification Quality Score:** (0-100%). Calculated by formula:
+    * Start: **100%**
+    * **-20%** for each Blocker (Priority 10)
+    * **-10%** for each Critical (Priority 8-9)
+    * **-5%** for each Major (Priority 6-7)
+    * **-2%** for each Minor (Priority 4-5)
+    * Score cannot be below **0%**.
+    * Formula: `Score = max(0, 100 - 20*Blockers - 10*Critical - 5*Major - 2*Minor)`
+* **Top 3 risks:** Brief, main issues.
 
-### 2. Матрица рисков (Таблица дефектов)
-Сортировка по приоритету (10 → 1).
+### 2. Risk Matrix (Defect Table)
+Sort by Priority (10 → 1).
 
-**Шкала приоритетов:**
-* **10 (Блокер):** Только два вида:
-    1. **Data Gap** — данные, необходимые для выполнения задекларированного действия, полностью отсутствуют в схеме (напр. действие "отправить SMS", а поля `phone` нет вообще).
-    2. **Прямое логическое противоречие** — два правила взаимно исключают друг друга и не могут быть реализованы одновременно без изменения спецификации.
-    Всё остальное — не Блокер.
-* **8-9 (Критический):** Высокий риск бага в проде: неописанные ветки бизнес-логики, неопределённое поведение при сбое внешних систем, критические NFR-пробелы.
-* **6-7 (Основной):** Архитектурный риск (нет идемпотентности, плохой формат данных), нарушение стандартов.
-* **4-5 (Минорный):** Неоднозначность формулировок, отсутствуют примеры ошибок, отсутствие вспомогательных атрибутов схемы (required, max для email).
+**Priority Scale:**
+* **10 (Blocker):** Only two kinds:
+    1. **Data Gap** — data required to perform a declared action is completely missing from the schema (e.g. action "send SMS" but the `phone` field is absent entirely).
+    2. **Direct logical Contradiction** — two rules are mutually exclusive and cannot be implemented simultaneously without changing the specification.
+    Everything else — not a Blocker.
+* **8-9 (Critical):** High risk of a bug in production: undescribed Business logic branches, undefined behavior on external system failure, Critical NFR gaps.
+* **6-7 (Major):** Architectural risk (no Idempotency, poor data format), standards violations.
+* **4-5 (Minor):** Ambiguity in wording, missing error examples, missing auxiliary schema attributes (required, max for email).
 
-| Приоритет | Категория | Проблема | Сценарий / Доказательство | Рекомендация |
+| Priority | Category | Issue | Scenario / Evidence | Recommendation |
 |:---:|---|---|---|---|
-| **10** | Пробел данных | Нет `phone` для SMS | Логика требует 2FA, но в `POST /register` нет телефона. | Добавить поле или брать из профиля. |
-| **8** | Безопасность | Риск IDOR | `GET /orders/{id}` не требует проверки владельца в описании. | Явно указать правило: "Order.userId == CurrentUser.id". |
-| **7** | Фаззинг | Отрицательная цена | Не описано поведение при `amount: -100`. | Добавить валидацию `min: 0.01`. |
+| **10** | Data Gap | No `phone` for SMS | Logic requires 2FA, but `POST /register` has no phone field. | Add a field or retrieve from profile. |
+| **8** | Security | IDOR risk | `GET /orders/{id}` does not require owner verification in the description. | Explicitly state the rule: "Order.userId == CurrentUser.id". |
+| **7** | Fuzzing | Negative price | Behavior for `amount: -100` is not described. | Add validation `min: 0.01`. |
 
-### 3. Чек-лист готовности (Анализ пробелов)
-Отметь, что есть (✅), чего нет (❌).
+### 3. Readiness Checklist (Gap Analysis)
+Mark what is present (✅), what is missing (❌).
 
-- [ ] **Схема:** JSON примера совпадает с таблицей.
-- [ ] **Валидация:** Указаны min/max/regex для всех полей.
-- [ ] **Ошибки:** Описаны коды ошибок (4xx, 5xx) и формат ответа при ошибке.
-- [ ] **Cross-Check:** Каждое техническое действие (SMS, Email, Push, Запись в БД) обеспечено соответствующим полем во входных данных или контексте.
-- [ ] **Безопасность:** Указаны Scope/Roles для эндпоинта.
-- [ ] **Наблюдаемость:** Понятно, что писать в логи (и что НЕ писать, напр. PAN карты).
+- [ ] **Schema:** JSON example matches the table.
+- [ ] **Validation:** min/max/regex specified for all fields.
+- [ ] **Errors:** Error codes (4xx, 5xx) and error response format are described.
+- [ ] **Cross-Check:** Every technical action (SMS, Email, Push, DB Write) is backed by a corresponding field in the input data or context.
+- [ ] **Security:** Scope/Roles specified for the Endpoint.
+- [ ] **Observability:** Clear what to log (and what NOT to log, e.g. card PAN).
 
-### 4. Блокирующие вопросы
-Только вопросы, без ответов на которые нельзя начать писать код.
+### 4. Blocking Questions
+Only questions without answers to which coding cannot begin.
 
-**Стиль:** Каждый вопрос — полное, вежливое и чёткое предложение на русском языке, адресованное аналитику или владельцу продукта. Не используй сокращения и жаргон.
-*Пример хорошего вопроса:* «Просим уточнить, какой HTTP-статус и сообщение об ошибке должен возвращать эндпоинт, если пользователь с указанным email уже зарегистрирован в системе?»
+**Style:** Each question — a complete, polite, and precise sentence in English, addressed to the analyst or product owner. Do not use abbreviations or jargon.
+*Good question example:* "Please clarify which HTTP status and error message the Endpoint should return if a user with the specified email is already registered in the system."
 
-1. [Полное вопросительное предложение.] (Влияние: ...)
+1. [Complete interrogative sentence.] (Impact: ...)
 
-## Самопроверка (Критически важно)
-Перед выводом проверь себя на 10 конкретных ошибок в спецификации:
-1. **Key-to-Key Mapping:** Выписаны ли все ключи JSON и все поля таблицы? Вычислена дельта? Расхождение = Дефект 9.
-2. **Constraint Verification:** Проверены ли значения Example Payload против всех min/max/формат ограничений? Нарушение = Дефект 9.
-3. **Несоответствие схемы:** Есть ли поля в примере, которых нет в описании (или типы не совпадают)?
-4. **Пробел данных:** Есть ли логика (напр. 2FA, отправка Email), для которой не переданы входные данные?
-5. **Нарушение правила (Dry Run):** Нарушает ли пример данных (payload) текстовые бизнес-правила?
-6. **Неопределённое поведение:** Не описаны ли граничные случаи (null, отрицательные числа, спецсимволы)?
-7. **NFR и безопасность:** Есть ли IDOR, PII в логах, отсутствие идемпотентности, race conditions?
-8. **Граничный арифметический тест:** Для каждого поля с ограничением — записано ли уравнение `len = N; min=X, max=Y → PASS/FAIL`? Нарушение = Дефект 9.
-9. **HTTP Status Exhaustion:** Для каждой ветки бизнес-логики — указан ли HTTP-статус и формат тела ответа? Незакрытая ветка = Дефект 8.
-10. **Null Matrix:** Для каждого `required`-поля — описан ли ответ API при его отсутствии? Нет = Дефект 8.
+## Definition of Done (for AI agent)
 
-**Если нашел такие — выводи их с приоритетом 8-10 (критический/блокер).**
+Before generating the output file, verify ALL conditions are met:
 
-## Протокол вербозности
+- [ ] 4 analysis passes completed (Static, Mental, Architecture, Ambiguity).
+- [ ] Key-to-Key, Null Matrix, and Verb-Data Lineage tables are physically generated.
+- [ ] Risk matrix is sorted by priority descending (10 → 1).
+- [ ] Specification Quality Score is calculated by the formula, not estimated.
+- [ ] Report is written in English (field names and code identifiers remain as-is).
 
-**Молчание золота:** Минимум объяснительного текста. Выводи только инструменты и блоки завершения.
+If any condition is NOT met — do not generate the file, complete the missing pass first.
 
-**Режимы коммуникации:**
+## Self-Check (Critically important)
+Before output, check yourself against 10 specific errors in the specification:
+1. **Key-to-Key Mapping:** Are all JSON keys and all table fields listed? Is the delta computed? Discrepancy = Defect 9.
+2. **Constraint Verification:** Are Example Payload values verified against all min/max/format constraints? Violation = Defect 9.
+3. **Schema mismatch:** Are there fields in the example that are not in the description (or types do not match)?
+4. **Data Gap:** Is there logic (e.g. 2FA, sending Email) for which no input data is provided?
+5. **Rule violation (Dry Run):** Does the example data (payload) violate textual Business rules?
+6. **Undefined behavior:** Are boundary cases not described (null, negative numbers, special characters)?
+7. **NFR and security:** Are there IDOR, PII in logs, missing Idempotency, race conditions?
+8. **Boundary Arithmetic Test:** For each field with a constraint — is the equation `len = N; min=X, max=Y → PASS/FAIL` recorded? Violation = Defect 9.
+9. **HTTP Status Exhaustion:** For each Business logic branch — is the HTTP status and response body format specified? Unclosed branch = Defect 8.
+10. **Null Matrix:** For each `required` field — is the API response when it is missing described? No = Defect 8.
 
-| Режим | Когда | Формат |
+**If you found any — output them with Priority 8-10 (Critical/Blocker).**
+
+## Verbosity Protocol
+
+**VERBOSITY: MINIMAL:** Minimum explanatory text. Output only tools and completion blocks.
+
+**Communication modes:**
+
+| Mode | When | Format |
 |------|------|--------|
-| **ГОТОВО** | Задача выполнена | `✅ SKILL COMPLETE: ...` блок |
-| **ПРЕДУПРЕЖДЕНИЕ** | Проблема, но продолжаю | `⚠️ WARNING: [Проблема]` |
-| **СТАТУС** | Смена фазы | `🤖 Orchestrator Status` (только при смене агента/фазы) |
+| **DONE** | Task completed | `✅ SKILL COMPLETE: ...` block |
+| **WARNING** | Issue, but continuing | `⚠️ WARNING: [Issue]` |
+| **STATUS** | Phase change | `🤖 Orchestrator Status` (only on agent/phase change) |
 
-**Без чата:**
-- Нет "Прочитаю файл" — только инструмент Read
-- Нет "Сейчас выполню" — только инструмент Bash
-- Нет "Файл содержит..." — вывод идет в блок завершения
-- Нет "Успешно создано..." — блок завершения показывает артефакты
+**No chat:**
+- No "I will read the file" — just the Read tool
+- No "I will now execute" — just the Bash tool
+- No "The file contains..." — output goes into the completion block
+- No "Successfully created..." — the completion block shows artifacts
 
-**Исключение:** При WARNING или Gardener Suggestion — объяснение обязательно.
+**Exception:** On WARNING or Gardener Suggestion — explanation is mandatory.
 
-**Формат решения:** БЛОКИРОВАТЬ / ОТКЛОНИТЬ / ПРОЙТИ С ПРЕДУПРЕЖДЕНИЯМИ / ОДОБРИТЬ.
+**Decision format:** BLOCK / REJECT / PASS WITH WARNINGS / APPROVE.
 
-**Отчёт аудита:** Только в файл. Матрица рисков, таблицы и детали дефектов — ЗАПРЕЩЕНО выводить в чат.
+**Audit report:** File only. Risk matrix, tables, and Defect details — FORBIDDEN to output in chat.
 
-### Завершение
+### Completion
 
-Сохрани полный результат аудита в `audit/spec-audit_{date}.md` (перезапись при повторном запуске).
+Save the full audit result to `audit/spec-audit_{date}.md` (overwrite on repeated run).
 
-После сохранения — выведи блок `SKILL COMPLETE`:
+After saving — output the `SKILL COMPLETE` block:
 
 **✅ SKILL COMPLETE: /spec-audit**
-- Артефакты: `audit/spec-audit_{date}.md`
-- Компиляция: N/A
-- Upstream: нет
-- Оценка качества спецификации: X%
-- Дефекты: N (Приоритет 10: X, 8-9: Y, 6-7: Z, 4-5: W)
-- Статус: Готово для разработки / Одобрено с исправлениями / Заблокировано
+- Artifacts: `audit/spec-audit_{date}.md`
+- Compilation: N/A
+- Upstream: none
+- Specification Quality Score: X%
+- Defects: N (Priority 10: X, 8-9: Y, 6-7: Z, 4-5: W)
+- Status: Ready for development / Approved with corrections / Blocked

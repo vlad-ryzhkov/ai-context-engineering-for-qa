@@ -1,72 +1,72 @@
 # QA Anti-Patterns Index
 
-> **Lazy Load Protocol:** Читай файл ТОЛЬКО при обнаружении нарушения.
-> Превентивная загрузка всех файлов ЗАПРЕЩЕНА (Token Economy).
+> **Lazy Load Protocol:** Read a file ONLY when a violation is detected.
+> Preemptive loading of all files is FORBIDDEN (Token Economy).
 
 ## Naming Convention
 
-`{category}/{problem-name}.md` → описание проблемы и Good Example.
+`{category}/{problem-name}.md` → problem description and Good Example.
 
 ## Available Patterns
 
-### common/ — Базовая гигиена кода
+### common/ — Basic Code Hygiene
 
-| Файл | Проблема |
-|------|----------|
-| `common/assertion-without-message.md` | Assertions без message |
-| `common/hardcoded-test-data.md` | Hardcoded данные |
-| `common/no-abstraction-layer.md` | Прямые HTTP-вызовы в тестах |
+| File | Problem |
+|------|---------|
+| `common/assertion-without-message.md` | Assertions without message |
+| `common/hardcoded-test-data.md` | Hardcoded data |
+| `common/no-abstraction-layer.md` | Direct HTTP calls in tests |
 | `common/static-object-mother.md` | Static Object Mother |
-| `common/no-order-dependent-tests.md` | Тесты зависят друг от друга |
-| `common/no-cleanup-pattern.md` | Нет cleanup после тестов |
+| `common/no-order-dependent-tests.md` | Tests depend on each other |
+| `common/no-cleanup-pattern.md` | No cleanup after tests |
 
-### api/ — Специфика HTTP и протоколов
+### api/ — HTTP and Protocol Specifics
 
-| Файл | Проблема |
-|------|----------|
-| `api/map-instead-of-dto.md` | `Map<String, Any>` вместо DTO |
-| `api/missing-content-type-validation.md` | Content-Type не валидируется |
-| `api/configure-http-client.md` | HTTP client не настроен |
+| File | Problem |
+|------|---------|
+| `api/map-instead-of-dto.md` | `Map<String, Any>` instead of DTO |
+| `api/missing-content-type-validation.md` | Content-Type not validated |
+| `api/configure-http-client.md` | HTTP client not configured |
 | `api/wrap-infrastructure-errors.md` | Unwrapped infrastructure errors |
-| `api/inline-http-calls.md` | `HttpClient(` создаётся inline в тесте |
-| `api/missing-security-headers.md` | POS-тест без проверки security headers |
-| `api/missing-business-error-assertion.md` | NEG-тест без проверки `body.code` |
+| `api/inline-http-calls.md` | `HttpClient(` created inline in test |
+| `api/missing-security-headers.md` | POS-test without security headers check |
+| `api/missing-business-error-assertion.md` | NEG-test without `body.code` check |
 
 ### platform/ — Kotlin + JUnit5
 
-| Файл | Проблема |
-|------|----------|
-| `platform/coroutine-test-return-type.md` | `runBlocking` без явного Unit type |
+| File | Problem |
+|------|---------|
+| `platform/coroutine-test-return-type.md` | `runBlocking` without explicit Unit type |
 | `platform/junit-test-initialization.md` | `@TestInstance(PER_CLASS)` + field init failures |
-| `platform/flaky-sleep-tests.md` | `Thread.sleep()` / `delay()` вместо polling |
-| `platform/no-hardcoded-timeouts.md` | Магические числа в таймаутах |
-| `platform/no-shared-mutable-state.md` | Shared state между тестами |
-| `platform/controlled-retries.md` | Неконтролируемая retry-логика |
+| `platform/flaky-sleep-tests.md` | `Thread.sleep()` / `delay()` instead of polling |
+| `platform/no-hardcoded-timeouts.md` | Magic numbers in timeouts |
+| `platform/no-shared-mutable-state.md` | Shared state between tests |
+| `platform/controlled-retries.md` | Uncontrolled retry logic |
 
-### security/ — Данные и безопасность
+### security/ — Data and Security
 
-| Файл | Проблема |
-|------|----------|
-| `security/no-sensitive-data-logging.md` | PII в логах |
-| `security/information-leakage-in-errors.md` | Утечка данных в логах ошибок |
-| `security/pii-combined.md` | PII в тест-данных и коде (api-tests + testcases) |
+| File | Problem |
+|------|---------|
+| `security/no-sensitive-data-logging.md` | PII in logs |
+| `security/information-leakage-in-errors.md` | Data leakage in error logs |
+| `security/pii-combined.md` | PII in test data and code (api-tests + testcases) |
 
-## Usage (для SDET)
+## Usage (for SDET)
 
-При обнаружении проблемы в коде:
-1. Определи категорию: common / api / platform / security
-2. Прочитай `.claude/qa-antipatterns/{category}/{name}.md` → примени Good Example → процитируй `(ref: {category}/{name}.md)`
-3. Если reference не найден → BLOCKER, не угадывай fix
+When a problem is found in code:
+1. Determine the category: common / api / platform / security
+2. Read `.claude/qa-antipatterns/{category}/{name}.md` → apply Good Example → cite `(ref: {category}/{name}.md)`
+3. If reference not found → BLOCKER, do not guess the fix
 
-## Usage (для Auditor)
+## Usage (for Auditor)
 
 ```bash
-# Сканируй по категории
+# Scan by category
 ls .claude/qa-antipatterns/api/
 
-# Grep в артефакте
+# Grep in artifact
 grep -r "HttpClient(\|Map<String, Any>\|body<" src/test/kotlin/
 
-# Прочитай файл при match
+# Read file on match
 cat .claude/qa-antipatterns/api/inline-http-calls.md
 ```

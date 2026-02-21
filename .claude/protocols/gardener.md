@@ -1,44 +1,44 @@
 # 🌱 Gardener Protocol — Continuous Improvement
 
-Запускается **ОБЯЗАТЕЛЬНО** в конце каждого скилла, ДО блока `SKILL COMPLETE`.
+Runs **MANDATORY** at the end of every skill, BEFORE the `SKILL COMPLETE` block.
 
-## Алгоритм
+## Algorithm
 
-1. Прочитай `.claude/skills/{current-skill}/SKILL.md`
-2. Проанализируй текущий прогон:
-   - Какие проблемы/отклонения обнаружены в артефакте?
-   - Какой шаг алгоритма был неоднозначным или пришлось интерпретировать?
-   - Есть ли паттерн ошибки, которого нет в явных правилах SKILL.md?
-3. Для каждого наблюдения: правило **отсутствует** в SKILL.md? → включить в таблицу
+1. Read `.claude/skills/{current-skill}/SKILL.md`
+2. Analyze the current run:
+   - What problems/deviations were found in the artifact?
+   - Which algorithm step was ambiguous or required interpretation?
+   - Is there an error pattern not covered by explicit SKILL.md rules?
+3. For each observation: is the rule **missing** from SKILL.md? → include in the table
 
-## Формат вывода (обязателен всегда)
+## Output Format (mandatory always)
 
 ```
 🌱 GARDENER ANALYSIS
-| # | Наблюдение | Предлагаемое правило | Секция | Целевой файл |
-|---|-----------|---------------------|--------|--------------|
-| 1 | {что произошло} | {конкретный запрет/правило} | {Protocol/BANNED/Quality Gates/...} | skills/{name}/SKILL.md |
+| # | Observation | Proposed rule | Section | Target file |
+|---|-------------|---------------|---------|-------------|
+| 1 | {what happened} | {specific prohibition/rule} | {Protocol/BANNED/Quality Gates/...} | skills/{name}/SKILL.md |
 ```
 
-Если предложений нет:
+If no proposals:
 ```
-🌱 GARDENER: нет предложений для этого прогона
+🌱 GARDENER: no proposals for this run
 ```
 
-## Куда выводить
+## Where to Output
 
-| Тип артефакта скилла | Действие |
-|---------------------|----------|
-| Markdown-отчёт (`.md`) | Append секцию `## 🌱 Gardener Analysis` в конец файла-артефакта |
-| Код (`.kt`, `.go` и т.д.) | Вывести в чат (не добавлять в код) |
-| Конфиг/init-файл (`CLAUDE.md`, `qa_agent.md`) | Вывести в чат |
-| Нет файла (chat-only скилл) | Вывести в чат |
+| Skill artifact type | Action |
+|---------------------|--------|
+| Markdown report (`.md`) | Append section `## 🌱 Gardener Analysis` to the end of the artifact file |
+| Code (`.kt`, `.go`, etc.) | Output to chat (do not add to code) |
+| Config/init file (`CLAUDE.md`, `qa_agent.md`) | Output to chat |
+| No file (chat-only skill) | Output to chat |
 
-**Markdown-скиллы** (append в артефакт): `test-cases`, `spec-audit`, `output-review`, `repo-scout`, `doc-lint`, `skill-audit`
+**Markdown skills** (append to artifact): `test-cases`, `spec-audit`, `output-review`, `repo-scout`, `doc-lint`, `skill-audit`
 
-## Правила генерации
+## Generation Rules
 
-- Формулировать как запрет или конкретное требование, не как пожелание
-- Только если правило **отсутствует** в SKILL.md — не дублировать существующие
-- Если >5 наблюдений — сгруппировать по теме (max 5 строк в таблице)
-- Не применять самостоятельно — только suggestion, пользователь решает
+- Formulate as a prohibition or specific requirement, not as a wish
+- Only if the rule is **missing** from SKILL.md — do not duplicate existing rules
+- If >5 observations — group by topic (max 5 rows in the table)
+- Do not apply independently — suggestion only, the user decides

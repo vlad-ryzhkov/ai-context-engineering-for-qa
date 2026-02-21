@@ -1,6 +1,6 @@
 ---
 name: screenshot-analyze
-description: Анализирует скриншоты мобильного приложения на L10N дефекты (переводы, CLDR форматы, RTL). Используй для проверки локализации UI, когда нужно найти ошибки в переводах, форматах дат/валют или проблемы RTL-верстки. Не используй для функционального тестирования UI или анализа кода.
+description: Analyzes mobile app screenshots for L10N defects (translations, CLDR formats, RTL). Use for UI localization verification when you need to find translation errors, date/currency format issues, or RTL layout problems. Do not use for functional UI testing or code analysis.
 allowed-tools: "Read Write Edit Glob Grep Bash(open*)"
 agent: agents/auditor.md
 context: fork
@@ -8,43 +8,43 @@ context: fork
 
 # L10n & I18n UI Audit (Ride-Hailing)
 
-Визуальный кросс-локализационный анализ UI для приложений вызова такси.
+Visual cross-localization UI analysis for ride-hailing applications.
 
-**Фокус:** Деньги, Время, Геолокация, RTL + **СЕМАНТИКА ПЕРЕВОДОВ**.
+**Focus:** Money, Time, Geolocation, RTL + **TRANSLATION SEMANTICS**.
 
-## Парсинг аргументов (ОБЯЗАТЕЛЬНО — шаг 0)
+## Argument Parsing (MUST — Step 0)
 
-Путь к скриншотам ищи по приоритету — остановись на первом успешном:
+Look for the screenshot path by priority — stop at the first match:
 
-**1. Args скилла** — любой текст после имени команды. Примеры:
+**1. Skill args** — any text after the command name. Examples:
 - `/screenshot-analyze resources/screenshots/brazil_passenger_main_screen` → `resources/screenshots/brazil_passenger_main_screen`
 - `/screenshot-analyze /abs/path/screens` → `/abs/path/screens`
 
-**2. Glob-поиск (fallback)** — если args не содержат путь, выполни `Glob("**/*.{png,jpg,jpeg,gif,webp}")`, сгруппируй по директориям, возьми директорию с наибольшим количеством изображений.
+**2. Glob search (fallback)** — if args do not contain a path, run `Glob("**/*.{png,jpg,jpeg,gif,webp}")`, group by directories, pick the directory with the most images.
 
-**3. Спроси пользователя** — только если пп.1-2 не дали результата.
+**3. Ask the user** — only if steps 1-2 yielded no result.
 
-**СТРОГО ЗАПРЕЩЕНО** задавать вопрос о пути, если в пп.1-2 найден путь или файлы.
+**STRICTLY FORBIDDEN** to ask about the path if steps 1-2 found a path or files.
 
 ---
 
-## Scope (Что проверяем)
+## Scope (What We Check)
 
 ```
-1. СЕМАНТИКА (Translation Quality) ← ГЛАВНЫЙ ПРИОРИТЕТ
-   - Смысловые ошибки (false friends, wrong context)
-   - Оскорбительный/опасный контент
-   - Буквальный перевод составных слов
+1. SEMANTICS (Translation Quality) ← TOP PRIORITY
+   - Semantic errors (false friends, wrong context)
+   - Offensive/dangerous content
+   - Literal translation of compound words
 
-2. ВЕРСТКА (Layout)
+2. LAYOUT
    - Truncation, Overflow, Overlap
    - RTL Mirroring
 
-3. ФОРМАТЫ (CLDR Compliance)
-   - Числа, Валюта, Дата, Время, Дистанция
+3. FORMATS (CLDR Compliance)
+   - Numbers, Currency, Date, Time, Distance
 
-4. КОНСИСТЕНТНОСТЬ
-   - Единый язык, числовая система, терминология
+4. CONSISTENCY
+   - Single language, numeral system, terminology
 ```
 
 ---
@@ -53,112 +53,112 @@ context: fork
 
 ### 1. Translation Verification FIRST
 
-**ГЛАВНАЯ ЗАДАЧА — ПРОВЕРКА ПЕРЕВОДОВ НА СМЫСЛОВЫЕ ОШИБКИ.** Активно ищи:
-- **False Friends** — похожие слова с разным значением
-- **Wrong Context** — правильное слово, неправильный контекст
-- **Literal Translation** — буквальный перевод идиом/терминов
-- **Offensive Content** — оскорбительный/табуированный контент
+**PRIMARY OBJECTIVE — VERIFY TRANSLATIONS FOR SEMANTIC ERRORS.** Actively look for:
+- **False Friends** — similar words with different meanings
+- **Wrong Context** — correct word, wrong context
+- **Literal Translation** — literal translation of idioms/terms
+- **Offensive Content** — offensive/taboo content
 
 ### 2. Container vs Content
 
-Помимо перевода проверяй: контейнеры (влезает ли текст) и форматы (CLDR). Не придирайся к стилистике, если нет смысловой ошибки.
+Besides translation, check: containers (does the text fit) and formats (CLDR). Do not nitpick style unless there is a semantic error.
 
 ### 3. RTL Mirroring
 
-В RTL локалях (ar, he, fa, ur) весь UI зеркальный. Отзеркалить: отступы, стрелки навигации, прогресс-бары. НЕ зеркалить: автомобили, карты.
+In RTL locales (ar, he, fa, ur) the entire UI is mirrored. Mirror: margins, navigation arrows, progress bars. DO NOT mirror: cars, maps.
 
-### 4. Валюта ≠ Локаль
+### 4. Currency ≠ Locale
 
-Валюта определяется **регионом**, не языком. inDrive Brazil → R$ (BRL) на ЛЮБОМ языке UI. НЕ считать R$ в ru-RU интерфейсе багом.
-
----
-
-## Входные требования
-
-| Параметр | Обязательность | Описание |
-|----------|----------------|----------|
-| Путь к скриншотам | **Обязательно** | Файл или директория (JPEG, PNG, GIF, WebP) |
-| Регион | **Авто / Спросить** | Из имени файла (`_BR`, `_RU`) или спросить |
-| Целевая локаль | Авто | Из имени файла (`ru_BR.png` → locale=ru, region=BR) |
-
-### Требования к изображениям
-
-| Параметр | Лимит |
-|----------|-------|
-| Размер файла | ≤5 MB |
-| Разрешение | ≤8000×8000 px |
-| Оптимальное | ≤1568 px по длинной стороне |
-| Минимальное | ≥200 px |
+Currency is determined by **region**, not language. inDrive Brazil → R$ (BRL) in ANY UI language. DO NOT flag R$ in a ru-RU interface as a bug.
 
 ---
 
-## Определение региона
+## Input Requirements
 
-### Формат имен файлов
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| Screenshot path | **Required** | File or directory (JPEG, PNG, GIF, WebP) |
+| Region | **Auto / Ask** | From filename (`_BR`, `_RU`) or ask |
+| Target locale | Auto | From filename (`ru_BR.png` → locale=ru, region=BR) |
+
+### Image Requirements
+
+| Parameter | Limit |
+|-----------|-------|
+| File size | ≤5 MB |
+| Resolution | ≤8000×8000 px |
+| Optimal | ≤1568 px on the longest side |
+| Minimum | ≥200 px |
+
+---
+
+## Region Detection
+
+### Filename Format
 ```
 {locale}_{REGION}.png
 
-Примеры:
-- en_BR.png → Locale: en, Region: BR (Бразилия)
-- ru_BR.png → Locale: ru, Region: BR (Бразилия)
-- ar_SA.png → Locale: ar, Region: SA (Саудовская Аравия)
+Examples:
+- en_BR.png → Locale: en, Region: BR (Brazil)
+- ru_BR.png → Locale: ru, Region: BR (Brazil)
+- ar_SA.png → Locale: ar, Region: SA (Saudi Arabia)
 ```
 
-**Если регион определен из файлов — НЕ задавай вопросы.**
+**If region is detected from files — DO NOT ask questions.**
 
-### Если регион НЕ определен — спроси:
+### If region is NOT detected — ask:
 
-"С какого региона собраны эти скриншоты?"
-- Бразилия (BR) — R$, km
-- Россия (RU) — ₽, km
-- Саудовская Аравия (SA) — SAR, RTL, km
-- США (US) — $, mi
+"What region are these screenshots from?"
+- Brazil (BR) — R$, km
+- Russia (RU) — ₽, km
+- Saudi Arabia (SA) — SAR, RTL, km
+- USA (US) — $, mi
 
 ---
 
-## Алгоритм анализа (4-Step)
+## Analysis Algorithm (4-Step)
 
 ### Step 1: Reference Check
-1. Найди EN скриншот — это Base Layout
-2. Запомни структуру: количество элементов, позиции, размеры
+1. Find EN screenshot — this is the Base Layout
+2. Memorize the structure: element count, positions, sizes
 
 ### Step 2: Layout Stress Test
-1. Найди языки с максимальной длиной: DE, RU, ES, PT-BR
-2. Проверь на каждом: Overflow, Truncation, Line Break Issues
+1. Find languages with maximum length: DE, RU, ES, PT-BR
+2. Check each for: Overflow, Truncation, Line Break Issues
 
 ### Step 3: Bi-Directional Check (RTL)
-Для AR/HE/FA/UR:
-1. Зеркалирование Margins/Paddings
-2. Направление стрелок навигации
-3. Позиция Back/Close кнопок
-4. Автомобили НЕ отзеркалены
+For AR/HE/FA/UR:
+1. Margins/Paddings mirroring
+2. Navigation arrow direction
+3. Back/Close button position
+4. Cars are NOT mirrored
 
 ### Step 4: Data Format Validation (CLDR)
-1. Числа: разделители тысяч и дробей
-2. Валюта: символ, позиция, отбивка
-3. Время: 12h vs 24h
+1. Numbers: thousands and decimal separators
+2. Currency: symbol, position, spacing
+3. Time: 12h vs 24h
 
-**Справочные таблицы:** `references/cldr-tables.md`
+**Reference tables:** `references/cldr-tables.md`
 
 ## Verbosity Protocol
 
-**Structured Output Priority:** Весь analysis идёт в артефакт (MD/HTML), не в чат.
+**Structured Output Priority:** All analysis goes into the artifact (MD/HTML), not into chat.
 
-**Chat output (ограничения):**
-- Brief Summary: max 5 строк (что нашли, сколько, итог)
-- Findings table: max 15 строк (топ по severity)
-- Полный отчёт: `📊 Полный отчёт: {path}` + открыть файл
+**Chat output (limits):**
+- Brief Summary: max 5 lines (what was found, count, conclusion)
+- Findings table: max 15 lines (top by severity)
+- Full report: `📊 Full report: {path}` + open file
 
-**Iterative steps:** Не выводить прогресс по каждому файлу. Checkpoint только при:
-- Phase transition (Фаза N → Фаза N+1)
-- Blocker обнаружен
-- Завершение (SKILL COMPLETE)
+**Iterative steps:** Do not output progress per file. Checkpoint only on:
+- Phase transition (Phase N → Phase N+1)
+- Blocker detected
+- Completion (SKILL COMPLETE)
 
 **Tools first:**
-- Grep → table → report, без "Now I will grep..."
-- Read → analyze → report, без "The file shows..."
+- Grep → table → report, without "Now I will grep..."
+- Read → analyze → report, without "The file shows..."
 
-**Post-Check:** Inline перед SKILL COMPLETE (5-7 строк checklist), не отдельный файл.
+**Post-Check:** Inline before SKILL COMPLETE (5-7 line checklist), not a separate file.
 
 **Steps 1-4:** Silent. **Output:** Master Issues Table (max 10) + HTML report opened.
 
@@ -166,124 +166,124 @@ context: fork
 
 ## LQA & Domain-Specific Checks
 
-Полные таблицы проверок (типы семантических ошибок, валюты, время, RTL) — в `references/lqa-rules.md`.
+Full check tables (semantic error types, currencies, time, RTL) — in `references/lqa-rules.md`.
 
-**Ключевые приоритеты:**
+**Key priorities:**
 - **CRITICAL:** False Friends, Wrong Context, Offensive Content, RTL Price Concatenation
-- **ERROR:** Literal Translation, CLDR нарушения, неправильные форматы времени
-- **WARNING:** Стилистика, minor format issues
+- **ERROR:** Literal Translation, CLDR violations, incorrect time formats
+- **WARNING:** Stylistics, minor format issues
 
 ---
 
-## Ограничения (Safety Limits)
+## Limits (Safety Limits)
 
 ### Max Issues: 10
-Ограничивай отчёт **ТОП-10 самых критичных ошибок**.
-Приоритет: CRITICAL → ERROR → WARNING.
+Limit the report to **TOP-10 most critical issues**.
+Priority: CRITICAL → ERROR → WARNING.
 
 ### Grouping
-Одинаковая ошибка на нескольких скриншотах = **1 запись** с перечислением файлов.
+Same error across multiple screenshots = **1 entry** listing all files.
 
-### Перевод на русский
-Для не-русских текстов **добавляй перевод**:
+### Translation to Russian
+For non-Russian texts **add a translation**:
 ```
-✅ "إيجاد الضحايا" (Найти жертв) — опасный перевод
+✅ "إيجاد الضحايا" (Найти жертв) — dangerous translation
 ```
 
-### Акцент на валютах
-**ОБЯЗАТЕЛЬНО** сравнивай формат валюты:
-- Символ (R$ vs BRL)
-- Позиция (R$13 vs 13R$)
-- Формат числа (R$13 vs R$13.00)
+### Currency Focus
+**MUST** compare currency format:
+- Symbol (R$ vs BRL)
+- Position (R$13 vs 13R$)
+- Number format (R$13 vs R$13.00)
 
 ---
 
 ## Severity Guidelines
 
-| Severity | Критерий |
-|----------|----------|
-| **CRITICAL** | Оскорбительный контент, полная поломка функционала |
-| **ERROR** | Неправильный перевод с изменением смысла, обрезанный CTA |
-| **WARNING** | Стилистика, minor format issues |
-| **INFO** | Рекомендации по улучшению |
+| Severity | Criterion |
+|----------|-----------|
+| **CRITICAL** | Offensive content, complete functionality breakage |
+| **ERROR** | Incorrect translation changing meaning, truncated CTA |
+| **WARNING** | Stylistics, minor format issues |
+| **INFO** | Improvement recommendations |
 
 ---
 
 ## Anti-Patterns (BANNED)
 
-1. **Vague Descriptions** → указывай элемент + конкретику: "Button text truncated at 'Регистрац...'"
-2. **Currency Region False Positive** → валюта региона (R$ в BR) корректна на любом языке UI
-3. **Translating Non-Translateables** → адреса, POI, бренды с карт не переводятся
-4. **Missing Location** → каждый баг с указанием элемента: "CTA button (bottom of screen)"
+1. **Vague Descriptions** → specify element + details: "Button text truncated at 'Регистрац...'"
+2. **Currency Region False Positive** → regional currency (R$ in BR) is correct in any UI language
+3. **Translating Non-Translateables** → addresses, POI, brands from maps are not translated
+4. **Missing Location** → every bug with element location: "CTA button (bottom of screen)"
 
 ---
 
-## Формат вывода
+## Output Format
 
-В чат вывести только:
+Output to chat only:
 ```
 📊 L10n: {N} issues (CRITICAL: X, ERROR: Y) → analysis-report.html
 ```
 
-**Ограничения:**
-- 0 ошибок → *"✅ Ошибок не обнаружено"*
+**Limits:**
+- 0 errors → *"✅ No issues found"*
 
 ### HTML Report
 
-Генерируется в директории со скриншотами.
+Generated in the screenshots directory.
 
-**Заголовок:** `L10n Report — {COUNTRY_NAME}`
-**Структура:** Summary Cards → Context Banner → Per-Screenshot Sections
+**Title:** `L10n Report — {COUNTRY_NAME}`
+**Structure:** Summary Cards → Context Banner → Per-Screenshot Sections
 
-**Шаблон:** `references/html-template.md`
+**Template:** `references/html-template.md`
 
-**ОБЯЗАТЕЛЬНО:** Открой отчёт командой `open {path}/analysis-report.html`
+**MUST:** Open the report with `open {path}/analysis-report.html`
 
 ---
 
 ## Cross-Screenshot Comparison
 
-При нескольких локалях — сравнительная таблица:
+For multiple locales — comparison table:
 
 ```markdown
-| Элемент | EN (ref) | RU | AR | Проблема |
-|---------|----------|----|----|----------|
-| CTA Button | Find offers | Найти ✅ | ❌ | AR: Буквальный перевод |
+| Element | EN (ref) | RU | AR | Issue |
+|---------|----------|----|----|-------|
+| CTA Button | Find offers | Найти ✅ | ❌ | AR: Literal translation |
 | Price | R$13 | R$13 ✅ | R$13 ✅ | — |
-| Back Button | < | < ✅ | ❌ < | AR: Должен быть > |
+| Back Button | < | < ✅ | ❌ < | AR: Should be > |
 ```
 
 ---
 
 ## Self-Check Protocol
 
-Перед завершением проверь:
-- [ ] Locale указан для всех проблем
-- [ ] Location указан для всех проблем
-- [ ] Severity присвоен
-- [ ] No false positives (валюта региона)
-- [ ] Не-русские тексты с переводом
+Before completion, verify:
+- [ ] Locale specified for all issues
+- [ ] Location specified for all issues
+- [ ] Severity assigned
+- [ ] No false positives (regional currency)
+- [ ] Non-Russian texts with translation
 
-**Полный чек-лист:** `references/checklists.md`
-
----
-
-## Что НЕ переводится
-
-| Элемент | Правило |
-|---------|---------|
-| Имена пользователей | Как введены |
-| Марки/модели авто | Глобальные бренды |
-| Адреса с карт | Локальный язык места |
-| POI | Язык места |
-| Госномера | Формат региона |
+**Full checklist:** `references/checklists.md`
 
 ---
 
-## Связанные файлы
+## Non-Translatable Elements
 
-| Файл | Содержание |
-|------|------------|
-| `references/cldr-tables.md` | CLDR таблицы: валюты, числа, время, plurals |
-| `references/checklists.md` | Полные чек-листы: RTL, Layout, CLDR, Semantics |
-| `references/html-template.md` | HTML шаблон отчёта |
+| Element | Rule |
+|---------|------|
+| Usernames | As entered |
+| Car makes/models | Global brands |
+| Map addresses | Local language of the place |
+| POI | Language of the place |
+| License plates | Regional format |
+
+---
+
+## Related Files
+
+| File | Contents |
+|------|----------|
+| `references/cldr-tables.md` | CLDR tables: currencies, numbers, time, plurals |
+| `references/checklists.md` | Full checklists: RTL, Layout, CLDR, Semantics |
+| `references/html-template.md` | HTML report template |

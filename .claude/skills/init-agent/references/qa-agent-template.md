@@ -1,51 +1,51 @@
-# qa_agent.md — Шаблон должностной инструкции
+# qa_agent.md — Job Description Template
 
-> **Назначение:** Культура команды для AI. Объясняем как мы думаем: "Мы параноики по безопасности", "Мы ненавидим Thread.sleep", "Мы пишем тесты до кода".
+> **Purpose:** Team culture for the AI. We explain how we think: "We are paranoid about security", "We hate Thread.sleep", "We write tests before code".
 
 ---
 
-## Шаблон
+## Template
 
 ```markdown
 # QA Agent: [Profile]
 
 ## Core Mindset
 
-1. **Trust No One** — проверяй требования на противоречия
-2. **Isolation First** — тесты не зависят друг от друга
-3. **Cleanup Always** — удаляй созданные данные
-4. **Fail Fast** — падай рано, падай громко
+1. **Trust No One** — verify requirements for contradictions
+2. **Isolation First** — tests do not depend on each other
+3. **Cleanup Always** — delete created data
+4. **Fail Fast** — fail early, fail loudly
 
 ## Anti-Patterns (BANNED)
 
-| ❌ Плохо | ✅ Хорошо | Почему |
-|----------|-----------|--------|
-| Thread.sleep() | Polling с таймаутом | Flaky тесты |
-| Хардкод ID/email | UUID/timestamp генерация | Коллизии |
-| Общие тестовые данные | Изолированные данные | Зависимости |
-| Игнорировать cleanup | try-finally | Мусор в системе |
-| assertEquals без msg | assertEquals с msg | Отладка в CI |
-| var вместо val | val везде | Иммутабельность |
+| ❌ Bad | ✅ Good | Why |
+|--------|---------|-----|
+| Thread.sleep() | Polling with timeout | Flaky tests |
+| Hardcoded ID/email | UUID/timestamp generation | Collisions |
+| Shared test data | Isolated data | Dependencies |
+| Ignoring cleanup | try-finally | Garbage in system |
+| assertEquals without msg | assertEquals with msg | Debugging in CI |
+| var instead of val | val everywhere | Immutability |
 
 ## Quality Gates
 
-### Перед коммитом
-- [ ] Код компилируется без ошибок
-- [ ] Тесты проходят локально
-- [ ] Нет хардкода (ID, email, телефоны)
-- [ ] Cleanup работает
+### Before Commit
+- [ ] Code compiles without errors
+- [ ] Tests pass locally
+- [ ] No hardcoded values (IDs, emails, phone numbers)
+- [ ] Cleanup works
 
-### Перед PR
-- [ ] Тесты изолированы
-- [ ] Naming convention соблюдён
-- [ ] Нет закомментированного кода
+### Before PR
+- [ ] Tests are isolated
+- [ ] Naming convention followed
+- [ ] No commented-out code
 
 ## Test Design
 
-### Структура (AAA)
-// Arrange — подготовка
-// Act — действие
-// Assert — проверка
+### Structure (AAA)
+// Arrange — setup
+// Act — action
+// Assert — verification
 
 ### Naming
 `[actor] can [action] when [condition]`
@@ -66,38 +66,38 @@ try { ... } finally { cleanup() }
 
 ---
 
-## Принципы по профилям QA
+## Principles by QA Profile
 
 ### API Testing
-- **Contract First** — тест проверяет контракт, не реализацию
-- **Boundary Obsession** — граничные значения важнее happy path
-- **Negative > Positive** — негативных сценариев больше
+- **Contract First** — test verifies the contract, not the implementation
+- **Boundary Obsession** — boundary values matter more than happy path
+- **Negative > Positive** — more negative scenarios than positive
 
 ### UI/E2E Testing
-- **User Perspective** — думай как пользователь
-- **Stable Selectors** — data-testid лучше CSS классов
-- **Flaky = Bug** — нестабильный тест — это баг теста
+- **User Perspective** — think like a user
+- **Stable Selectors** — data-testid is better than CSS classes
+- **Flaky = Bug** — an unstable test is a test bug
 
 ### Performance Testing
-- **Baseline First** — сначала измерь, потом оптимизируй
-- **Percentiles > Average** — p95/p99 важнее среднего
+- **Baseline First** — measure first, then optimize
+- **Percentiles > Average** — p95/p99 matter more than average
 
 ### Security Testing
-- **OWASP Top 10** — минимальный чек-лист
-- **AuthZ ≠ AuthN** — авторизация и аутентификация разные вещи
-- **Trust Nothing** — все входные данные потенциально вредоносны
+- **OWASP Top 10** — minimum checklist
+- **AuthZ ≠ AuthN** — authorization and authentication are different things
+- **Trust Nothing** — all input data is potentially malicious
 
 ---
 
-## Расположение файла
+## File Location
 
 ```
 .claude/
-└── qa_agent.md    # В папке .claude
+└── qa_agent.md    # In the .claude directory
 ```
 
 ---
 
-## Полный гайд
+## Full Guide
 
-`docs/ai-files-handbook.md` → Часть 2: qa_agent.md
+`docs/ai-files-handbook.md` → Part 2: qa_agent.md

@@ -1,180 +1,180 @@
-# Фазы анализа документации
+# Documentation Analysis Phases
 
-## Фаза 1: Discovery & File Inventory
+## Phase 1: Discovery & File Inventory
 
-**Цель:** Собрать каталог файлов, исключая тяжелые и служебные директории.
+**Goal:** Collect the file catalog, excluding heavy and service directories.
 
 1. **Glob Pattern:** `**/*.md`, `**/*.yaml`, `**/*.yml`, `**/*.txt`
-2. **Исключения (Blacklist):**
-   - Системные: `node_modules/`, `.git/`, `.gradle/`, `build/`, `dist/`, `vendor/`, `.claude/`
-   - Бинарные/Lock: `*.lock`, `*.bin`, `*.jar`, `*.png`, `*.jpg`
-   - **Генерируемые отчеты (ВАЖНО):** `audit/` (чтобы не линтить отчеты прошлых запусков)
-   - **Архив/Спецификации:** `specifications/` (исторические данные), `legacy/`
+2. **Exclusions (Blacklist):**
+   - System: `node_modules/`, `.git/`, `.gradle/`, `build/`, `dist/`, `vendor/`, `.claude/`
+   - Binary/Lock: `*.lock`, `*.bin`, `*.jar`, `*.png`, `*.jpg`
+   - **Generated reports (IMPORTANT):** `audit/` (to avoid linting reports from previous runs)
+   - **Archive/Specifications:** `specifications/` (historical data), `legacy/`
 3. **Smart Filtering:**
-   - Если пользователь не задал `Scope`, игнорировать файлы в корне `.github/` (обычно это шаблоны)
+   - If the user did not specify `Scope`, ignore files in root `.github/` (usually templates)
 4. **Inventory Step:**
-   - Используй `wc -l` для подсчета строк (НЕ ИСПОЛЬЗУЙ `read` для этого шага, экономь токены).
-   - Классифицируй файлы по пути.
-   - Для каждого файла определить:
-     - Path (относительный)
+   - Use `wc -l` for line counting (DO NOT USE `read` for this step, save tokens).
+   - Classify files by path.
+   - For each file determine:
+     - Path (relative)
      - Line count (`wc -l`)
-     - Type classification (по правилам из `references/check-rules.md` § 1)
-5. Сформировать таблицу-инвентарь:
+     - Type classification (per rules from `references/check-rules.md` § 1)
+5. Build the inventory table:
 
 ```markdown
-| # | Файл | Строк | Тип | Status |
-|---|------|------:|-----|--------|
+| # | File | Lines | Type | Status |
+|---|------|------:|------|--------|
 | 1 | CLAUDE.md | 107 | CLAUDE.md | — |
 ```
 
-**Checkpoint:** Все файлы в scope найдены, line counts верифицированы.
+**Checkpoint:** All files in scope found, line counts verified.
 
 ---
 
-## Фаза 2: Size Analysis
+## Phase 2: Size Analysis
 
-**Цель:** Определить файлы, превышающие пороги.
+**Goal:** Identify files exceeding thresholds.
 
-1. Загрузить пороги из `references/check-rules.md` § 1
-2. Для каждого файла из инвентаря:
-   - Определить applicable threshold по типу файла
-   - Сравнить line count с порогами
-   - Присвоить severity: **OK** / **WARNING** / **CRITICAL**
-3. Обновить колонку Status в инвентаре
+1. Load thresholds from `references/check-rules.md` § 1
+2. For each file in the inventory:
+   - Determine applicable threshold by file type
+   - Compare line count against thresholds
+   - Assign severity: **OK** / **WARNING** / **CRITICAL**
+3. Update the Status column in the inventory
 
-**Формула:**
+**Formula:**
 ```
-Если lines > CRITICAL threshold → CRITICAL
-Если lines > WARNING threshold → WARNING
-Иначе → OK
+If lines > CRITICAL threshold → CRITICAL
+If lines > WARNING threshold → WARNING
+Otherwise → OK
 ```
 
 ---
 
-## Фаза 3: Structure Analysis
+## Phase 3: Structure Analysis
 
-**Цель:** Проверить внутреннюю структуру каждого файла.
+**Goal:** Verify the internal structure of each file.
 
-Для каждого .md файла:
+For each .md file:
 
 **3.1 Heading Hierarchy**
-- Извлечь все заголовки (`# `, `## `, `### `, ...)
-- Проверить на пропуски уровней: H1→H3 (минуя H2) → **CRITICAL**
-- Проверить глубину: >H4 → **INFO** "Consider restructuring"
+- Extract all headings (`# `, `## `, `### `, ...)
+- Check for skipped levels: H1→H3 (skipping H2) → **CRITICAL**
+- Check depth: >H4 → **INFO** "Consider restructuring"
 
 **3.2 Section Balance**
-- Посчитать строки между заголовками
-- Если одна секция > 40% от всего файла → **WARNING**
+- Count lines between headings
+- If one section > 40% of the entire file → **WARNING**
 
 **3.3 Empty Sections**
-- Заголовок → следующий заголовок без контента (только whitespace) → **WARNING**
+- Header → next header with no content (only whitespace) → **WARNING**
 
 **3.4 TOC Check**
-- Файл >200 строк без `## Table of Contents`, `## Содержание`, `## TOC` → **INFO**
+- File >200 lines without `## Table of Contents`, `## Содержание`, `## TOC` → **INFO**
 
 **3.5 Readability**
-- Wall-of-text: >20 строк подряд без заголовков/списков/пустых строк/code blocks → **WARNING**
-- Строки >200 символов → **INFO**
+- Wall-of-text: >20 consecutive lines without headers/lists/blank lines/code blocks → **WARNING**
+- Lines >200 characters → **INFO**
 
 ---
 
-## Фаза 4: Cross-File Duplicate Detection
+## Phase 4: Cross-File Duplicate Detection
 
-**Цель:** Найти дублирование контента между файлами. Ключевая фаза.
+**Goal:** Find content duplication between files. Key phase.
 
 ### 4.1 Block Extraction
 
-Для каждого файла извлечь семантические блоки:
-- Таблицы (от `|` до конца таблицы)
-- Code blocks (от ``` до ```)
-- Списки (последовательные строки с `- `, `* `, `1. `)
-- Параграфы (>3 строк подряд)
+For each file extract semantic blocks:
+- Tables (from `|` to end of table)
+- Code blocks (from ``` to ```)
+- Lists (consecutive lines with `- `, `* `, `1. `)
+- Paragraphs (>3 consecutive lines)
 
-### 4.2 Known Pattern Matching (быстрый проход)
+### 4.2 Known Pattern Matching (fast pass)
 
-Загрузить паттерны из `references/check-rules.md` § 2.
-Для каждого паттерна KP-1..KP-5:
+Load patterns from `references/check-rules.md` § 2.
+For each pattern KP-1..KP-5:
 
-1. Grep по сигнатуре
-2. Собрать файлы с совпадением
-3. Если файлов ≥2 → зафиксировать кластер дубликатов
+1. Grep by signature
+2. Collect files with matches
+3. If files ≥2 → record duplicate cluster
 
 ### 4.3 Heuristic Cross-Comparison
 
-**ВАЖНО:** Сравнивать содержимое ТОЛЬКО для файлов, попавших в один кластер на шаге 4.2 (Grep match). Не проводить полное попарное сравнение всего проекта (риск комбинаторного взрыва токенов).
+**IMPORTANT:** Compare content ONLY for files that fell into the same cluster in step 4.2 (Grep match). Do not perform full pairwise comparison of the entire project (risk of combinatorial token explosion).
 
-Для таблиц (внутри кластера):
-1. Сравнить header rows (строки с `|`)
-2. Если headers совпадают >70% → сравнить содержимое
-3. Содержимое совпадает >70% → **WARNING** near-duplicate
+For tables (within cluster):
+1. Compare header rows (lines with `|`)
+2. If headers match >70% → compare content
+3. Content matches >70% → **WARNING** near-duplicate
 
-Для code blocks и списков (внутри кластера):
-1. Нормализовать по правилам из `references/check-rules.md` § 5
-2. Exact match ≥5 строк → **CRITICAL**
-3. Exact match 3-5 строк → **WARNING**
+For code blocks and lists (within cluster):
+1. Normalize per rules from `references/check-rules.md` § 5
+2. Exact match ≥5 lines → **CRITICAL**
+3. Exact match 3-5 lines → **WARNING**
 
 ### 4.4 Intra-file Duplicates
 
-Внутри одного файла:
-- Повторяющиеся секции (одинаковые заголовки + похожий контент)
-- Повторяющиеся таблицы
-- Copy-paste параграфы
+Within a single file:
+- Repeating sections (identical headings + similar content)
+- Repeating tables
+- Copy-paste paragraphs
 
 ### 4.5 SSOT Owner Assignment
 
-Для каждого кластера дубликатов:
-1. Определить категорию контента по `references/check-rules.md` § 3
-2. Назначить SSOT Owner
-3. Сформировать рекомендацию: "Оставить в {Owner}, остальные заменить ссылкой"
+For each duplicate cluster:
+1. Determine content category per `references/check-rules.md` § 3
+2. Assign SSOT Owner
+3. Formulate recommendation: "Keep in {Owner}, replace with link in the rest"
 
 ---
 
-## Фаза 5: Content Hygiene
+## Phase 5: Content Hygiene
 
-**Цель:** Найти проблемы с содержимым.
+**Goal:** Find content issues.
 
 **5.1 Markers**
 - `TODO`, `FIXME`, `HACK`, `XXX`, `TEMP` → **INFO**
 
 **5.2 Broken Internal Links**
-- Найти все `[text](path)` где path — относительный путь
-- Проверить существование файла → не существует → **CRITICAL**
-- Пустые ссылки `[text]()` или `[](path)` → **WARNING**
+- Find all `[text](path)` where path is a relative path
+- Check file existence → not found → **CRITICAL**
+- Empty links `[text]()` or `[](path)` → **WARNING**
 
 **5.3 Stale Dates**
-- Даты в формате YYYY-MM-DD старше 6 месяцев от текущей даты → **INFO** "Potentially stale"
+- Dates in YYYY-MM-DD format older than 6 months from the current date → **INFO** "Potentially stale"
 
 **5.4 Diataxis Type Mix**
-- Загрузить маркеры из `references/check-rules.md` § 4
-- Если файл содержит маркеры ≥2 типов → **INFO**
+- Load markers from `references/check-rules.md` § 4
+- If file contains markers of ≥2 types → **INFO**
 
 ---
 
-## Фаза 6: Report Generation
+## Phase 6: Report Generation
 
-**Цель:** Собрать все findings в структурированный отчёт.
+**Goal:** Compile all findings into a structured report.
 
 ### 6.2 Safe Fix Script Generation
 
-Сгенерировать Bash-скрипт `audit/safe-fix.sh` с безопасными автоматическими исправлениями.
+Generate a Bash script `audit/safe-fix.sh` with safe automatic fixes.
 
-**Safe (автоматические):**
-- Добавление `## Table of Contents` (если отсутствует и файл >200 строк)
-- Создание пустых файлов-заглушек для битых ссылок (помеченных `# TODO: Content needed`)
-- Удаление trailing spaces (пробелов в конце строк)
+**Safe (automatic):**
+- Adding `## Table of Contents` (if missing and file >200 lines)
+- Creating empty stub files for broken links (marked with `# TODO: Content needed`)
+- Removing trailing spaces
 
-**Manual (требуют человека):**
-- Удаление дубликатов (риск потери контекста)
-- Разбиение файлов на части
-- Рефакторинг содержимого
+**Manual (require human):**
+- Removing duplicates (risk of losing context)
+- Splitting files into parts
+- Content refactoring
 
-Скрипт должен содержать:
+The script MUST contain:
 1. Shebang `#!/usr/bin/env bash`
-2. Safety header с предупреждением
-3. Dry-run mode по умолчанию (флаг `--apply` для применения)
-4. Каждое действие с комментарием и echo перед выполнением
+2. Safety header with warning
+3. Dry-run mode by default (`--apply` flag to execute)
+4. Each action with a comment and echo before execution
 
-**Пример структуры:**
+**Example structure:**
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
@@ -195,21 +195,21 @@ fi
 
 ---
 
-## Фаза 7: Generate Safe-Fix Script
+## Phase 7: Generate Safe-Fix Script
 
-**Цель:** Создать `audit/safe-fix.sh`, который оркестрирует исправления, используя надежные инструменты.
+**Goal:** Create `audit/safe-fix.sh` that orchestrates fixes using reliable tools.
 
-1. Создать файл `audit/safe-fix.sh` с shebang `#!/usr/bin/env bash` и `set -euo pipefail`.
-2. **Логика для TOC (Оглавлений):**
-   - Проверить наличие утилиты `.claude/scripts/generate-toc.sh`.
-   - Если утилита существует: добавить в скрипт команду вызова этой утилиты для всех файлов, где найден Warning "No TOC".
-     Пример: `.claude/scripts/generate-toc.sh "$file" || echo "⚠️  Failed to generate TOC for $file"`
-   - Если утилиты НЕТ: добавить команду вставки *только* плейсхолдера с помощью простого `sed`.
-     Пример: вставить `## Table of Contents\n\n*TODO: Auto-generate TOC*\n` после заголовка H1.
-3. **Логика для битых ссылок:**
-   - Если найдены битые ссылки (CRITICAL), добавить команды `mkdir -p $(dirname path/to/missing.md) && touch path/to/missing/file.md` и `echo "# TODO: Created by doc-lint" > ...`.
-4. Сделать скрипт исполняемым (`chmod +x`).
+1. Create the file `audit/safe-fix.sh` with shebang `#!/usr/bin/env bash` and `set -euo pipefail`.
+2. **TOC (Table of Contents) logic:**
+   - Check if the utility `.claude/scripts/generate-toc.sh` exists.
+   - If the utility exists: add a command to the script to invoke it for all files where Warning "No TOC" was found.
+     Example: `.claude/scripts/generate-toc.sh "$file" || echo "⚠️  Failed to generate TOC for $file"`
+   - If the utility DOES NOT exist: add a command to insert *only* a placeholder using simple `sed`.
+     Example: insert `## Table of Contents\n\n*TODO: Auto-generate TOC*\n` after the H1 heading.
+3. **Broken links logic:**
+   - If broken links were found (CRITICAL), add commands `mkdir -p $(dirname path/to/missing.md) && touch path/to/missing/file.md` and `echo "# TODO: Created by doc-lint" > ...`.
+4. Make the script executable (`chmod +x`).
 
-**Важно:** Не пытайся генерировать сложный Bash-код для парсинга заголовков Markdown внутри этого скрипта. Используй внешнюю утилиту (`.claude/scripts/generate-toc.sh`) или оставляй эту задачу IDE (через плейсхолдер).
+**Important:** Do not attempt to generate complex Bash code for parsing Markdown headings inside this script. Use an external utility (`.claude/scripts/generate-toc.sh`) or leave this task to the IDE (via placeholder).
 
-**Checkpoint:** Скрипт создан, исполняемые права выставлены, использует статические утилиты где возможно.
+**Checkpoint:** Script created, executable permissions set, uses static utilities where possible.

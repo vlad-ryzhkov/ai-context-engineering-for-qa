@@ -1,43 +1,43 @@
 # Information Leakage in Error Responses
 
-**Applies to:** `/api-tests` (автотесты), `/spec-audit` (аудит требований)
+**Applies to:** `/api-tests` (automated tests), `/spec-audit` (requirements audit)
 
 ## Why this is bad
 
-Утечка внутренней информации через error responses:
-- Stack traces раскрывают технологический стек, версии библиотек и структуру кода
-- Internal paths раскрывают файловую систему сервера (`/opt/app/src/...`)
-- Debug info раскрывает SQL-запросы, имена таблиц, connection strings
-- Атакующий использует эту информацию для targeted-атак
+Leaking internal information through error responses:
+- Stack traces reveal the technology stack, library versions, and code structure
+- Internal paths reveal the server file system (`/opt/app/src/...`)
+- Debug info reveals SQL queries, table names, connection strings
+- Attackers use this information for targeted attacks
 
 ## Bad Example
 
 ```kotlin
-// ❌ BAD: Тест не проверяет отсутствие утечки информации в ошибке
+// ❌ BAD: Test does not check for information leakage in error
 @Test
-@DisplayName("[Error] Сервер возвращает 500 при невалидных данных")
+@DisplayName("[Error] Server returns 500 for invalid data")
 fun serverError() {
     val response = ApiHelper.apiClient.execute { CreateRawRequest(TestData.corruptedJson()) }
     assertEquals(500, response.code, "Server should return 500")
-    // Тест прошёл, но ответ содержит:
+    // Test passed, but response contains:
     // {"error": "NullPointerException at com.company.service.UserService.create(UserService.kt:42)"}
 }
 
-// ❌ BAD: Тест проверяет наличие stack trace как ожидаемое поведение
+// ❌ BAD: Test checks for stack trace presence as expected behavior
 @Test
 fun serverErrorContainsDetails() {
     val response = ApiHelper.apiClient.execute { CreateRawRequest("""{"invalid": true}""") }
-    assertTrue(response.rawBody.contains("Exception"), "Фиксирует утечку как фичу")
+    assertTrue(response.rawBody.contains("Exception"), "Codifies leakage as a feature")
 }
 ```
 
 ## Good Example
 
 ```kotlin
-// ✅ GOOD: Тест проверяет что ошибка НЕ содержит внутренних деталей
+// ✅ GOOD: Test verifies that error does NOT contain internal details
 @Test
 @Severity(CRITICAL)
-@DisplayName("[Security] 500-ошибка не раскрывает stack trace")
+@DisplayName("[Security] 500 error does not reveal stack trace")
 fun serverErrorDoesNotLeakStackTrace() {
     val response = ApiHelper.apiClient.execute { CreateRawRequest("""{"trigger": "server_error"}""") }
     assertEquals(500, response.code, "Server should return 500")
@@ -48,10 +48,10 @@ fun serverErrorDoesNotLeakStackTrace() {
     assertFalse(body.contains(".kt:"), "Error response should not contain source references")
 }
 
-// ✅ GOOD: Тест проверяет что ошибка не содержит internal paths
+// ✅ GOOD: Test verifies that error does not contain internal paths
 @Test
 @Severity(CRITICAL)
-@DisplayName("[Security] Error response не содержит внутренних путей")
+@DisplayName("[Security] Error response does not contain internal paths")
 fun errorDoesNotLeakInternalPaths() {
     val response = ApiHelper.apiClient.execute { CreateRawRequest("""{"trigger": "bad_request"}""") }
 
@@ -61,10 +61,10 @@ fun errorDoesNotLeakInternalPaths() {
     assertFalse(body.contains("src/main/"), "Error should not contain source paths")
 }
 
-// ✅ GOOD: Тест проверяет формат generic error response
+// ✅ GOOD: Test verifies generic error response format
 @Test
 @Severity(NORMAL)
-@DisplayName("[Error] 500-ошибка возвращает generic сообщение")
+@DisplayName("[Error] 500 error returns generic message")
 fun serverErrorReturnsGenericMessage() {
     val response = ApiHelper.apiClient.execute { CreateRawRequest("""{"trigger": "server_error"}""") }
     assertEquals(500, response.code, "Server should return 500")
@@ -75,17 +75,17 @@ fun serverErrorReturnsGenericMessage() {
 
 ## What to look for in review
 
-- Тесты на 4xx/5xx ошибки не проверяют содержимое error body на утечки
-- Error response содержит слова: `Exception`, `Error at`, `stack`, `trace`
-- Error response содержит пути файловой системы (`/opt/`, `/home/`, `/var/`, `src/`)
-- Error response содержит имена классов (`com.company.`, `io.ktor.`)
-- Error response содержит SQL-фрагменты (`SELECT`, `INSERT`, `table`)
-- Error response содержит версии технологий
+- Tests for 4xx/5xx errors do not check error body content for leaks
+- Error response contains words: `Exception`, `Error at`, `stack`, `trace`
+- Error response contains file system paths (`/opt/`, `/home/`, `/var/`, `src/`)
+- Error response contains class names (`com.company.`, `io.ktor.`)
+- Error response contains SQL fragments (`SELECT`, `INSERT`, `table`)
+- Error response contains technology versions
 
-## Grep-сигнатуры для автоматического обнаружения
+## Grep signatures for automatic detection
 
 ```
-# В error response assertions — ищем тесты которые НЕ проверяют утечки
-pattern: "assertEquals(500"  # → проверь что рядом есть assertion на body
-pattern: "response.error"    # → проверь что нет фиксации утечек как ожидаемого поведения
+# In error response assertions — find tests that do NOT check for leaks
+pattern: "assertEquals(500"  # → verify that body assertion is nearby
+pattern: "response.error"    # → verify that leaks are not codified as expected behavior
 ```
