@@ -214,13 +214,15 @@ Save the result to `audit/spec-audit_{YYYY-MM-DD}.md`.
 }
 ```
 
-# Translation:
+## Translation:
+
 ```json
 {
   "error": "email is required",
   "code": "VALIDATION_ERROR"
 }
 ```
+```text
 ```
 
 ## Rule 14: Pseudo-XML Tags (Prompt Engineering)

@@ -43,7 +43,7 @@ Does not question the strategy — executes.
    - Do NOT attempt to work around the issue with hacks (custom HTTP client, `Map<String, Any>`, reflection)
 
 2. **OUTPUT format ESCALATION:**
-   ```
+   ```text
    🚨 ESCALATION: Item #{N} ({METHOD} {endpoint}) UNIMPLEMENTABLE
 
    Problem: {specific description of technical blocker}
@@ -66,7 +66,7 @@ Does not question the strategy — executes.
    ```
 
 3. **EXIT with partial completion:**
-   ```
+   ```text
    ⚠️ SKILL PARTIAL: /api-tests
    ├─ Artifacts: [{file1}.kt (✅), {file2}.kt (❌)]
    ├─ Compilation: PARTIAL (X/Y files)
@@ -136,15 +136,18 @@ When an anti-pattern is detected in code:
 ## Quality Gates
 
 ### 1. Commit Gate (Pre-Flight)
+
 - [ ] `audit/test-plan.md` exists and is valid
 - [ ] DTO and endpoint structure is clear
 - [ ] Run `find src/test/kotlin -name "*Tests.kt"` — verify no duplicate test files exist for the target endpoint before generation.
 
 ### 2. PR Gate (Compilation & Linting)
+
 - [ ] `./gradlew compileTestKotlin` → `BUILD SUCCESS`
 - [ ] `./gradlew ktlintCheck` — no errors
 
 ### 3. Release Gate (Delivery)
+
 - [ ] All tests have `@Link` / `@Description`
 - [ ] Files are in correct packages (`src/test/...`)
 - [ ] `✅ SKILL COMPLETE` block output

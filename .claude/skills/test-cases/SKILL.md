@@ -114,6 +114,7 @@ Before execution the agent MUST load: `.claude/protocols/gardener.md`
 Rules for the `Expected Result (HTTP + Logic)` column — mandatory for all scenarios:
 
 ### 1. Contract-First (Schema Validation)
+
 For **POS** scenarios of mutating and read operations `Expected Result` MUST contain a JSON schema reference:
 - Format: `Contract Match: {field}({type}), {field}({type})`
 - Types: `string`, `UUID`, `ISO8601`, `boolean`, `integer`, `array`
@@ -121,6 +122,7 @@ For **POS** scenarios of mutating and read operations `Expected Result` MUST con
 - Benefit: a single test automatically catches field renaming, type change, or removal of a required key.
 
 ### 2. State Verification (Side Effects)
+
 For **any** scenario of any type (POS, BVA, SEC, L10N, IDEM), if `Expected Result` contains a **2xx response** (request mutates the system), `Expected Result` MUST contain a system state check after the server response:
 - DB: `DB: users.status = 'PENDING' WHERE email = {EMAIL}`
 - Queue: `Event published: user.registered (topic: registrations)`
@@ -130,17 +132,20 @@ For **any** scenario of any type (POS, BVA, SEC, L10N, IDEM), if `Expected Resul
 - Example: `201 Created. DB: users.status='PENDING', verification_token NOT NULL. Mock: EmailProvider returns 200`
 
 ### 3. Headers & Security
+
 For **POS Happy Path** of each endpoint add a header verification row (`Type: HEADERS`):
 - `Content-Type: application/json; charset=utf-8` — mandatory
 - Security headers: `X-Content-Type-Options: nosniff`
 - Example table row: `| REG-01h | HEADERS | Response headers | — | Content-Type: application/json; charset=utf-8. X-Content-Type-Options: nosniff |`
 
 ### 4. Audit-Ready (NEG Specificity)
+
 For **NEG** scenarios `Expected Result` MUST contain `code` from the response body, not just the HTTP status:
 - Format: `{HTTP_CODE} + body.code: '{ERROR_CODE}'`
 - Example: `400 Bad Request + body.code: 'VALIDATION_ERROR'` (❌ just `400 Bad Request`)
 
 ### 5. Cleanup / Teardown
+
 Every **POS** scenario that creates data MUST end with a cleanup step. Goal: re-running tests MUST NOT produce uniqueness conflicts.
 
 **Cleanup mechanism — priority order (top = preferred):**
@@ -159,7 +164,7 @@ Every **POS** scenario that creates data MUST end with a cleanup step. Goal: re-
 
 | Category | Rule | Violation → Correct |
 |----------|------|---------------------|
-| **Format** | NO CODE | `@Test fun...` (❌) → `| ID | Scenario |` (✅) |
+| **Format** | NO CODE | `@Test fun...` (❌) → `\| ID \| Scenario \|` (✅) |
 | **Data** | Placeholders | `test@test.com` (❌) → `{UNIQUE_EMAIL}` (✅) |
 | **Privacy** | NO PII | `ivan.petrov` (❌) → `user_{uuid}` (✅) |
 | **Privacy** | RFC 2606 Only | `@gmail.com` (❌) → `@example.com` (✅) |
@@ -224,7 +229,7 @@ Create file `docs/test-cases/test-scenarios_{timestamp}.md` (timestamp format: `
    - **Risk Assessment:** Classify each endpoint as `[CRITICAL]`, `[HIGH]`, or `[MEDIUM]` based on domain (Money/Security/Data Integrity → CRITICAL, core business → HIGH, read-only/dictionaries → MEDIUM).
    - **Dependency Map:** Identify endpoints that call external APIs (payment gateways, email/SMS providers, 3rd-party services) — mark them for mock specification.
    - **Contradiction Check:** Cross-reference business rules for logical conflicts before generating any scenario. Key patterns to detect:
-     - IDEM cache-expiry behavior vs. uniqueness constraint: if both exist, scenario "same data after cache expires" yields `409 Conflict` (uniqueness wins), NOT a new `201 Created`.
+     - IDEM cache-expiry behavior vs. uniqueness constraint: if both exist, scenario "same data after cache expires" yields `409 Conflict` (uniqueness wins), NOT a new `201 Created`. **⛔ Generating `201` here is a guaranteed audit FAIL.**
      - State-dependent logic vs. validation rules: if a rule applies only to certain entity states (e.g., PENDING vs. ACTIVE), verify that test inputs reflect the correct state.
      - **Case-normalization + uniqueness:** if spec mandates lowercase or case-normalization for a field (e.g., RFC 5321 lowercase for email) AND has a uniqueness constraint, generate a NEG scenario: same value in a different case variant (e.g., `ALEX@example.com` vs stored `alex@example.com`) → `409 Conflict`.
      - **IDEM body mismatch:** if spec defines an idempotency window, generate IDEM scenario (4): same key + different body → `400 BAD_REQUEST` + `body.code: 'IDEMPOTENCY_KEY_MISMATCH'`. If spec is silent on this behavior → append `⚠️ SPEC AMBIGUITY` instead.
@@ -238,6 +243,7 @@ Create file `docs/test-cases/test-scenarios_{timestamp}.md` (timestamp format: `
    - Generate IDEM (repeated request) — MANDATORY for all POST/PUT.
    - **If `[CRITICAL]`** — generate expanded NEG: race conditions, double execution, partial failure.
    - **If endpoint calls external APIs** — add `Mock: {System} returns {Response}` to Expected Result; for `[CRITICAL]` add failure mock scenario.
+   - **IDEM Self-Check (MANDATORY after IDEM generation):** Count IDEM rows. Minimum: (a) first request, (b) cached repeat, (c) cache-expiry, (d) body mismatch (if spec defines it). Verify cache-expiry expects `409` (not `201`) when uniqueness applies. Missing rows → ADD before proceeding.
 3. **Scope Purge Pass (MANDATORY — execute before writing any output):**
    Active deletion step. Go through every generated row and apply the following rules in order. For each matching row: **delete it**, do not keep it.
 
@@ -249,7 +255,7 @@ Create file `docs/test-cases/test-scenarios_{timestamp}.md` (timestamp format: `
    - Row matches any remaining pattern in `EXCLUDED_SCENARIOS` → **DELETE**
 
    **After purge — append `## Scope Reduction Log` to the output file:**
-   ```
+   ```markdown
    ## Scope Reduction Log
    | Removed ID | Scenario | Reason |
    |---|---|---|

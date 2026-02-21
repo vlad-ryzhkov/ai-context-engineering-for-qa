@@ -43,7 +43,7 @@
 3. Update the Status column in the inventory
 
 **Formula:**
-```
+```text
 If lines > CRITICAL threshold → CRITICAL
 If lines > WARNING threshold → WARNING
 Otherwise → OK

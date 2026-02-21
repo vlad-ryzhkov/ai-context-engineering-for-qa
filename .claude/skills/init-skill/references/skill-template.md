@@ -13,7 +13,7 @@
 
 ## Template
 
-```markdown
+````markdown
 ---
 description: [Verb] + [what] + [context]. Max 100 characters.
 ---
@@ -57,13 +57,13 @@ description: [Verb] + [what] + [context]. Max 100 characters.
 
 - `scripts/[name]` — [purpose]
 - `references/[name]` — [purpose]
-```
+````
 
 ---
 
 ## Progressive Disclosure
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │ Level 1: YAML header                                    │
 │ → Always in the system prompt (< 100 characters)        │
@@ -80,7 +80,7 @@ description: [Verb] + [what] + [context]. Max 100 characters.
 
 ## Skill Directory Structure
 
-```
+```text
 .claude/skills/{skill-name}/
 ├── SKILL.md              # Levels 1-2: header + instructions (≤500 lines)
 ├── scripts/              # Level 3: executable code (optional)
@@ -93,7 +93,7 @@ description: [Verb] + [what] + [context]. Max 100 characters.
 
 ### Real Example: screenshot-analyze
 
-```
+```text
 .claude/skills/screenshot-analyze/
 ├── SKILL.md                    # 335 lines — core logic
 └── references/

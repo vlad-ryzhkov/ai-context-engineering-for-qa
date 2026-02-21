@@ -77,15 +77,18 @@ The rest — **delegate** to specialized agents.
 ### Quality Gates
 
 #### 1. Commit Gate (Discovery Phase)
+
 - [ ] Repo is accessible, `/repo-scout` completed
 - [ ] Specification found, `/spec-audit` has no BLOCKER
 
 #### 2. PR Gate (Execution Phase)
+
 - [ ] SDET did not loop (max 3 attempts)
 - [ ] Code compiles (`BUILD SUCCESS`)
 - [ ] Auditor reviewed in isolated context
 
 #### 3. Release Gate (Quality Phase)
+
 - [ ] All artifacts physically exist in FS
 - [ ] Auditor: `✅ PASS` or `🟡 PASS WITH WARNINGS`
 - [ ] Final report generated
@@ -186,7 +189,7 @@ Sub-agents operate in `context: fork` — pass **exhaustive context** in the pro
 
 Each skill ends with one of the following blocks:
 
-```
+```text
 ✅ SKILL COMPLETE: /{skill-name}
 ├─ Artifacts: [list]
 ├─ Compilation: [PASS/FAIL/N/A]
@@ -194,7 +197,7 @@ Each skill ends with one of the following blocks:
 └─ Coverage: [X/Y]
 ```
 
-```
+```text
 ⚠️ SKILL PARTIAL: /{skill-name}
 ├─ Artifacts: [list (✅/❌)]
 ├─ Compilation: [PARTIAL (X/Y files)]

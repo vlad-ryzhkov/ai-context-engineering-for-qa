@@ -1,6 +1,7 @@
 # API Tests: Code Examples
 
 ## Models
+
 ```kotlin
 @JsonNaming(SnakeCaseStrategy::class)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -27,6 +28,7 @@ data class ErrorResponse(
 ```
 
 ## Config
+
 ```kotlin
 object Endpoints { const val REGISTRATION = "/api/v2/registration" }
 object Msgs {
@@ -36,6 +38,7 @@ object Msgs {
 ```
 
 ## API Client (DRY — single method returning HttpResponse)
+
 ```kotlin
 object RegistrationClient {
     private val client by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
@@ -60,6 +63,7 @@ object RegistrationClient {
 ```
 
 ## Helpers (@Step methods, body extraction via response.body<T>())
+
 ```kotlin
 object RegistrationHelper {
     @Step("Register new user")
@@ -78,6 +82,7 @@ object RegistrationHelper {
 ```
 
 ## TestData (UUID-based, no mutable counters)
+
 ```kotlin
 object RegistrationTestData {
     private val faker = Faker()
@@ -95,6 +100,7 @@ object RegistrationTestData {
 ```
 
 ## Tests — POS with try/finally cleanup + HSTS check
+
 ```kotlin
 @Epic("Registration")
 @Feature("POST /api/v2/registration")
@@ -135,6 +141,7 @@ class RegistrationPositiveTests {
 ```
 
 ## Tests — NEG with @ParameterizedTest + @MethodSource
+
 ```kotlin
 @Epic("Registration")
 @Feature("POST /api/v2/registration")

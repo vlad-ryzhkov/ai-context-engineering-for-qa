@@ -68,7 +68,7 @@ before planning test coverage.
 
 Read `.claude/qa_agent.md` (if present in the working project). Output:
 
-```
+```text
 📋 TASK BRIEF
 ├─ Target: {repo-name} — backend service reconnaissance
 ├─ Scope: API surface + infrastructure + test coverage
@@ -81,7 +81,7 @@ Read `.claude/qa_agent.md` (if present in the working project). Output:
 **Goal:** Determine language, build system, directory structure.
 
 1. Check for build files:
-   ```
+   ```text
    go.mod, go.sum, Makefile
    ```
    If `go.mod` not found — output: "⚠️ WARNING: go.mod not found, possibly not a Go project. Scanning available structure."
@@ -92,14 +92,14 @@ Read `.claude/qa_agent.md` (if present in the working project). Output:
    - Key dependencies (HTTP framework, gRPC, DB driver, test libraries)
 
 3. Determine structure:
-   ```
+   ```text
    Glob: cmd/*/main.go → list of services
    Glob: internal/*/ → business modules
    Glob: pkg/*/ → public packages
    ```
 
 4. Count size:
-   ```
+   ```text
    Number of .go files (excluding *_test.go)
    Number of *_test.go files
    ```
@@ -111,7 +111,7 @@ Read `.claude/qa_agent.md` (if present in the working project). Output:
 #### 2.1 OpenAPI / Swagger
 
 Search for files:
-```
+```text
 Glob: **/swagger.json, **/swagger.yaml, **/openapi.json, **/openapi.yaml, **/*.swagger.json
 ```
 
@@ -123,7 +123,7 @@ For each found file:
 #### 2.2 Protocol Buffers (gRPC)
 
 Search for files:
-```
+```text
 Glob: **/*.proto
 ```
 
@@ -137,7 +137,7 @@ For each .proto file:
 Read `references/lang-patterns.md` for current patterns.
 
 Search Go files for route registration patterns:
-```
+```text
 Grep: r\.HandleFunc|r\.Get\(|r\.Post\(|r\.Put\(|r\.Delete\(|r\.Route\(|\.GET\(|\.POST\(|echo\.
 ```
 
@@ -150,19 +150,22 @@ For each found:
 
 #### 2.4 HTTP Client Files
 
-```
+```text
 Glob: **/*.http, **/api.http
 ```
 
 If found — note as an additional source of examples.
+
 #### 2.5 Risk Classification
+
 Flag **Sensitive Endpoints** (auth, login, token, billing, pay, wallet, users, profile, export) in the report — SDET will apply `@Severity(CRITICAL)` patterns.
+
 ### Phase 3: Test Analysis
 
 **Goal:** Assess current test coverage.
 
 1. Find all test files:
-   ```
+   ```text
    Glob: **/*_test.go
    ```
 
@@ -172,38 +175,50 @@ Flag **Sensitive Endpoints** (auth, login, token, billing, pay, wallet, users, p
    - **E2E/API:** separate test repositories (check README for links)
 
 3. Determine test frameworks:
-   ```
+   ```text
    Grep in go.mod: testify, gomock, go-sqlmock, testcontainers
    ```
 
 4. Check for external test repositories:
    - Search README for links to `indrive-api-tests-*` or `*-tests`
    - Check `.dev-platform/` for test runner configurations
+
 ### Phase 4: Infrastructure Scan
 
 **Goal:** Understand the infrastructure context.
 
 #### 4.1 CI/CD
-```
+
+```text
 Glob: .github/workflows/*.yml, .gitlab-ci.yml, Jenkinsfile
 ```
+
 #### 4.2 Docker
-```
+
+```text
 Glob: **/Dockerfile, **/docker-compose.yaml, **/docker-compose.yml
 ```
+
 #### 4.3 Database
-```
+
+```text
 Glob: migrations/**, **/migrations/**, **/liquibase/**
 ```
+
 #### 4.4 Configuration
-```
+
+```text
 Glob: config/*.yaml, config/*.yml
 ```
+
 #### 4.5 Dev-Platform
-```
+
+```text
 Glob: .dev-platform/**
 ```
+
 #### 4.6 Security & Secrets Baseline
+
 1. **Secrets:** `ls -la .env .env.*`, grep for RSA/OPENSSH keys, api_key/secret_key
 2. **Dependencies:** `govulncheck ./...`
 3. **SQL Injection:** grep for unsafe `fmt.Sprintf` in SQL statements
@@ -211,7 +226,7 @@ Glob: .dev-platform/**
 ### Phase 5: AI Setup Status
 
 Check for AI files:
-```
+```text
 - CLAUDE.md
 - .claude/qa_agent.md
 - .claude/skills/*/SKILL.md
@@ -258,7 +273,7 @@ After saving `audit/repo-scout-report_{timestamp}.md` — print `SKILL COMPLETE`
 
 Self-Review for this skill **is not generated** (read-only scanning, not content generation).
 
-```
+```text
 ✅ SKILL COMPLETE: /repo-scout
 ├─ Artifacts: audit/repo-scout-report_{timestamp}.md — **Each invocation creates a new timestamped file**
 ├─ Self-Review: N/A (scanning)

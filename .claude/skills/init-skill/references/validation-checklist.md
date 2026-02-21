@@ -27,7 +27,7 @@
 
 ## If SKILL.md > 500 Lines
 
-```
+```text
 Skill is too large ([N] lines > 500).
 
 I suggest extracting:

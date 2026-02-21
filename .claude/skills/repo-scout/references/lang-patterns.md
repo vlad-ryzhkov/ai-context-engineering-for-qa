@@ -33,7 +33,7 @@
 
 ### Grep String for Route Search
 
-```
+```text
 r\.Get\(|r\.Post\(|r\.Put\(|r\.Delete\(|r\.Route\(|r\.HandleFunc\(|\.GET\(|\.POST\(|\.PUT\(|\.DELETE\(|HandleFunc\(|pb\.Register|echo\.|fiber\.
 ```
 

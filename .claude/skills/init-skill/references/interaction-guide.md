@@ -4,7 +4,7 @@
 
 ### Analysis Skills
 
-```
+```text
 I suggest adding:
 - [ ] Severity levels (Critical/Major/Minor)?
 - [ ] Export to JSON/Markdown?
@@ -13,7 +13,7 @@ I suggest adding:
 
 ### Generation Skills
 
-```
+```text
 I suggest clarifying:
 - [ ] Output language (Kotlin/Python/TypeScript)?
 - [ ] Need dry-run mode (preview without saving)?
@@ -22,7 +22,7 @@ I suggest clarifying:
 
 ### Validation Skills
 
-```
+```text
 I suggest adding:
 - [ ] Output format (Pass/Fail, list of violations)?
 - [ ] Auto-fix for simple cases?
@@ -31,7 +31,7 @@ I suggest adding:
 
 ### Transformation Skills
 
-```
+```text
 I suggest clarifying:
 - [ ] Input format?
 - [ ] Output format?
@@ -40,7 +40,7 @@ I suggest clarifying:
 
 ## Phase 5: Editing Options
 
-```
+```text
 What's next?
 1. ✅ Looks great, save it
 2. ✏️ Change description
@@ -52,7 +52,7 @@ What's next?
 
 ## Refinement Cycle
 
-```
+```text
 REPEAT until the user selects "Save":
 
   User selects an action →
@@ -80,7 +80,7 @@ REPEAT until the user selects "Save":
 
 ## Step 7.4: Refinement Cycle After First Use
 
-```
+```text
 Recommended refinement cycle:
 1. Invoke /[skill-name] on a real task
 2. Pay attention: where does Claude "stall" or deviate from expectations?

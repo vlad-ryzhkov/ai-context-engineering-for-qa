@@ -37,9 +37,9 @@ Read `.claude/qa_agent.md` and `.claude/agents/auditor.md`.
 ## Verbosity Protocol (STRICT)
 
 **SILENT MODE ENFORCED:**
-1.  **NO CHAT TABLES:** Never output tables (Inventory, Findings, Stats) to chat. Only to the report file.
-2.  **NO LISTS:** Do not list checked files in chat.
-3.  **ONLY STATUS:** Output to chat **only** the final `SKILL COMPLETE` block and the report path.
+1. **NO CHAT TABLES:** Never output tables (Inventory, Findings, Stats) to chat. Only to the report file.
+2. **NO LISTS:** Do not list checked files in chat.
+3. **ONLY STATUS:** Output to chat **only** the final `SKILL COMPLETE` block and the report path.
 
 **Example of the only acceptable chat output:**
 > 📝 Audit Complete.
@@ -84,7 +84,7 @@ Start Score: 100.
 | <50 | Refactoring needed | Urgent documentation refactoring |
 
 **Formula MUST be shown with substituted values:**
-```
+```text
 Score = 100 - (2 × 15) - (5 × 5) - (8 × 0.5) = 100 - 30 - 25 - 4 = 41/100
 ```
 
@@ -198,28 +198,28 @@ Post-Check format — same as `/spec-audit` (see qa_agent.md § Skill Completion
 
 ### False Positive on Identical Headers
 
-```
+```text
 ❌ Flagging tables with identical headers but different data as "duplicate"
 ✅ Compare cell content, not just headers
 ```
 
 ### Phantom Findings
 
-```
+```text
 ❌ Generating findings based on assumptions without reading the file
 ✅ Every finding confirmed by file content (line, excerpt)
 ```
 
 ### Missing Context
 
-```
+```text
 ❌ "File is too long"
 ✅ "CLAUDE.md: 305 lines > CRITICAL threshold (300). Recommendation: extract section X to qa_agent.md"
 ```
 
 ### Over-flagging Intentional Repetition
 
-```
+```text
 ❌ Flagging pattern references as duplicates (references are not duplicates)
 ✅ Distinguish full copying from references and brief mentions
 ```
@@ -239,7 +239,7 @@ Post-Check format — same as `/spec-audit` (see qa_agent.md § Skill Completion
 
 After creating the report and script — output the `SKILL COMPLETE` block (format in qa_agent.md § Skill Completion Protocol).
 
-```
+```text
 ✅ SKILL COMPLETE: /doc-lint
 ├─ Artifacts: audit/doc-lint-report.md, audit/safe-fix.sh
 ├─ Compilation: N/A

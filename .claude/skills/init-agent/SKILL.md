@@ -49,7 +49,7 @@ Read `.claude/qa_agent.md`.
 
 Ask the user or determine from the project:
 
-```
+```text
 What type of testing predominates?
 
 1. API Testing — REST/GraphQL, contract testing
@@ -65,7 +65,7 @@ What type of testing predominates?
 
 **Profile is ambiguous** (user answered vaguely) → Clarify with one question:
 
-```
+```text
 Name 1-2 task types that take > 70% of the team's time:
 REST API tests / UI automation / Load testing / Pentesting
 ```
@@ -138,7 +138,8 @@ From `references/qa-profiles.md` select relevant anti-patterns:
 ```
 
 ### Naming Convention
-```
+
+```text
 `[actor] can [action] when [condition]`
 `[actor] cannot [action] when [condition]`
 ```
@@ -146,9 +147,11 @@ From `references/qa-profiles.md` select relevant anti-patterns:
 ## Data Management
 
 ### Unique Data Generation
+
 [Example for the chosen language]
 
 ### Cleanup Pattern
+
 [try-finally example for the chosen language]
 
 ## Cross-Skill Protocol
@@ -158,7 +161,7 @@ From `references/qa-profiles.md` select relevant anti-patterns:
 3. `/api-tests` → automate
 
 **Do not jump straight to code!**
-```
+```text
 
 ## Output
 
@@ -183,7 +186,7 @@ AI: Generating qa_agent.md for universal QA...
 [Shows file with principles from all categories]
 
 Save to .claude/qa_agent.md? (y/n)
-```
+```text
 
 ## Self-Check (before saving)
 

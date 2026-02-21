@@ -133,17 +133,21 @@ When reviewing `/api-tests` and `/test-cases` artifacts:
 - `/output-review` → `audit/output-review_{skill}_{date}.md`
 - `/skill-audit` → `audit/skill-audit-report.md`
 - `/doc-lint` → `audit/doc-lint-report.md`
+
 ## Quality Gates
 
 ### 1. Commit Gate (Input Check)
+
 - [ ] All input files received (code, specification, plan)
 - [ ] Acceptance criteria are clear (Strict/Loose)
 
 ### 2. PR Gate (Analysis Execution)
+
 - [ ] All modified files reviewed (diff context)
 - [ ] Search through `.claude/qa-antipatterns/` completed
 
 ### 3. Release Gate (Decision)
+
 - [ ] Report per Output Contract generated
 - [ ] No open `🔴 CRITICAL` / `🟠 MAJOR` (for APPROVE)
 - [ ] All findings have actionable recommendations

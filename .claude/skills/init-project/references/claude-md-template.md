@@ -6,7 +6,7 @@
 
 ## Template
 
-```markdown
+````markdown
 # [Project Name]
 
 ## Context
@@ -62,12 +62,13 @@ For tasks > 3 files: Analysis → Plan → Execute → Verify
 ## Key Values
 
 ### [Subsection by component]
+
 - `[key]` — [what it does, why it matters]
 
 <!-- SECTION: CI/CD Flow — if .github/workflows/, .gitlab-ci.yml, Jenkinsfile found -->
 ## CI/CD Flow
 
-```
+```text
 [pipeline diagram: step → step → step]
 ```
 
@@ -81,14 +82,15 @@ For tasks > 3 files: Analysis → Plan → Execute → Verify
 | `/api-tests` | API automated tests |
 
 **Workflow:** `/spec-audit` → `/test-cases` → `/api-tests`
-```
+````
 
 ---
 
 ## Tech Stack by Languages
 
 ### Kotlin
-```
+
+```text
 | Component | Technology | BANNED |
 |-----------|------------|--------|
 | HTTP | common-test-libs ApiClient + ApiRequestBaseJson<T> | Custom HTTP wrappers |
@@ -100,7 +102,8 @@ For tasks > 3 files: Analysis → Plan → Execute → Verify
 ```
 
 ### Python
-```
+
+```text
 | Component | Technology | BANNED |
 |-----------|------------|--------|
 | HTTP | httpx / requests | urllib |
@@ -110,7 +113,8 @@ For tasks > 3 files: Analysis → Plan → Execute → Verify
 ```
 
 ### TypeScript
-```
+
+```text
 | Component | Technology | BANNED |
 |-----------|------------|--------|
 | HTTP | axios / fetch | request |
@@ -120,7 +124,8 @@ For tasks > 3 files: Analysis → Plan → Execute → Verify
 ```
 
 ### Infrastructure (Helm / Kubernetes / Terraform)
-```
+
+```text
 | Component | Technology | BANNED |
 |-----------|------------|--------|
 | Package Manager | Helm 3 | Kustomize, raw kubectl apply |
@@ -135,7 +140,7 @@ For tasks > 3 files: Analysis → Plan → Execute → Verify
 
 ## File Location
 
-```
+```text
 project-root/
 └── CLAUDE.md    # In the project root
 ```

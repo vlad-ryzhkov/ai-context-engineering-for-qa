@@ -64,7 +64,7 @@ Read `.claude/qa_agent.md` and `.claude/agents/auditor.md`.
 4. Validation: Glob `.claude/skills/{skill-name}/SKILL.md` — file MUST exist
 
 **If skill not found → STOP:**
-```
+```text
 ❌ Skill /{skill-name} not found in .claude/skills/
 Available: [list from Glob]
 ```
@@ -102,7 +102,7 @@ Available: [list from Glob]
 **For each found file — verify existence via Glob.**
 
 **If no artifacts found:**
-```
+```text
 ⚠️ No artifacts detected. Evaluation will be performed based on chat context.
 ```
 
@@ -207,7 +207,7 @@ For each item from Phase 2:
 
 #### Scorecard
 
-```
+```text
 Score = PASS / (PASS + FAIL) × 100
 
 Formula: {N_pass} + {N_partial}×0.5 / ({N_pass} + {N_partial}×0.5 + {N_fail}) × 100
@@ -215,7 +215,7 @@ SKIP not counted.
 ```
 
 **Example:**
-```
+```text
 Scorecard: 12 PASS + 1 PARTIAL×0.5 / (12 + 0.5 + 2) × 100 = 86%
 ```
 
@@ -259,6 +259,7 @@ Logic: each FAIL/PARTIAL is a symptom of a missing or unclear rule in the skill.
 - Recommendation MUST be specific: what exactly to add/change in SKILL.md and in which section
 - Formulate as a rule/prohibition, not a suggestion
 - If >5 FAIL found — group by theme, do not list each one separately
+```text
 ```
 
 ---

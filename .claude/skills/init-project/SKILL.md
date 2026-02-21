@@ -48,7 +48,7 @@ Read `.claude/qa_agent.md`.
 
 Find and analyze:
 
-```
+```text
 1. Build files:
    - build.gradle.kts / build.gradle → Kotlin/Java + dependencies
    - pom.xml → Maven + dependencies
@@ -75,7 +75,7 @@ Find and analyze:
 
 **Build files not found** → Ask the user:
 
-```
+```text
 Could not determine tech stack automatically. Specify manually:
 - Language/runtime: (Kotlin / Java / Python / JS / Go / other)
 - HTTP client for tests:
@@ -145,7 +145,7 @@ Save the result to `CLAUDE.md` in the project root.
 
 ## Example Dialog
 
-```
+```text
 User: /init-project
 
 AI: Scanning the project...

@@ -13,7 +13,7 @@ Runs **MANDATORY** at the end of every skill, BEFORE the `SKILL COMPLETE` block.
 
 ## Output Format (mandatory always)
 
-```
+```text
 🌱 GARDENER ANALYSIS
 | # | Observation | Proposed rule | Section | Target file |
 |---|-------------|---------------|---------|-------------|
@@ -21,7 +21,7 @@ Runs **MANDATORY** at the end of every skill, BEFORE the `SKILL COMPLETE` block.
 ```
 
 If no proposals:
-```
+```text
 🌱 GARDENER: no proposals for this run
 ```
 

@@ -3,6 +3,7 @@
 ## Required Fields
 
 ### name
+
 - **Format:** kebab-case
 - **Constraints:**
   - Lowercase letters, digits, hyphens only
@@ -14,6 +15,7 @@
   - ❌ `TestPlan`, `api_tests`, `claude-helper`
 
 ### description
+
 - **Format:** `[What it does]. [When to use]. [When NOT to use]`
 - **Constraints:**
   - Maximum 1024 characters
@@ -31,6 +33,7 @@
 ## Optional Fields
 
 ### allowed-tools
+
 - **Format:** Space-separated string
 - **Examples:**
   - `"Read Write Edit Glob Grep"`
@@ -38,10 +41,12 @@
 - **Wildcards:** Bash commands can be restricted by pattern: `Bash(ls*)` allows only `ls`
 
 ### agent
+
 - **Format:** Path to agent file relative to `.claude/`
 - **Example:** `agents/sdet.md`, `agents/auditor.md`
 
 ### context
+
 - **Options:**
   - `fork` — isolated context (Process Isolation)
   - `inherit` — inherited context (default)
@@ -49,6 +54,7 @@
 ## Ready-made YAML Examples
 
 ### Analysis Skill
+
 ```yaml
 ---
 name: spec-audit
@@ -60,6 +66,7 @@ context: fork
 ```
 
 ### Generation Skill
+
 ```yaml
 ---
 name: api-tests
@@ -71,6 +78,7 @@ context: fork
 ```
 
 ### Validation Skill
+
 ```yaml
 ---
 name: lint-tests

@@ -30,7 +30,7 @@ Look for the screenshot path by priority — stop at the first match:
 
 ## Scope (What We Check)
 
-```
+```text
 1. SEMANTICS (Translation Quality) ← TOP PRIORITY
    - Semantic errors (false friends, wrong context)
    - Offensive/dangerous content
@@ -95,7 +95,8 @@ Currency is determined by **region**, not language. inDrive Brazil → R$ (BRL) 
 ## Region Detection
 
 ### Filename Format
-```
+
+```text
 {locale}_{REGION}.png
 
 Examples:
@@ -119,14 +120,17 @@ Examples:
 ## Analysis Algorithm (4-Step)
 
 ### Step 1: Reference Check
+
 1. Find EN screenshot — this is the Base Layout
 2. Memorize the structure: element count, positions, sizes
 
 ### Step 2: Layout Stress Test
+
 1. Find languages with maximum length: DE, RU, ES, PT-BR
 2. Check each for: Overflow, Truncation, Line Break Issues
 
 ### Step 3: Bi-Directional Check (RTL)
+
 For AR/HE/FA/UR:
 1. Margins/Paddings mirroring
 2. Navigation arrow direction
@@ -134,6 +138,7 @@ For AR/HE/FA/UR:
 4. Cars are NOT mirrored
 
 ### Step 4: Data Format Validation (CLDR)
+
 1. Numbers: thousands and decimal separators
 2. Currency: symbol, position, spacing
 3. Time: 12h vs 24h
@@ -178,19 +183,23 @@ Full check tables (semantic error types, currencies, time, RTL) — in `referenc
 ## Limits (Safety Limits)
 
 ### Max Issues: 10
+
 Limit the report to **TOP-10 most critical issues**.
 Priority: CRITICAL → ERROR → WARNING.
 
 ### Grouping
+
 Same error across multiple screenshots = **1 entry** listing all files.
 
 ### Translation to Russian
+
 For non-Russian texts **add a translation**:
-```
+```text
 ✅ "إيجاد الضحايا" (Найти жертв) — dangerous translation
 ```
 
 ### Currency Focus
+
 **MUST** compare currency format:
 - Symbol (R$ vs BRL)
 - Position (R$13 vs 13R$)
@@ -221,7 +230,7 @@ For non-Russian texts **add a translation**:
 ## Output Format
 
 Output to chat only:
-```
+```text
 📊 L10n: {N} issues (CRITICAL: X, ERROR: Y) → analysis-report.html
 ```
 

@@ -39,8 +39,9 @@ Scenario source — `audit/test-scenarios.md` (result of /test-cases) or specifi
 **Forbidden:** Assumptions from "previous agent context", inventing endpoint contracts.
 
 ## Protocol
+
 1. **Stack:** HTTP client = Ktor `HttpClient(CIO)` initialized in the `requests/` layer (not in tests) via `by lazy(LazyThreadSafetyMode.SYNCHRONIZED)`. JUnit5 + `@ParameterizedTest` (`junit-jupiter-params`), Awaitility, Ktor Logging (`LogLevel.ALL`), JSON Schema Validator, Faker (data generation in TestData).
-2. **BANNED:** `Thread.sleep`, `delay`, `runBlocking` (use `runTest`), `HttpClient(` in `*Tests.kt` (inline HTTP in tests), manual `@AllureId`, `shouldBe` (use `assertEquals`), `LocalDateTime.now()` in strict assertions. **Zero-comment policy:** `//` and `/* */` in generated code are FORBIDDEN.
+2. **BANNED:** `Thread.sleep`, `delay`, `runBlocking` (use `runTest`), `HttpClient(` in `*Tests.kt` (inline HTTP in tests), manual `@AllureId`, `shouldBe` (use `assertEquals`), `assert(` (Kotlin builtin — use `assertEquals`/`assertTrue` from `org.junit.jupiter.api.Assertions`), `LocalDateTime.now()` in strict assertions. **Zero-comment policy:** `//` and `/* */` in generated code are FORBIDDEN.
 2a. **Coroutine Tests:** Preferred: `fun test(): Unit = runTest { }` from `kotlinx-coroutines-test`. If `runBlocking` is unavoidable — explicit return type required: `fun test(): Unit = runBlocking { }`. FORBIDDEN: `delay()` as timing substitute — use Awaitility.
 2b. **Test Lifecycle:** `@BeforeEach`/`@AfterEach` for setup/teardown. `lateinit var` for resources requiring cleanup. **FORBIDDEN:** `@TestInstance(PER_CLASS)` with field initialization — JUnit skips class init on constructor failure.
 2c. **DRY API Clients:** FORBIDDEN: duplicating client method bodies to return different response types (e.g., `registerUser(): RegisterResponse` + `registerUserExpectError(): ErrorResponse` with identical request construction). Generate a single method returning `HttpResponse` or a generic `suspend inline fun <reified T> request(...)` and let the test parse the body as needed. (ref: `api/dry-api-client.md`)
@@ -48,6 +49,8 @@ Scenario source — `audit/test-scenarios.md` (result of /test-cases) or specifi
 2e. **Ktor Body Extraction Rule:** FORBIDDEN: `response.toString()` to obtain response body — in Ktor this returns object metadata, not the body. Use `response.body<T>()` (typed, via `ContentNegotiation` plugin) or `response.bodyAsText()` if raw string is required. Manual `Json.decodeFromString(response.toString())` is a guaranteed runtime crash. (ref: `api/ktor-body-extraction.md`)
 2f. **Single Serialization Framework Rule:** Use exactly one JSON framework across the entire generation — either Jackson OR kotlinx.serialization. FORBIDDEN: mixing Jackson annotations (`@JsonProperty`, `@JsonNaming`, `@JsonIgnoreProperties`) with `kotlinx.serialization` parsing (`Json.decodeFromString`, `@Serializable`). If using Ktor with `ContentNegotiation(jackson())`, deserialize via `response.body<T>()` — never parse raw strings manually. If the stack is `jackson`, all DTOs use `@JsonNaming`/`@JsonProperty`. If the stack is `kotlinx.serialization`, all DTOs use `@Serializable` and no Jackson annotations appear anywhere.
 2g. **Time-Dependent Scenarios (TTL/Cache):** FORBIDDEN: Using `Thread.sleep` or `delay()` to simulate time passing for cache expiration, idempotency TTLs, or rate limits. Do not blindly execute sequential requests expecting time to advance instantly. For short asynchronous state changes, use Awaitility. For long temporal conditions (e.g., 5-minute cache expiration), if the specification does NOT explicitly provide a testability hook (e.g., `X-Test-Advance-Time` header or cache invalidation endpoint), you MUST generate the complete test logic and annotate the test method with `@Disabled("Time-dependent scenario: {Wait Time}. Requires testability hook (time-travel/cache-clear) or manual execution.")`.
+2h. **Timestamp Response Validation:** If the specification defines a time-based response field (e.g., `expires_at = request_time + N minutes`, JWT `exp` claim), the test MUST validate it with a relative drift check: `assertTrue(abs(actual - expected) < driftToleranceSeconds, "timestamp drift")`. Using `Instant.now()` + offset is acceptable; using `isNotBlank()` or `> 0` alone is INSUFFICIENT. FORBIDDEN: `LocalDateTime.now()` in assertions.
+2i. **WireMock Integration for External Services:** When a test configures WireMock stubs for external services (SMS gateway, payment provider, etc.), the test MUST connect the mock to the application under test. At minimum: set a system property or environment variable (e.g., `System.setProperty("SMS_GATEWAY_URL", "http://localhost:${wireMockServer.port()}")`) in `@BeforeEach` and clear it in `@AfterEach`. A disconnected WireMock server (started but not referenced by the app) is a SILENT TEST BUG — the test passes/fails based on real service state, not mock behavior.
 3. **Security Headers Rule:** Every positive test (POST/PUT/DELETE with 2xx) MUST verify `Content-Type`, `X-Content-Type-Options`, `Strict-Transport-Security` via `assertEquals` on `response.headers`. (ref: `api/missing-security-headers.md`)
 4. **Structure:**
    - `requests/`: DTOs + Request/Response objects. **ALL** data classes mapped to snake_case JSON (request AND response) MUST have `@JsonNaming(SnakeCaseStrategy::class)` + `@JsonIgnoreProperties(ignoreUnknown = true)`. Omitting `@JsonNaming` on response DTOs causes silent null fields.
@@ -72,7 +75,7 @@ Scenario source — `audit/test-scenarios.md` (result of /test-cases) or specifi
 ```
 
 **If the file is missing:**
-```
+```text
 ⚠️ WARNING: audit/test-scenarios.md not found. Continuing without pre-built scenarios.
 ```
 
@@ -83,7 +86,7 @@ grep -q "^|" audit/test-scenarios.md || echo "WARNING"
 ```
 
 **If no table rows found:**
-```
+```text
 ⚠️ WARNING: test-scenarios.md exists but contains no table rows. Continuing with empty base.
 ```
 
@@ -100,7 +103,7 @@ grep -q "^|" audit/test-scenarios.md || echo "WARNING"
 4. Generation order: by priority from `audit/test-plan.md` (if available) or row by row
 
 **If User requests an endpoint without scenarios in the table:**
-```
+```text
 ⚠️ WARNING: No scenarios for {endpoint} in audit/test-scenarios.md. Continuing without scenarios for this endpoint.
 ```
 
@@ -123,10 +126,13 @@ grep -q "^|" audit/test-scenarios.md || echo "WARNING"
 **Mandatory Checks:**
 ```bash
 grep -r "Thread.sleep\|delay(\|runBlocking\|shouldBe\|//\|@AllureId(\|LocalDateTime.now()\|response\.toString()\|catch.*Exception\|kotlinx\.serialization\|Json\.decodeFromString" src/test/kotlin/
+grep -rn "^\s*assert(" src/test/kotlin/ | grep -v "assertEquals\|assertTrue\|assertNotNull\|assertNotEquals\|assertThrows\|assertFalse"
 grep -rl "HttpClient(" src/test/kotlin/ | grep "Tests\.kt$"
 grep -r "Map<String, Any>" src/test/kotlin/
 grep -rL "Strict-Transport-Security" src/test/kotlin/*/tests/*Tests.kt
 ```
+⛔ Any match on lines 1-2 → FAIL (BANNED pattern detected).
+The `assert(` check (line 2) catches Kotlin builtin `assert()` while excluding JUnit `assertEquals`/`assertTrue`/etc.
 Any POS-test file without HSTS check → FAIL (Protocol 3).
 ```bash
 grep -rL "AfterEach\|finally" src/test/kotlin/*/tests/*Tests.kt
@@ -151,6 +157,7 @@ If `test-scenarios.md` contains `Cleanup:` for POS/L10N scenarios, every test fi
 - **Anti-Pattern "The Liar":** Every `@Test` MUST contain at least one `assertEquals` or `assertTrue` evaluating the response body or side-effects.
 
 ## Workflow
+
 0. **Input Check (MANDATORY):**
    - Perform 2-phase test-scenarios validation (see Input Validation above)
    - If any phase FAILs → output ⚠️ WARNING and continue with available data
@@ -176,6 +183,11 @@ If `test-scenarios.md` contains `Cleanup:` for POS/L10N scenarios, every test fi
    - **Phase 3:** Multi-step (Helpers, State transitions).
 3. **Translation & Grouping:** Apply mapping from `references/api-patterns.md#translation-rules`. NEG/BVA grouping — from `api-patterns.md#grouping-strategy`.
 4. **Compile:** `./gradlew compileTestKotlin && ./gradlew ktlintCheck`. If > 1 failed compilations → ESCALATION (see below)
+4a. **Smoke Run:** `./gradlew test 2>&1 | tail -80`. Classify failures:
+   - `ConnectException`/`Connection refused` → ⚠️ Infrastructure. API server not running. NOT a code bug — do NOT fix. Report: `"Smoke: API unreachable on {BASE_URL}. Tests require running service or mock."`
+   - `JsonMappingException`/`MismatchedInputException`/`Unrecognized field` → 🐛 DTO bug in generated code. Fix `@JsonNaming`/field names/defaults → re-compile → re-run (max 2 fix iterations).
+   - `NoSuchMethodError`/`ClassNotFoundException` → Dependency mismatch → ESCALATION.
+   - All failures = Infrastructure-only → **Smoke Run: PASS** (infra-blocked).
 5. **Verify:** Grep BANNED patterns (see Post-Check above). Fix violations → re-compile.
 
 ### Escalation (3-Strike Rule)
@@ -185,7 +197,7 @@ If `test-scenarios.md` contains `Cleanup:` for POS/L10N scenarios, every test fi
 1. STOP generation for this item. Do NOT attempt workarounds (`Map<String, Any>`, reflection, custom HTTP client).
 2. Output the following block:
 
-```
+```text
 🚨 ESCALATION: Item #{N} ({METHOD} {endpoint}) UNIMPLEMENTABLE
 
 Problem: {specific description of technical blocker}
@@ -209,11 +221,13 @@ Status of remaining items:
 3. EXIT with `⚠️ SKILL PARTIAL` (see Completion Contract below).
 
 ## Review Mode (`review` arg)
+
 1. Read `src/test/**/*.kt`.
 2. Check against **Protocol** + `references/api-patterns.md#architecture` + `qa-antipatterns/_index.md`.
 3. Report: `⛔ Violation (ref: antipattern)` / `✅ Pass`. DO NOT EDIT.
 
 ## References
+
 - Architecture & patterns: `references/api-patterns.md` (Architecture, Translation Rules, Coverage Matrix, Grouping)
 - Code examples: `references/examples.md`
 - Anti-patterns: `.claude/qa-antipatterns/_index.md` → `platform/`, `api/`, `common/`, `security/`
@@ -222,7 +236,7 @@ Status of remaining items:
 
 ### Success (Full Coverage)
 
-```
+```text
 ✅ SKILL COMPLETE: /api-tests
 ├─ Artifacts: src/main/kotlin/**/ (requests, helpers, config) + src/test/kotlin/autotests/**/ (tests)
 ├─ Compilation: PASS
@@ -230,12 +244,13 @@ Status of remaining items:
 ├─ Context: audit/test-plan.md (P0: X endpoints, P1: Y endpoints) | "none"
 ├─ Coverage: N/M scenarios implemented (NN%)
 ├─ Traceability: @Link(scenario ID) in N/N tests (100% mandatory)
-└─ BANNED check: PASS
+├─ BANNED check: PASS
+└─ Smoke Run: PASS | WARN (API unreachable on {host:port}) | FAIL (N DTO bugs fixed)
 ```
 
 ### Partial (With Blockers)
 
-```
+```text
 ⚠️ SKILL PARTIAL: /api-tests
 ├─ Artifacts: [{file1}.kt (✅), {file2}.kt (❌)]
 ├─ Compilation: PARTIAL (X/Y files)

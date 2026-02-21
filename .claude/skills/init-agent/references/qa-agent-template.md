@@ -69,20 +69,24 @@ try { ... } finally { cleanup() }
 ## Principles by QA Profile
 
 ### API Testing
+
 - **Contract First** — test verifies the contract, not the implementation
 - **Boundary Obsession** — boundary values matter more than happy path
 - **Negative > Positive** — more negative scenarios than positive
 
 ### UI/E2E Testing
+
 - **User Perspective** — think like a user
 - **Stable Selectors** — data-testid is better than CSS classes
 - **Flaky = Bug** — an unstable test is a test bug
 
 ### Performance Testing
+
 - **Baseline First** — measure first, then optimize
 - **Percentiles > Average** — p95/p99 matter more than average
 
 ### Security Testing
+
 - **OWASP Top 10** — minimum checklist
 - **AuthZ ≠ AuthN** — authorization and authentication are different things
 - **Trust Nothing** — all input data is potentially malicious
@@ -91,7 +95,7 @@ try { ... } finally { cleanup() }
 
 ## File Location
 
-```
+```text
 .claude/
 └── qa_agent.md    # In the .claude directory
 ```

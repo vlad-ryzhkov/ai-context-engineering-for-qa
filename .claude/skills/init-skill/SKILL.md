@@ -65,13 +65,13 @@ Use **imperative style** in skill instructions:
 
 ---
 
-# INTERACTIVE WORKFLOW
+## INTERACTIVE WORKFLOW
 
 ## Phase 1: Define Purpose
 
 ### Step 1.1: Ask for the purpose
 
-```
+```text
 What should the new skill do?
 
 Examples for QA:
@@ -91,7 +91,7 @@ Full table with examples: `references/skill-template.md` → section "Skill Cate
 
 Ask the user for **2-3 specific examples**:
 
-```
+```text
 Before designing the skill, I need specific examples:
 
 1. **Trigger phrases** — what will the user say to invoke the skill?
@@ -109,7 +109,7 @@ Before designing the skill, I need specific examples:
 
 ### ✅ CHECKPOINT 1: Purpose Confirmation
 
-```
+```text
 Understood the task as:
 - Purpose: [what it does]
 - Category: [Analysis/Generation/Validation/Transformation]
@@ -138,7 +138,7 @@ Full list of questions for each category — in `references/interaction-guide.md
 
 ### Step 2.2: Define file structure
 
-```
+```text
 .claude/skills/{skill-name}/
 ├── SKILL.md              # Mandatory (case-sensitive!)
 ├── scripts/              # Executable — automation and utilities
@@ -156,7 +156,7 @@ Full list of questions for each category — in `references/interaction-guide.md
 
 ### ✅ CHECKPOINT 2: Structure Confirmation
 
-```
+```text
 Skill structure:
 - Main file: SKILL.md
 - Scripts: [yes/no] — [purpose]
@@ -187,7 +187,7 @@ Read `references/yaml-reference.md` for the full reference on fields, constraint
 
 ### ✅ CHECKPOINT 3: YAML Frontmatter Confirmation
 
-```
+```text
 YAML Frontmatter (will be visible in the system prompt):
 
 ---
@@ -243,7 +243,7 @@ The refinement cycle is described in `references/interaction-guide.md` → "Refi
 
 ### ✅ CHECKPOINT 6: Final Confirmation
 
-```
+```text
 Ready to save:
 
 .claude/skills/[skill-name]/

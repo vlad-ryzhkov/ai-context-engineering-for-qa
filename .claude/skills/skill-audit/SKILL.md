@@ -190,7 +190,7 @@ For skills that generate file artifacts (e.g., `/spec-audit`, `/test-cases`, `/a
 Write the full report to `audit/skill-audit-report.md` (findings table + Summary).
 
 Output to chat only:
-```
+```text
 📊 Skill Audit: {N} CRITICAL, {N} WARNING, {N} INFO → audit/skill-audit-report.md
 ```
 

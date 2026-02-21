@@ -144,33 +144,39 @@
 These items MUST remain exactly as-is in the translation:
 
 ### File and Directory Names
+
 - `SKILL.md`, `CLAUDE.md`, `README.md`, `qa_agent.md`
 - `.claude/`, `.claude/skills/`, `.claude/agents/`, `.claude/protocols/`
 - `references/`, `scripts/`, `assets/`, `audit/`
 - `copilot-instructions.md`, `AGENTS.md`
 
 ### Skill Commands
+
 - `/spec-audit`, `/test-cases`, `/api-tests`, `/repo-scout`
 - `/screenshot-analyze`, `/doc-lint`, `/skill-audit`
 - `/init-skill`, `/init-agent`, `/init-project`
 - `/update-ai-setup`, `/qa-translate`
 
 ### Tool Names
+
 - `Read`, `Write`, `Edit`, `Glob`, `Grep`, `Bash`
 - `AskUserQuestion`, `Task`
 
 ### Frameworks and Libraries
+
 - JUnit 5, Allure, Awaitility, Hamcrest, Jackson
 - ktlint, Gradle, Kotlin
 - OWASP, ISTQB, BABOK
 
 ### Acronyms and Technical Terms
+
 - SSOT, PII, IDOR, NFR, DNT
 - API, REST, HTTP, JSON, YAML, XML
 - CI/CD, PR, CLI, IDE
 - kebab-case, snake_case, SNAKE_CASE
 
 ### Brand Names
+
 - Claude Code, Cursor, VS Code, IntelliJ IDEA
 - GitHub Copilot, OpenCode, Codex
 - Anthropic

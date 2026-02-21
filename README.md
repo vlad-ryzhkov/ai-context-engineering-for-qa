@@ -4,7 +4,7 @@
 
 A ready-to-use collection of AI prompts, agents, and anti-patterns for several QA workflows including automation API tests.
 
-Structured prompts give more consistent results than ad-hoc chat — each skill in this repo is a tested `.md` file that tells the AI exactly what to do, 
+Structured prompts give more consistent results than ad-hoc chat — each skill in this repo is a tested `.md` file that tells the AI exactly what to do,
 what to check, and how to format the output. Originally built for a workshop, works as a standalone toolkit (should be adapted for your specific needs).
 
 > **⚠️ Disclaimer:** Always review AI-generated results. Even with well-crafted prompts and agents, outputs must be validated by a human before being merged or executed.

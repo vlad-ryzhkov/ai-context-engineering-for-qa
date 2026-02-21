@@ -84,7 +84,7 @@ fun serverErrorReturnsGenericMessage() {
 
 ## Grep signatures for automatic detection
 
-```
+```bash
 # In error response assertions — find tests that do NOT check for leaks
 pattern: "assertEquals(500"  # → verify that body assertion is nearby
 pattern: "response.error"    # → verify that leaks are not codified as expected behavior

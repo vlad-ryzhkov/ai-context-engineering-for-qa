@@ -55,7 +55,7 @@ None required. The Skill runs automatically based on the current file state.
 
 Read `docs/ai-setup.md`. If the file does not exist:
 
-```
+```text
 ⚠️ WARNING: docs/ai-setup.md not found — creating a new file.
 ```
 
@@ -67,7 +67,7 @@ Record current data: file list, line counts, number of patterns, Skills, Anti-pa
 
 Run Glob across all AI files:
 
-```
+```text
 Required:
   - CLAUDE.md
   - .claude/qa_agent.md
@@ -104,7 +104,7 @@ Compare scan results with the current Registry:
 
 If no delta — notify the user and finish:
 
-```
+```text
 ✅ Registry is up to date. No changes detected.
 ```
 
@@ -129,7 +129,7 @@ Before saving:
 1. Verify Quality Gates (see below)
 2. Show the user the list of changes:
 
-```
+```text
 📊 DELTA REPORT
 ├─ Added: [N files/patterns]
 ├─ Removed: [N files/patterns]
@@ -142,7 +142,7 @@ Before saving:
 
 ## Output Format
 
-```
+```text
 ✅ SKILL COMPLETE: /update-ai-setup
 ├─ Artifacts: docs/ai-setup.md
 ├─ Delta: [+N added, -N removed, ~N updated | "no changes"]

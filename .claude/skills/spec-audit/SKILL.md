@@ -44,63 +44,70 @@ Read `.claude/qa_agent.md`.
 You MUST perform the analysis in 4 stages. Do not mix conclusions.
 
 ### 1. Static Analysis (Deep Cross-Check)
-* **Key-to-Key Mapping (List Method):** You MUST physically write out two sorted lists:
-    * **List A:** all keys from the JSON example (line by line, in alphabetical order).
-    * **List B:** all fields from the Parameters Table (line by line, in alphabetical order).
+
+- **Key-to-Key Mapping (List Method):** You MUST physically write out two sorted lists:
+  - **List A:** all keys from the JSON example (line by line, in alphabetical order).
+  - **List B:** all fields from the Parameters Table (line by line, in alphabetical order).
     Compute the delta character-by-character: `A \ B` (in JSON but not in table) and `B \ A` (in table but not in JSON). Any non-empty delta set — **Defect 9**. Skipping list construction is not allowed — an incomplete list invalidates the analysis.
-* **Constraint Verification:** Take each value from the Example Payload and verify it against ALL table constraints (min/max length, type, format, regex). If the table says `max: 100` and the string in the example is longer — **Defect 9**. If the text says "min. 8 characters" and the example has 7 — **Defect 9**.
-* **Boundary Arithmetic Test:** For each field with a constraint (min/max length, min/max value) you MUST write out the equation and compute the result:
-    * `len("value_from_example") = N; min=X, max=Y → PASS` (if X ≤ N ≤ Y)
-    * `len("value_from_example") = N; min=X, max=Y → FAIL` (if N < X or N > Y) → **Defect 9**
-    * Example: `len("Pass1234") = 8; min=8, max=64 → PASS`
+- **Constraint Verification:** Take each value from the Example Payload and verify it against ALL table constraints (min/max length, type, format, regex). If the table says `max: 100` and the string in the example is longer — **Defect 9**. If the text says "min. 8 characters" and the example has 7 — **Defect 9**.
+- **Boundary Arithmetic Test:** For each field with a constraint (min/max length, min/max value) you MUST write out the equation and compute the result:
+  - `len("value_from_example") = N; min=X, max=Y → PASS` (if X ≤ N ≤ Y)
+  - `len("value_from_example") = N; min=X, max=Y → FAIL` (if N < X or N > Y) → **Defect 9**
+  - Example: `len("Pass1234") = 8; min=8, max=64 → PASS`
     Silence is not allowed: every field with a numeric constraint MUST have a line with the test result.
-* **Null Matrix:** You MUST create a table for all request fields:
+- **Null Matrix:** You MUST create a table for all request fields:
     | Field | required | HTTP response when field is missing described? | Status |
     |---|---|---|---|
     | `email` | true | 400 + `{"error": "email required"}` | PASS |
     | `phone` | true | not described | FAIL → Defect 8 |
+
     **Presumption of required:** If the `required` column is absent from the table — treat all fields as required by default. Log the absence of the column itself as **Defect 4-5 (Minor)** — "Adding a `required` column is recommended to eliminate Ambiguity". Do not escalate to Defect 8 if the behavior when a field is missing is implicitly covered by a generic error code (e.g. `400 VALIDATION_ERROR`). Assign Defect 8 only if the behavior when a field is missing is **not described at all** — neither explicitly nor via a generic handler.
-* **Regex Literal Test:** If the specification defines a regex pattern for a field — you MUST apply it literally to the value from the Example Payload. Record the result explicitly:
-    * `regex="..."` applied to `"value"` → MATCH → PASS
-    * `regex="..."` applied to `"value"` → NO-MATCH → analyze the cause (see below)
+- **Regex Literal Test:** If the specification defines a regex pattern for a field — you MUST apply it literally to the value from the Example Payload. Record the result explicitly:
+  - `regex="..."` applied to `"value"` → MATCH → PASS
+  - `regex="..."` applied to `"value"` → NO-MATCH → analyze the cause (see below)
     If a regex is specified but the example is not tested — the analysis is incomplete.
     **Rule for interpreting example-to-rule mismatch:** If the example violates a rule — first check whether the rule itself contains Ambiguity. Variants:
     1. Rule is unambiguous, example is clearly wrong → **Defect 9** "Example violates Requirement".
     2. Rule is ambiguous (e.g. "Unicode letters only" vs. space as PII separator in the same document) → this is a Contradiction in the **specification**, not an example error. Classify as **Defect 10 (Contradiction)** if the rules are mutually exclusive, or **Defect 7-8** if the Ambiguity can be resolved with clarification. The Recommendation should propose fixing the rule (or regex), not the example.
-* **Type Checking:** Are the data types appropriate? (e.g. `money` as float — this is a risk, decimal/int is needed).
-* **Verb-Data Lineage (Data Tracing):** Find ALL system actions (verbs) in the text: sending SMS, Email, Push, writing to DB, calling an external service. You MUST compile a table:
+- **Type Checking:** Are the data types appropriate? (e.g. `money` as float — this is a risk, decimal/int is needed).
+- **Verb-Data Lineage (Data Tracing):** Find ALL system actions (verbs) in the text: sending SMS, Email, Push, writing to DB, calling an external service. You MUST compile a table:
     | Action | Required field | Present in Request Body? |
     |---|---|---|
     | Send SMS | `phone` | FOUND / MISSING |
+
     If status is MISSING — **Blocker (Data Gap, Priority 10)**. Anti-Hallucination Rule: do not add a field to the table "from memory".
 
 ### 2. Mental Sandbox (Simulation and Fuzzing)
-* **Rule Enforcement (Dry Run):** Take the Example Payload and "run" it through each Business rule literally.
-* **PII Dry Run (mandatory when password security rules are present):** If a rule states "password MUST NOT contain personal data" — perform a mechanical check:
+
+- **Rule Enforcement (Dry Run):** Take the Example Payload and "run" it through each Business rule literally.
+- **PII Dry Run (mandatory when password security rules are present):** If a rule states "password MUST NOT contain personal data" — perform a mechanical check:
     1. Extract all tokens from `email` (part before `@` and after `@`) and `full_name`, token length > 3 characters.
     2. For each token: find its occurrence in the `password` string (case-insensitive).
     3. Record the result: token `"ivan"` in `"Ivan2024!"` → MATCH → **Defect 9** "Business logic violation in example data".
     Coverage: every token MUST be checked explicitly. Skipping is not allowed.
-* **HTTP Status Exhaustion (Branch Coverage):** Find all conditional branches in Business rules ("if", "in case", "when", "otherwise"). You MUST compile a table:
+- **HTTP Status Exhaustion (Branch Coverage):** Find all conditional branches in Business rules ("if", "in case", "when", "otherwise"). You MUST compile a table:
     | Condition (branch) | HTTP status described? | Error body format described? |
     |---|---|---|
     | Email already registered | 409 / not specified | `{"error": "..."}` / not specified |
+
     If the status or body is not described for any branch — **Defect 8** (Undefined behavior).
-* **Happy Path Dry Run:** Run the example data through the Business rules step by step.
-* **Mental Fuzzing (Most important):** Attack the requirements. Devise 3 boundary scenarios that will break the logic:
-    * *Null/Empty:* What if a required field arrives empty? Is the error described?
-    * *Boundary values:* Maximum length, negative numbers, special characters, emoji.
-    * *Status Conflicts:* What if the status is already "Completed" and we send "Cancel"?
+- **Happy Path Dry Run:** Run the example data through the Business rules step by step.
+- **Mental Fuzzing (Most important):** Attack the requirements. Devise 3 boundary scenarios that will break the logic:
+  - *Null/Empty:* What if a required field arrives empty? Is the error described?
+  - *Boundary values:* Maximum length, negative numbers, special characters, emoji.
+  - *Status Conflicts:* What if the status is already "Completed" and we send "Cancel"?
 
 ### 3. Architecture and NFR (Non-Functional Requirements)
-* **Concurrency:** What happens with two simultaneous requests? (Is an Idempotency Key required?)
-* **Security (OWASP):**
-    * Are there IDOR risks? (userId in URL without authorization check).
-    * PII: Is there sensitive data in logs or the response?
-* **Distributed Systems:** Are external system timeouts accounted for? What happens if the database responded but the message broker went down?
+
+- **Concurrency:** What happens with two simultaneous requests? (Is an Idempotency Key required?)
+- **Security (OWASP):**
+  - Are there IDOR risks? (userId in URL without authorization check).
+  - PII: Is there sensitive data in logs or the response?
+- **Distributed Systems:** Are external system timeouts accounted for? What happens if the database responded but the message broker went down?
 
 ### 4. Ambiguity Check
-* Look for weasel words: "quickly", "correctly", "as usual", "later". These are signs of tech debt.
+
+- Look for weasel words: "quickly", "correctly", "as usual", "later". These are signs of tech debt.
 
 ---
 
@@ -137,28 +144,30 @@ You MUST perform the analysis in 4 stages. Do not mix conclusions.
 **Limit:** Maximum 42 Defects.
 
 ### 1. Executive Summary
-* **Verdict:** `Ready for development` / `Approved with corrections` / `Blocked`.
-* **Specification Quality Score:** (0-100%). Calculated by formula:
-    * Start: **100%**
-    * **-20%** for each Blocker (Priority 10)
-    * **-10%** for each Critical (Priority 8-9)
-    * **-5%** for each Major (Priority 6-7)
-    * **-2%** for each Minor (Priority 4-5)
-    * Score cannot be below **0%**.
-    * Formula: `Score = max(0, 100 - 20*Blockers - 10*Critical - 5*Major - 2*Minor)`
-* **Top 3 risks:** Brief, main issues.
+
+- **Verdict:** `Ready for development` / `Approved with corrections` / `Blocked`.
+- **Specification Quality Score:** (0-100%). Calculated by formula:
+  - Start: **100%**
+  - **-20%** for each Blocker (Priority 10)
+  - **-10%** for each Critical (Priority 8-9)
+  - **-5%** for each Major (Priority 6-7)
+  - **-2%** for each Minor (Priority 4-5)
+  - Score cannot be below **0%**.
+  - Formula: `Score = max(0, 100 - 20*Blockers - 10*Critical - 5*Major - 2*Minor)`
+- **Top 3 risks:** Brief, main issues.
 
 ### 2. Risk Matrix (Defect Table)
+
 Sort by Priority (10 → 1).
 
 **Priority Scale:**
-* **10 (Blocker):** Only two kinds:
+- **10 (Blocker):** Only two kinds:
     1. **Data Gap** — data required to perform a declared action is completely missing from the schema (e.g. action "send SMS" but the `phone` field is absent entirely).
     2. **Direct logical Contradiction** — two rules are mutually exclusive and cannot be implemented simultaneously without changing the specification.
     Everything else — not a Blocker.
-* **8-9 (Critical):** High risk of a bug in production: undescribed Business logic branches, undefined behavior on external system failure, Critical NFR gaps.
-* **6-7 (Major):** Architectural risk (no Idempotency, poor data format), standards violations.
-* **4-5 (Minor):** Ambiguity in wording, missing error examples, missing auxiliary schema attributes (required, max for email).
+- **8-9 (Critical):** High risk of a bug in production: undescribed Business logic branches, undefined behavior on external system failure, Critical NFR gaps.
+- **6-7 (Major):** Architectural risk (no Idempotency, poor data format), standards violations.
+- **4-5 (Minor):** Ambiguity in wording, missing error examples, missing auxiliary schema attributes (required, max for email).
 
 | Priority | Category | Issue | Scenario / Evidence | Recommendation |
 |:---:|---|---|---|---|
@@ -167,6 +176,7 @@ Sort by Priority (10 → 1).
 | **7** | Fuzzing | Negative price | Behavior for `amount: -100` is not described. | Add validation `min: 0.01`. |
 
 ### 3. Readiness Checklist (Gap Analysis)
+
 Mark what is present (✅), what is missing (❌).
 
 - [ ] **Schema:** JSON example matches the table.
@@ -177,6 +187,7 @@ Mark what is present (✅), what is missing (❌).
 - [ ] **Observability:** Clear what to log (and what NOT to log, e.g. card PAN).
 
 ### 4. Blocking Questions
+
 Only questions without answers to which coding cannot begin.
 
 **Style:** Each question — a complete, polite, and precise sentence in English, addressed to the analyst or product owner. Do not use abbreviations or jargon.
@@ -199,6 +210,7 @@ Before generating the output file, verify ALL conditions are met:
 If any condition is NOT met — do not generate the file, complete the missing pass first.
 
 ## Self-Check (Critically important)
+
 Before output, check yourself against 10 specific errors in the specification:
 1. **Key-to-Key Mapping:** Are all JSON keys and all table fields listed? Is the delta computed? Discrepancy = Defect 9.
 2. **Constraint Verification:** Are Example Payload values verified against all min/max/format constraints? Violation = Defect 9.
@@ -246,7 +258,7 @@ Before output, check yourself against 10 specific errors in the specification:
 2. Save the full audit result to `audit/spec-audit_{SPEC_NAME}_{YYYYMMDD_HHMMSS}.md`.
 3. Output `SKILL COMPLETE` block to chat only (no Risk Matrix, no Defect details, no summary table):
 
-```
+```text
 ✅ SKILL COMPLETE: /spec-audit
 ├─ Artifacts: audit/spec-audit_{SPEC_NAME}_{YYYYMMDD_HHMMSS}.md — **Each invocation creates a new timestamped file**
 ├─ Compilation: N/A

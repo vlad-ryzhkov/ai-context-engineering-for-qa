@@ -42,7 +42,7 @@ Determine which files to translate, in priority order:
 2. **User message** — if contains a file path (`.md`) → use it
 3. **Explicit file list** — if user lists specific files → use them
 4. **None of the above** → ask the user:
-   ```
+   ```text
    Which files should I translate?
    Options:
    - Single file path (e.g., .claude/agents/auditor.md)
@@ -74,7 +74,7 @@ grep -E -c '[А-Яа-яЁё]' {file_path}
 If the resolved file list contains **>5 files**:
 1. Process in batches of 5
 2. After each batch, report progress and ask for confirmation:
-   ```
+   ```text
    ✅ Batch N/M complete: [file1, file2, ...]
    Continue with next batch? (yes / stop)
    ```

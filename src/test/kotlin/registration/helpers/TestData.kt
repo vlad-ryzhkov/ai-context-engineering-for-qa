@@ -1,37 +1,47 @@
 package registration.helpers
 
-import registration.requests.RegisterRequest
+import net.datafaker.Faker
 import java.util.UUID
 
 object TestData {
-    private var emailCounter = 0
+
+    private val faker = Faker()
 
     fun uniqueEmail(): String {
-        emailCounter++
-        return "user_${UUID.randomUUID()}_$emailCounter@example.com"
+        val uuid = UUID.randomUUID().toString().replace("-", "").take(12)
+        return "user_$uuid@example.com"
     }
 
-    fun validRegistration(
-        email: String = uniqueEmail(),
-        phone: String = "+79991234567",
-        password: String = "Safe1@Pass",
-        fullName: String = "John Doe"
-    ): RegisterRequest = RegisterRequest(
-        email = email,
-        phone = phone,
-        password = password,
-        fullName = fullName
-    )
-
-    fun longEmail(): String {
-        val baseEmail = "user_550e8400e29b41d4a716446655440000_"
-        val padding = "a".repeat(Math.max(0, 250 - baseEmail.length - 11))
-        return "$baseEmail$padding@example.com"
+    fun longEmail(targetLength: Int): String {
+        val domain = "@example.com"
+        val localPartLength = targetLength - domain.length
+        val uuid = UUID.randomUUID().toString().replace("-", "")
+        val padding = "a".repeat((localPartLength - uuid.length).coerceAtLeast(0))
+        return (uuid + padding).take(localPartLength) + domain
     }
 
-    fun tooLongEmail(): String {
-        val baseEmail = "user_550e8400e29b41d4a716446655440000_"
-        val padding = "a".repeat(255 - baseEmail.length - 11)
-        return "$baseEmail$padding@example.com"
+    fun uniquePhone(): String {
+        val digits = (1000000..9999999).random()
+        return "+7999$digits"
+    }
+
+    fun alternativePhone(): String {
+        val digits = (1000000..9999999).random()
+        return "+1212$digits"
+    }
+
+    fun validPassword(): String = "Safe1@Pass"
+
+    fun fullName(): String = "${faker.name().firstName()} ${faker.name().lastName()}"
+
+    fun idempotencyKey(): String = UUID.randomUUID().toString()
+
+    fun validRequest(): registration.requests.RegisterRequest {
+        return registration.requests.RegisterRequest(
+            email = uniqueEmail(),
+            phone = uniquePhone(),
+            password = validPassword(),
+            fullName = fullName()
+        )
     }
 }

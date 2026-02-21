@@ -35,6 +35,10 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("io.ktor:ktor-client-logging:$ktorVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.1")
+
+    testImplementation("net.datafaker:datafaker:2.1.0")
+    testImplementation("org.awaitility:awaitility-kotlin:4.2.0")
+    testImplementation("org.wiremock:wiremock-standalone:3.3.1")
 }
 
 tasks.test {
