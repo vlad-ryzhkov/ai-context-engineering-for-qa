@@ -1,0 +1,16 @@
+---
+description: SKILL: Technical Translation RU→EN (use for /qa-translate)
+globs: ""
+alwaysApply: false
+---
+# SKILL: QA TRANSLATE
+
+## TRIGGER
+User explicitly types `/qa-translate` or asks to translate markdown files from Russian to English.
+
+## EXECUTION INSTRUCTIONS
+DO NOT guess the procedure and DO NOT output anything yet.
+To perform this skill, you MUST dynamically read the instructions using your file-reading capabilities.
+
+1. Read the specific skill protocol: `.claude/skills/qa-translate/SKILL.md`
+2. Execute based STRICTLY on the logic and output format defined in that file.

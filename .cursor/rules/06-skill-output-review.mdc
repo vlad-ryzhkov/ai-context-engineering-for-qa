@@ -1,0 +1,16 @@
+---
+description: SKILL: Independent Audit of Skill Output (use for /output-review)
+globs: ""
+alwaysApply: false
+---
+# SKILL: OUTPUT REVIEW
+
+## TRIGGER
+User explicitly types `/output-review` or asks to audit a skill's output against its checklist.
+
+## EXECUTION INSTRUCTIONS
+DO NOT guess the procedure and DO NOT output anything yet.
+To perform this skill, you MUST dynamically read the instructions using your file-reading capabilities.
+
+1. Read the specific skill protocol: `.claude/skills/output-review/SKILL.md`
+2. Execute based STRICTLY on the logic and output format defined in that file.

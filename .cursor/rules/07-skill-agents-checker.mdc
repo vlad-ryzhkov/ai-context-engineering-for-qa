@@ -1,0 +1,16 @@
+---
+description: SKILL: Agent Setup Validation (use for /agents-checker)
+globs: ".claude/agents/**,.claude/qa_agent.md"
+alwaysApply: false
+---
+# SKILL: AGENTS CHECKER
+
+## TRIGGER
+User explicitly types `/agents-checker` or asks to verify agent file compliance.
+
+## EXECUTION INSTRUCTIONS
+DO NOT guess the procedure and DO NOT output anything yet.
+To perform this skill, you MUST dynamically read the instructions using your file-reading capabilities.
+
+1. Read the specific skill protocol: `.claude/skills/agents-checker/SKILL.md`
+2. Execute based STRICTLY on the logic and output format defined in that file.
