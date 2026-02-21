@@ -121,6 +121,17 @@ Core pipeline — choose your starting point based on the scope:
 
 ---
 
+## 🏛️ How to adapt these approaches for your project and style
+
+- Run any skill and review the output critically
+- Expect gaps — invest time in refining the skill file to better fit your context
+- Skills are natural language prompts under the hood: add requirements, remove noise, or ask the AI to improve the prompt directly
+- After major edits, run `/skill-audit` to verify structure and formatting
+- Iterate: each revision tightens output quality
+- Once results are consistently good enough — share the skill with your team
+
+---
+
 ## ⚙️ Tech Stack (for generated tests)
 
 | Component      | Technology             |
