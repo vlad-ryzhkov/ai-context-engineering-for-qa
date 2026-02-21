@@ -52,3 +52,6 @@ src/test/kotlin/rawResults/**
 # macOS
 .DS_Store
 **/.DS_Store
+
+# Local drafts (never push)
+drafts/

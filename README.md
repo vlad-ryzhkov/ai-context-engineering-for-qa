@@ -1,19 +1,52 @@
 # AI Context Engineering for QA
 
-🎤 Presented at "Podlodka AI Crew #2" in 2026 — [Watch Demo](https://youtu.be/7VnjM44qkmc) / [Slides](presentation/Workshop_AI_for_QA.pdf)
-
 A ready-to-use collection of AI prompts, agents, and anti-patterns for several QA workflows including automation API tests.
 
 Structured prompts give more consistent results than ad-hoc chat — each skill in this repo is a tested `.md` file that tells the AI exactly what to do,
-what to check, and how to format the output. Originally built for a workshop, works as a standalone toolkit (should be adapted for your specific needs).
-
-> **⚠️ Disclaimer:** Always review AI-generated results. Even with well-crafted prompts and agents, outputs must be validated by a human before being merged or executed.
+what to check, and how to format the output. Originally built for a workshop, works as a Context Engineering Library (should be adapted for your specific needs).
 
 <p align="center">
   <img src="presentation/context-pyramid.png" alt="Context Pyramid" width="300"/>
 </p>
 
+___
+### 🔬 QA Workflow Skills
+
+Core pipeline — choose your starting point based on the scope:
+
+```text
+[Macro] /repo-scout (whole repo)  ──┐
+                                    ↓
+[Micro] /spec-audit (single spec)  ──→  audit/spec-audit_{date}.md
+                                    ↓
+         /test-cases               ──→  docs/test-cases/test-scenarios.md
+                                    ↓
+         /api-tests                ──→  src/test/kotlin/...Tests.kt
+```
+
+| Skill         | Input                          | Output                                              | What you'll see                                    |
+|---------------|--------------------------------|-----------------------------------------------------|----------------------------------------------------|
+| `/repo-scout` | Backend repository             | API surface, infrastructure, test coverage map      | Catalog of endpoints, gaps, entry points for tests |
+| `/spec-audit` | API specification              | QA audit report: gaps, contradictions, OWASP issues | defects, PO questions, risk matrix                 |
+| `/test-cases` | Specification + audit          | Exhaustive test scenario matrix (Markdown)          | Markdown table: ~50–80 test scenarios per spec     |
+| `/api-tests`  | Test scenarios + specification | Production-ready Kotlin tests (JUnit 5, Allure)     | Kotlin test class, ready to run: `./gradlew test`  |
+
+- Note: While the `/api-tests` output provides great coverage out of the box, it is designed to be adapted to your team's specific architectural guidelines.
+___
+
+### 🏗️ Setup Skills
+
+Generate and maintain the AI configuration files themselves.
+
+| Skill           | What it generates                                | When to use                      |
+|-----------------|--------------------------------------------------|----------------------------------|
+| `/init-project` | `CLAUDE.md` — project-level AI instructions      | New QA project, no AI config yet |
+| `/init-agent`   | `qa_agent.md` — QA agent role and principles     | Setting up AI agent behavior     |
+| `/init-skill`   | `SKILL.md` — new skill with checklist and phases | Automating a repeatable QA task  |
+
 ---
+
+> **⚠️ Disclaimer:** Always review AI-generated results. Even with well-crafted prompts and agents, outputs must be validated by a human before being merged or executed.
 
 ### 🚀 Getting Started
 
@@ -68,38 +101,6 @@ Open your AI chat and follow the [QA Workflow Skills](#-qa-workflow-skills) pipe
 
 > 📖 Detailed prompt snippets for every IDE: **[docs/workshop-commands.md](docs/workshop-commands.md)**
 
----
-
-### 🏗️ Setup Skills
-
-Generate and maintain the AI configuration files themselves.
-
-| Skill           | What it generates                                | When to use                      |
-|-----------------|--------------------------------------------------|----------------------------------|
-| `/init-project` | `CLAUDE.md` — project-level AI instructions      | New QA project, no AI config yet |
-| `/init-agent`   | `qa_agent.md` — QA agent role and principles     | Setting up AI agent behavior     |
-| `/init-skill`   | `SKILL.md` — new skill with checklist and phases | Automating a repeatable QA task  |
-
-### 🔬 QA Workflow Skills
-
-Core pipeline — choose your starting point based on the scope:
-
-```text
-[Macro] /repo-scout (whole repo)  ──┐
-                                    ↓
-[Micro] /spec-audit (single spec)  ──→  audit/spec-audit_{date}.md
-                                    ↓
-         /test-cases               ──→  docs/test-cases/test-scenarios.md
-                                    ↓
-         /api-tests                ──→  src/test/kotlin/...Tests.kt
-```
-
-| Skill         | Input                          | Output                                              | What you'll see                                    |
-|---------------|--------------------------------|-----------------------------------------------------|----------------------------------------------------|
-| `/repo-scout` | Backend repository             | API surface, infrastructure, test coverage map      | Catalog of endpoints, gaps, entry points for tests |
-| `/spec-audit` | API specification              | QA audit report: gaps, contradictions, OWASP issues | ~15 defects, PO questions, risk matrix             |
-| `/test-cases` | Specification + audit          | Exhaustive test scenario matrix (Markdown)          | Markdown table: ~50–80 test scenarios per spec     |
-| `/api-tests`  | Test scenarios + specification | Production-ready Kotlin tests (JUnit 5, Allure)     | Kotlin test class, ready to run: `./gradlew test`  |
 
 ---
 
@@ -153,7 +154,7 @@ Core pipeline — choose your starting point based on the scope:
 
 ### 📄 Workshop Materials
 
-- 📺 [Demo Video](https://youtu.be/7VnjM44qkmc) — Live session: AI-Driven QA with Claude
+- 📺 [Demo Video](https://youtu.be/7VnjM44qkmc) — 🎤 Presented at Podlodka AI Crew #2, February 2026.
 - 📊 [Presentation (PDF)](presentation/Workshop_AI_for_QA.pdf)
 - 📖 [Workshop commands & IDE prompts](docs/workshop-commands.md)
 - 🔀 Branches: `main` (configured project), `spec-only` (clean starting point)
