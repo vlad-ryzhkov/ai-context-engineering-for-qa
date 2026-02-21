@@ -7,7 +7,7 @@ A ready-to-use collection of AI prompts, agents, and anti-patterns for several Q
 Structured prompts give more consistent results than ad-hoc chat — each skill in this repo is a tested `.md` file that tells the AI exactly what to do, 
 what to check, and how to format the output. Originally built for a workshop, works as a standalone toolkit (should be adapted for your specific needs).
 
-Disclaimer: I insist that you have to review any AI generated results even if it used great prompts/agents/skills and looks pretty nice.
+> **⚠️ Disclaimer:** Always review AI-generated results. Even with well-crafted prompts and agents, outputs must be validated by a human before being merged or executed.
 
 <p align="center">
   <img src="presentation/context-pyramid.png" alt="Context Pyramid" width="300"/>
@@ -17,7 +17,13 @@ Disclaimer: I insist that you have to review any AI generated results even if it
 
 ## 🚀 Getting Started
 
-### 1. Pick your tool
+### Prerequisites
+
+- An active subscription or API key for your AI tool of choice (Claude, OpenAI, etc.)
+- Git
+- IDE or CLI tool (see compatibility matrix below)
+
+### 🔧 1. Pick your tool
 
 | Tool              | Setup method        | Context loading                                     |
 |-------------------|---------------------|-----------------------------------------------------|
@@ -51,12 +57,12 @@ Disclaimer: I insist that you have to review any AI generated results even if it
 
 </details>
 
-### 2. Installation
+### 📦 2. Installation
 
 - **For Claude Code / OpenCode:** Copy the `.claude/` folder from this repo into your project root. Then run `/init-project` in your AI chat to automatically generate your `CLAUDE.md` config.
 - **For other IDEs:** Check the compatibility matrix above to see how to load the context properly.
 
-### 3. Run your first audit
+### ▶️ 3. Run your first audit
 
 Open your AI chat and follow the [QA Workflow Skills](#-qa-workflow-skills) pipeline below.
 
@@ -113,7 +119,7 @@ Core pipeline — choose your starting point based on the scope:
 
 - **Progressive Disclosure** — `CLAUDE.md` → `qa_agent.md` → `SKILL.md` load only on demand, saves tokens
 - **Gardener Protocol** — AI suggests improvements to the knowledge base at the end of each run
-- **Quality Gates** — more than 20 anti-pattern files the AI checks generated code against
+- **Quality Gates** — 25 anti-pattern files the AI checks generated code against
 - **Meta Configuration** — `/init-*` skills generate and maintain the config files themselves
 - **Token Management** — specialized agents (Auditor, SDET) and strict context limits prevent context window bloat
 

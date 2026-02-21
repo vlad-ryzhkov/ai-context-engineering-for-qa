@@ -115,6 +115,7 @@ When asked to shorten, simplify, or trim output/content — remove only what is 
 | `/doc-lint` | Documentation audit |
 | `/skill-audit` | SKILL.md files audit |
 | `/output-review` | Skill output audit |
+| `/agents-checker` | Agent setup validation |
 | `/init-skill` | New skill creation |
 | `/init-agent` | qa_agent.md creation |
 | `/init-project` | Project CLAUDE.md initialization |

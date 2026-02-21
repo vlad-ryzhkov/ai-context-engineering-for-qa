@@ -43,5 +43,7 @@ Invoke with `$skill-name` or via the skill selector:
 | `$init-project`     | CLAUDE.md project initialization             |
 | `$update-ai-setup`  | AI setup registry update                     |
 | `$output-review`    | Independent skill output audit               |
+| `$agents-checker`   | Agent setup validation                       |
+| `$qa-translate`     | Technical translation RU→EN                  |
 
 **Recommended Workflow:** `$repo-scout` → `$spec-audit` → `$test-cases` → `$api-tests`

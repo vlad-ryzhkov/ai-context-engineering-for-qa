@@ -28,10 +28,10 @@ Three layers, loaded on demand (not all at once):
 
 ```text
 ┌─────────────────────────────────────┐
-│  Layer 1: CLAUDE.md (126 lines)     │  ← Always in context
+│  Layer 1: CLAUDE.md (127 lines)     │  ← Always in context
 │  Tech Stack, Safety, Skills         │
 ├─────────────────────────────────────┤
-│  Layer 2: qa_agent.md (182 lines)   │  ← On any skill invocation
+│  Layer 2: qa_agent.md (204 lines)   │  ← On any skill invocation
 │  Mindset, Anti-Patterns, Protocols  │
 ├─────────────────────────────────────┤
 │  Layer 3: SKILL.md + references/    │  ← On specific skill activation
@@ -70,9 +70,9 @@ Three layers, loaded on demand (not all at once):
 │   │   └── auditor.md               #   Planning + quality audit
 │   ├── hooks/                       # PostToolUse hooks
 │   │   └── skill-lint.sh            #   SKILL.md validation on every edit
-│   ├── qa-antipatterns/             # Code quality checks (22 files + 1 index)
+│   ├── qa-antipatterns/             # Code quality checks (25 files + 1 index)
 │   │   ├── _index.md
-│   │   ├── api/                     # 7 patterns
+│   │   ├── api/                     # 10 patterns
 │   │   ├── common/                  # 6 patterns
 │   │   ├── platform/               # 6 patterns
 │   │   └── security/               # 3 patterns
@@ -99,12 +99,12 @@ Three layers, loaded on demand (not all at once):
 │
 ├── docs/
 │   ├── ai-setup.md                  # This file
+│   ├── test-cases/                  # Manual test scenarios
 │   └── workshop-commands.md         # Workshop commands per IDE
 │
 ├── specifications/                  # API specifications for analysis
 │
 ├── src/test/
-│   ├── testCases/                   # Manual tests (Kotlin DSL)
 │   ├── kotlin/                      # API automated tests
 │   └── resources/screenshots/       # Screenshots for L10n analysis
 │
@@ -116,8 +116,8 @@ Three layers, loaded on demand (not all at once):
 
 | File              | Path                            | Lines | Purpose                                               |
 |-------------------|---------------------------------|------:|-------------------------------------------------------|
-| CLAUDE.md         | `CLAUDE.md`                     |   126 | Main onboarding: stack, safety, conventions           |
-| QA Agent          | `.claude/qa_agent.md`           |   182 | Mindset, anti-patterns, Cross-Skill Protocol          |
+| CLAUDE.md         | `CLAUDE.md`                     |   127 | Main onboarding: stack, safety, conventions           |
+| QA Agent          | `.claude/qa_agent.md`           |   204 | Mindset, anti-patterns, Cross-Skill Protocol          |
 | Gardener Protocol | `.claude/protocols/gardener.md` |    44 | "Suggest improvements" protocol injected at runtime   |
 | Settings          | `.claude/settings.json`         |    50 | Plugins, permissions, hooks                           |
 | MCP Servers       | `.mcp.json`                     |    12 | context7 + sequential-thinking                        |
@@ -144,7 +144,7 @@ Three layers, loaded on demand (not all at once):
 
 ### Anti-Patterns
 
-22 files the AI checks generated code against. Organized by category:
+25 files the AI checks generated code against. Organized by category:
 
 | File                              | Path                                                              | Lines | Category |
 |-----------------------------------|-------------------------------------------------------------------|------:|----------|
@@ -155,6 +155,9 @@ Three layers, loaded on demand (not all at once):
 | missing-business-error-assertion  | `.claude/qa-antipatterns/api/missing-business-error-assertion.md` |    50 | api      |
 | missing-content-type-validation   | `.claude/qa-antipatterns/api/missing-content-type-validation.md`  |    61 | api      |
 | missing-security-headers          | `.claude/qa-antipatterns/api/missing-security-headers.md`         |    56 | api      |
+| dry-api-client                    | `.claude/qa-antipatterns/api/dry-api-client.md`                   |    77 | api      |
+| ktor-body-extraction              | `.claude/qa-antipatterns/api/ktor-body-extraction.md`             |    54 | api      |
+| silent-catch                      | `.claude/qa-antipatterns/api/silent-catch.md`                     |    57 | api      |
 | wrap-infrastructure-errors        | `.claude/qa-antipatterns/api/wrap-infrastructure-errors.md`       |    60 | api      |
 | assertion-without-message         | `.claude/qa-antipatterns/common/assertion-without-message.md`     |    76 | common   |
 | hardcoded-test-data               | `.claude/qa-antipatterns/common/hardcoded-test-data.md`           |    64 | common   |
@@ -250,7 +253,7 @@ Approaches used in this project. Each pattern solves a specific problem.
 ### 5. Anti-Pattern Library
 
 **Problem:** AI repeats the same mistakes — hardcoded data, missing assertions, Thread.sleep().
-**Solution:** 22 pattern files across 4 categories. The AI checks its output against them before finishing.
+**Solution:** 25 pattern files across 4 categories. The AI checks its output against them before finishing.
 
 ### 6. Locked Tech Stack + BANNED list
 
@@ -375,7 +378,7 @@ How the system improves over time:
 | 4  | AI Registry Sync              | Delta update of this file — registry of all project AI files                  |
 | 5  | Real-Time Hook                | `skill-lint.sh` validates SKILL.md on every edit                              |
 | 6  | Gardener Protocol             | AI notices "smells" during work → suggests fixes without blocking             |
-| 7  | Anti-Pattern Library          | 22 pattern files in 4 categories — reference-driven checks                    |
+| 7  | Anti-Pattern Library          | 25 pattern files in 4 categories — reference-driven checks                    |
 | 8  | kotlin-lsp Plugin             | Kotlin code navigation and analysis                                           |
 | 9  | Segregation of Duties         | SDET codes, Auditor reviews — no one reviews their own work                   |
 

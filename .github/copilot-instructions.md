@@ -36,12 +36,22 @@ GitHub Copilot does not read instructions automatically. To execute a task:
    - Open file `.claude/skills/api-tests/SKILL.md`
    - Type: "Generate tests based on the open SKILL file"
 
-| Command (alias) | Which file to add to context | Purpose |
-|-----------------|------------------------------|---------|
-| Spec Audit      | `.claude/skills/spec-audit/SKILL.md` | QA audit of specification |
-| Test Cases      | `.claude/skills/test-cases/SKILL.md` | Test cases from specification |
-| API Tests       | `.claude/skills/api-tests/SKILL.md` | API automated tests (JUnit 5, Allure) |
-| Screenshot      | `.claude/skills/screenshot-analyze/SKILL.md` | L10N and UI defects |
+| Command (alias)    | Which file to add to context                        | Purpose                                |
+|--------------------|------------------------------------------------------|----------------------------------------|
+| Repo Scout         | `.claude/skills/repo-scout/SKILL.md`                 | Repository scanning                    |
+| Spec Audit         | `.claude/skills/spec-audit/SKILL.md`                 | QA audit of specification              |
+| Test Cases         | `.claude/skills/test-cases/SKILL.md`                 | Test cases from specification          |
+| API Tests          | `.claude/skills/api-tests/SKILL.md`                  | API automated tests (JUnit 5, Allure)  |
+| Screenshot         | `.claude/skills/screenshot-analyze/SKILL.md`         | L10N and UI defects                    |
+| Doc Lint           | `.claude/skills/doc-lint/SKILL.md`                   | Documentation audit                    |
+| Skill Audit        | `.claude/skills/skill-audit/SKILL.md`                | SKILL.md files audit                   |
+| Output Review      | `.claude/skills/output-review/SKILL.md`              | Skill output audit                     |
+| Agents Checker     | `.claude/skills/agents-checker/SKILL.md`             | Agent setup validation                 |
+| Init Skill         | `.claude/skills/init-skill/SKILL.md`                 | New skill creation                     |
+| Init Agent         | `.claude/skills/init-agent/SKILL.md`                 | qa_agent.md creation                   |
+| Init Project       | `.claude/skills/init-project/SKILL.md`               | CLAUDE.md project initialization       |
+| Update AI Setup    | `.claude/skills/update-ai-setup/SKILL.md`            | AI setup registry update               |
+| QA Translate       | `.claude/skills/qa-translate/SKILL.md`               | Technical translation RU→EN            |
 
 **Workflow:** Audit → Test Cases → API Tests
 
