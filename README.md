@@ -127,7 +127,7 @@ Core pipeline — choose your starting point based on the scope:
 
 ---
 
-## 🏛️ How to adapt these approaches for your project and style
+### 🏛️ How to adapt these approaches for your project and style
 
 - Run any skill and review the output critically
 - Expect gaps — invest time in refining the skill file to better fit your context
@@ -138,7 +138,7 @@ Core pipeline — choose your starting point based on the scope:
 
 ---
 
-## ⚙️ Tech Stack (for generated tests)
+### ⚙️ Tech Stack (for generated tests)
 
 | Component      | Technology             |
 |----------------|------------------------|
@@ -151,7 +151,7 @@ Core pipeline — choose your starting point based on the scope:
 
 ---
 
-## 📄 Workshop Materials
+### 📄 Workshop Materials
 
 - 📺 [Demo Video](https://youtu.be/7VnjM44qkmc) — Live session: AI-Driven QA with Claude
 - 📊 [Presentation (PDF)](presentation/Workshop_AI_for_QA.pdf)
@@ -160,36 +160,39 @@ Core pipeline — choose your starting point based on the scope:
 
 ---
 
-## 📚 Resources
+<details>
+<summary>📚 <strong>Resources</strong></summary>
 
-### 🧠 Prompt Engineering
+#### 🧠 Prompt Engineering
 
 - [Anthropic Prompt Guide](https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview)
 
-### 🟣 Anthropic (Claude)
+#### 🟣 Anthropic (Claude)
 
 - [Anthropic Cookbook](https://github.com/anthropics/anthropic-cookbook)
 - [The Complete Guide to Building Skills for Claude (PDF)](https://resources.anthropic.com/hubfs/The-Complete-Guide-to-Building-Skill-for-Claude.pdf?hsLang=en)
 - [Sub-agents](https://code.claude.com/docs/en/sub-agents)
 
-### 🔵 VS Code & GitHub Copilot
+#### 🔵 VS Code & GitHub Copilot
 
 - [Custom Instructions](https://code.visualstudio.com/docs/copilot/customization/custom-instructions) — configuring `.github/copilot-instructions.md`
 
-### 🔵 Cursor
+#### 🔵 Cursor
 
 - [Skills](https://cursor.com/docs/context/skills)
 - [Subagents](https://cursor.com/docs/context/subagents)
 
-### 🔵 Codex
+#### 🔵 Codex
 
 - [Agent Skills](https://developers.openai.com/codex/skills/)
 
-### 🧠 Vibe Coding
+#### 🧠 Vibe Coding
 
 - [Vibe coding tips](https://www.threads.com/@boris_cherny/post/DTBVlMIkpcm)
 
-### 🌐 Translations
+#### 🌐 Translations
 
 - [Translated version of this repository (ru)](https://github.com/vlad-ryzhkov/AI-QA-workshop-feb19)
+
+</details>
 
