@@ -160,8 +160,10 @@ Core pipeline — choose your starting point based on the scope:
 
 ---
 
+### 📚 Resources
+
 <details>
-<summary>📚 <strong>Resources</strong></summary>
+<summary>👇 <strong>Click to expand</strong></summary>
 
 #### 🧠 Prompt Engineering
 
