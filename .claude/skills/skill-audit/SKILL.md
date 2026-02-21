@@ -170,6 +170,19 @@ Find sections with:
 - Severity: **INFO**
 - Recommendation: extract to `references/`
 
+### Check 9a: Artifact Timestamping
+
+For skills that generate file artifacts (e.g., `/spec-audit`, `/test-cases`, `/api-tests`), verify:
+1. Output Template specifies **timestamped filenames** in format `{filename}_{timestamp}` (e.g., `test-scenarios_{timestamp}.md`, `spec-audit_{timestamp}.md`)
+2. Completion Contract mentions that **each invocation creates a new file** (see spec-audit/SKILL.md for reference)
+3. If skill outputs multiple files, **each gets a unique timestamp** or **shared timestamp prefix**
+
+**Why:** Prevents accidental overwrites and maintains audit history per invocation.
+
+- Severity: **CRITICAL** (if artifact-generating skill lacks timestamping)
+- Skills to check: `/spec-audit`, `/test-cases`, `/api-tests`, `/repo-scout`
+- Recommendation: Add timestamp format `YYYYMMDD_HHMMSS` to Output Template and Completion Contract
+
 ---
 
 ## Report Format
@@ -187,7 +200,7 @@ Output to chat only:
 
 | Severity | What it catches |
 |----------|-----------------|
-| **CRITICAL** | "DO NOT FIX", SKILL.md >500 lines |
+| **CRITICAL** | "DO NOT FIX", SKILL.md >500 lines, Artifact-generating skills without timestamping (spec-audit, test-cases, api-tests, repo-scout) |
 | **ERROR** | Stale cross-references in qa_agent.md |
 | **WARNING** | Self-Review Protocol (bloated >50 lines), Tech Stack duplication, code >50 lines inline, Anti-Patterns >30 lines, 300–500 lines |
 | **INFO** | Decorative ``` blocks, rarely-used sections inline |

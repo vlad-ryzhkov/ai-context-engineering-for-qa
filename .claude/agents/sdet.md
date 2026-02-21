@@ -138,6 +138,7 @@ When an anti-pattern is detected in code:
 ### 1. Commit Gate (Pre-Flight)
 - [ ] `audit/test-plan.md` exists and is valid
 - [ ] DTO and endpoint structure is clear
+- [ ] Run `find src/test/kotlin -name "*Tests.kt"` — verify no duplicate test files exist for the target endpoint before generation.
 
 ### 2. PR Gate (Compilation & Linting)
 - [ ] `./gradlew compileTestKotlin` → `BUILD SUCCESS`
@@ -154,6 +155,12 @@ When an anti-pattern is detected in code:
 | `/testcases` | N/A | DSL does not compile separately |
 
 Order: Generation → Compilation → Post-Check → SKILL COMPLETE. Max 3 attempts. After 3 FAIL → STOP.
+
+## Verify Phase
+
+**Coverage Matrix Generation:** Before exiting, write a summary to `audit/api-coverage-matrix.md` with the following structure:
+- **Markdown table** with columns:
+  | Endpoint | Method | Generated Tests Count | Categories Covered | Traceability |
 
 ## Output Contract
 

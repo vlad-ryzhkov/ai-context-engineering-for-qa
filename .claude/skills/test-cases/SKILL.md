@@ -81,6 +81,16 @@ Before execution the agent MUST load: `.claude/protocols/gardener.md`
      - `BVA:{field}` — BVA for a specific field (e.g. `BVA:password`), if length is delegated to Middleware
      - `POS:encoding_variants` — extra Happy Path with Unicode/hyphens on top of basic POS if standard validation library covers them
 
+   **Ownership → EXCLUDED_SCENARIOS mapping (parse spec's exclusion table row by row):**
+   | Spec ownership marker | Add to EXCLUDED_SCENARIOS |
+   |---|---|
+   | `delegated to Middleware (Zod/Pydantic)` for field X | `NEG:format_X`, `BVA:X` — only `NEG:missing_X` survives |
+   | `covered by library` for feature Y | `NEG:Y_detail` — keep one representative NEG (any input = error) only |
+   | `Unit tests of shared-library` | `NEG:{feature}_combinations` — keep only one POS + one basic NEG |
+   | `"Field presence only: missing → 400"` | All NEG for that field **except** `NEG:missing_{field}` |
+   | `DB level` (BVA) | `BVA:{field}` for all mentioned fields |
+   | `L10N: out of scope` | `L10N:*` for all text fields |
+
    - If no exclusions found — `EXCLUDED_TYPES = []`, `EXCLUDED_SCENARIOS = []`, apply the full Coverage Matrix.
 
 4. **Risk-Based Prioritization:**
@@ -97,7 +107,7 @@ Before execution the agent MUST load: `.claude/protocols/gardener.md`
    - **BVA (Boundaries):** Numbers (Min-1/Min, Max/Max+1), Strings (Len-1, Len+1), Logic Boundaries (e.g. >3 chars → 3 (Pass), 4 (Fail)), Arrays (Empty, Max items).
    - **SEC (Security):** No Token, Invalid Token, Injection payloads (`' OR 1=1`), IDOR (another user's ID).
    - **L10N (Localization) [Conditional]:** Apply if the endpoint accepts user text fields (name, address, description, comment). Verify POS with: Cyrillic (`{CYR_NAME}`), Arabic/RTL (`{AR_NAME}`), CJK (`{ZH_NAME}`), emoji (`{EMOJI_STRING}`), special characters (`{SPECIAL_CHARS}`: `& < > " '`). Expected result: data saved and returned without corruption (UTF-8 round-trip). **L10N scenarios with 2xx response are POS-mutating — MUST contain `Contract Match: ...` on par with other POS.** **If the spec explicitly forbids a character class** (emoji, special characters) — the L10N scenario for it is generated as **NEG with 4xx** (not POS); Contract Match is not needed, `body.code` is required. **Exclusion marker in spec:** `L10N: out of scope`.
-   - **IDEM (Idempotency) [MANDATORY for POST/PUT]:** Apply for **every** POST/PUT endpoint without exceptions. Two scenarios: (1) repeated request with identical data → MUST return **the same result** without creating a duplicate (`200 OK` or `201 Created` per contract); (2) repeated request after successful creation of a unique entity → `409 Conflict` (if business logic forbids duplicates). **If the endpoint's business logic forbids any repeated success (always 409 by design) — covering only scenario (2) is allowed with an explicit note in Scope Reductions: `IDEM:success_variant: not applicable (endpoint non-idempotent by design)`.** **Exclusion marker in spec:** `IDEM: not required`.
+   - **IDEM (Idempotency) [MANDATORY for POST/PUT]:** Apply for **every** POST/PUT endpoint without exceptions. Four scenarios: (1) repeated request with identical `Idempotency-Key` within the cache window → MUST return **the same result** without creating a duplicate (`200 OK` or `201 Created` per contract); (2) repeated request after successful creation of a unique entity (no Idempotency-Key or different key) → `409 Conflict` (if business logic forbids duplicates); (3) **Cache-expiry + uniqueness conflict** — same data, same `Idempotency-Key`, but after the idempotency window expires AND the entity was already persisted → `409 Conflict` (uniqueness rule wins; NOT a new `201 Created`). Generate scenario (3) as NEG whenever the spec has both an idempotency window AND a uniqueness constraint; (4) **Body mismatch** — same `Idempotency-Key` within the cache window, but different request body (any field differs from the original request bound to that key) → `400 BAD_REQUEST` + code `IDEMPOTENCY_KEY_MISMATCH` (if spec defines this behavior) OR append `⚠️ SPEC AMBIGUITY: Idempotency-Key body mismatch behavior undefined` to the output file (if spec is silent — the system must choose: return cached response OR reject with 400). **If the endpoint's business logic forbids any repeated success (always 409 by design) — covering only scenario (2) is allowed with an explicit note in Scope Reductions: `IDEM:success_variant: not applicable (endpoint non-idempotent by design)`.** **Exclusion marker in spec:** `IDEM: not required`.
 
 ## Expected Result Engineering
 
@@ -131,9 +141,18 @@ For **NEG** scenarios `Expected Result` MUST contain `code` from the response bo
 - Example: `400 Bad Request + body.code: 'VALIDATION_ERROR'` (❌ just `400 Bad Request`)
 
 ### 5. Cleanup / Teardown
-Every **POS** scenario that creates data MUST end with a cleanup step:
-- Add to `Expected Result`: `Cleanup: DELETE /users/{UUID}` or `Cleanup: DB rollback`
-- Goal: re-running tests MUST NOT produce uniqueness conflicts (duplicate email, duplicate phone).
+Every **POS** scenario that creates data MUST end with a cleanup step. Goal: re-running tests MUST NOT produce uniqueness conflicts.
+
+**Cleanup mechanism — priority order (top = preferred):**
+1. `Cleanup: DB: DELETE FROM {table} WHERE {field} = {VALUE}` — direct DB, no endpoint required, no auth risk
+2. `Cleanup: Admin API: DELETE /admin/{resource}/{UUID}` — if spec documents an admin/internal endpoint
+3. `Cleanup: Test API: DELETE /test/{resource}/{UUID}` — only if spec explicitly provides a test-only teardown endpoint
+4. `Cleanup: Public API: DELETE /{resource}/{UUID} (requires auth token from step POS-01)` — only if spec documents this endpoint WITH authentication
+
+**NEVER write `Cleanup: DELETE /users/{UUID}` without specifying the auth mechanism or ownership.** An unauthenticated public DELETE endpoint is a security anti-pattern and will raise audit flags.
+
+**If cleanup method is unknown from the spec** → write: `Cleanup: ⚠️ mechanism unspecified — requires Admin API or DB access. Do NOT implement as unauthenticated public endpoint.`
+
 - If cleanup is not needed (read-only) — explicitly state `Cleanup: N/A`.
 
 ## Constraints (Violation = REJECT)
@@ -154,17 +173,18 @@ Every **POS** scenario that creates data MUST end with a cleanup step:
 | **State** | Side Effects | `"201 Created"` (❌) → `"201 Created. DB: status='PENDING'"` (✅) for POST/PATCH |
 | **Audit** | NEG Specificity | `"400 Bad Request"` (❌) → `"400 + body.code: 'VALIDATION_ERROR'"` (✅) |
 | **Headers** | Content-Type | Content-Type not specified (❌) → separate `HEADERS` row for each endpoint (✅) |
-| **Cleanup** | Teardown | POS without cleanup (❌) → `"Cleanup: DELETE /resource/{UUID}"` (✅) |
+| **Cleanup** | Teardown | POS without cleanup (❌) → `"Cleanup: DB: DELETE FROM {table} WHERE ..."` or Admin API (✅). `Cleanup: DELETE /resource/{UUID}` without auth/ownership specified (❌) |
 | **L10N** | UTF-8 Round-Trip | Only ASCII in name/address (❌) → `{CYR_NAME}`, `{AR_NAME}`, `{EMOJI_STRING}` (✅) if field is text |
 | **IDEM** | Idempotency | No repeated request (❌) → IDEM scenarios mandatory for all POST/PUT: repeated request without duplicate + 409 on conflict (✅) |
+| **IDEM** | Cache-expiry + uniqueness | `IDEM expired → 201 Created` (❌) → `IDEM expired → 409 Conflict` when entity was persisted and uniqueness constraint applies (✅) |
 | **Risk** | Risk Tag | `[CRITICAL]` endpoint without expanded NEG (race condition, double execution) (❌) → `[CRITICAL]` endpoints MUST have expanded NEG set (✅) |
 | **Isolation** | External API Mock | Calls external API without mock spec (❌) → `Mock: {System} returns {Response}` in Expected Result (✅) |
 
 
 ## Output Template
 
-Create file `docs/test-cases/test-scenarios.md`.
-**Important:** If scenarios > 100 or the file becomes too large, create folder `audit/scenarios/` and split output: `01_Auth.md`, `02_Users.md`, `03_Orders.md`.
+Create file `docs/test-cases/test-scenarios_{timestamp}.md` (timestamp format: `YYYYMMDD_HHMMSS`).
+**Important:** Each invocation produces a new timestamped file. If scenarios > 100 or the file becomes too large, create folder `audit/scenarios/` and split output with timestamp: `01_Auth_{timestamp}.md`, `02_Users_{timestamp}.md`, `03_Orders_{timestamp}.md`.
 
 ```markdown
 # Test Scenarios Specification
@@ -203,6 +223,12 @@ Create file `docs/test-cases/test-scenarios.md`.
    - If exclusions found — record them explicitly at the top of the output file: `> ⚠️ Scope: SEC excluded per spec (section X.Y)`.
    - **Risk Assessment:** Classify each endpoint as `[CRITICAL]`, `[HIGH]`, or `[MEDIUM]` based on domain (Money/Security/Data Integrity → CRITICAL, core business → HIGH, read-only/dictionaries → MEDIUM).
    - **Dependency Map:** Identify endpoints that call external APIs (payment gateways, email/SMS providers, 3rd-party services) — mark them for mock specification.
+   - **Contradiction Check:** Cross-reference business rules for logical conflicts before generating any scenario. Key patterns to detect:
+     - IDEM cache-expiry behavior vs. uniqueness constraint: if both exist, scenario "same data after cache expires" yields `409 Conflict` (uniqueness wins), NOT a new `201 Created`.
+     - State-dependent logic vs. validation rules: if a rule applies only to certain entity states (e.g., PENDING vs. ACTIVE), verify that test inputs reflect the correct state.
+     - **Case-normalization + uniqueness:** if spec mandates lowercase or case-normalization for a field (e.g., RFC 5321 lowercase for email) AND has a uniqueness constraint, generate a NEG scenario: same value in a different case variant (e.g., `ALEX@example.com` vs stored `alex@example.com`) → `409 Conflict`.
+     - **IDEM body mismatch:** if spec defines an idempotency window, generate IDEM scenario (4): same key + different body → `400 BAD_REQUEST` + `body.code: 'IDEMPOTENCY_KEY_MISMATCH'`. If spec is silent on this behavior → append `⚠️ SPEC AMBIGUITY` instead.
+     - If a contradiction is **unresolvable from the spec** → generate the scenario using the **stricter rule** (error over success), AND append to the output file after the table: `> ⚠️ SPEC AMBIGUITY: [Rule A] contradicts [Rule B] — expected behavior unspecified. Test generated with stricter interpretation: [result chosen].`
 2. **Design Loop:** For each endpoint, **skipping types from `EXCLUDED_TYPES`**:
    - Generate POS scenarios (Min/Max).
    - Generate NEG (Validation).
@@ -212,23 +238,43 @@ Create file `docs/test-cases/test-scenarios.md`.
    - Generate IDEM (repeated request) — MANDATORY for all POST/PUT.
    - **If `[CRITICAL]`** — generate expanded NEG: race conditions, double execution, partial failure.
    - **If endpoint calls external APIs** — add `Mock: {System} returns {Response}` to Expected Result; for `[CRITICAL]` add failure mock scenario.
-3. **Review (Exclusion Compliance Checklist):**
+3. **Scope Purge Pass (MANDATORY — execute before writing any output):**
+   Active deletion step. Go through every generated row and apply the following rules in order. For each matching row: **delete it**, do not keep it.
+
+   **Purge rules (apply to every row):**
+   - Row's Scenario tests **format, regex, or special-character rules** for a field listed in `EXCLUDED_SCENARIOS` as `NEG:format_{field}` → **DELETE**
+   - Row's Scenario tests **string/number length boundaries (BVA)** for a field listed as `BVA:{field}` → **DELETE**
+   - Row's Scenario tests **internal rule combinations** (password complexity variants, PII substring combos, encoding permutations) for a feature listed as `NEG:{feature}_combinations` → **DELETE** (the one representative NEG kept in step 2 survives)
+   - Row's Type is in `EXCLUDED_TYPES` → **DELETE**
+   - Row matches any remaining pattern in `EXCLUDED_SCENARIOS` → **DELETE**
+
+   **After purge — append `## Scope Reduction Log` to the output file:**
+   ```
+   ## Scope Reduction Log
+   | Removed ID | Scenario | Reason |
+   |---|---|---|
+   | REG-NEG-FORMAT-01 | Invalid phone format (non-E.164) | NEG:format_phone — delegated to Middleware (spec: Excluded from Test Scope) |
+   ```
+   If no rows were deleted → `## Scope Reduction Log\n> No rows removed.`
+
+4. **Compliance Checklist:**
    - [ ] BVA complete? (Min-1/Min, Max/Max+1) — **skip if BVA ∈ `EXCLUDED_TYPES`**
    - [ ] NO hardcode? (email/phone/name)
    - [ ] NO PII? (@gmail/@yandex, real names)
    - [ ] Expectations specific? (no "or", "depends on")
    - [ ] Atomic? (1 row = 1 scenario)
    - [ ] Duplicates? (Same Action + Same Expected → remove)
-   - [ ] **No scenarios from `EXCLUDED_TYPES`?** → Find and remove all rows where `Type` is in `EXCLUDED_TYPES`.
-   - [ ] **No scenarios from `EXCLUDED_SCENARIOS`?** → Find and remove rows matching patterns (injection, duplicate NEG per field, BVA of excluded fields, extra encoding variants of POS).
+   - [ ] **No scenarios from `EXCLUDED_TYPES`?** → Verify purge was complete.
+   - [ ] **No scenarios from `EXCLUDED_SCENARIOS`?** → Verify purge was complete.
    - [ ] **Risk tags assigned?** → Every endpoint header has `[CRITICAL]`, `[HIGH]`, or `[MEDIUM]`.
    - [ ] **`[CRITICAL]` expanded NEG?** → Race condition, double execution, partial failure scenarios present for all `[CRITICAL]` endpoints.
    - [ ] **External API mocks?** → Endpoints calling external services have `Mock: {System} returns {Response}` in Expected Result.
    - [ ] **L10N: all 5 variants present** — `{CYR_NAME}`, `{AR_NAME}`, `{ZH_NAME}`, `{EMOJI_STRING}`, `{SPECIAL_CHARS}`? (if `L10N ∉ EXCLUDED_TYPES` and endpoint contains text fields)
-4. **Write:** Save output to `docs/test-cases/test-scenarios.md` (or split into files per endpoint in `docs/test-cases/`).
+5. **Write:** Save output to `docs/test-cases/test-scenarios.md` (or split into files per endpoint in `docs/test-cases/`).
 
 ## Quality Gates
 
+- **Zero scenarios from `EXCLUDED_SCENARIOS` or `EXCLUDED_TYPES` remain in the output** — `## Scope Reduction Log` is present and accounts for every deletion
 - Every endpoint has at minimum 1 POS + 1 NEG + 1 BVA + 1 SEC + 1 HEADERS scenario; every POST/PUT additionally at minimum 1 IDEM
 - No scenario contains hardcoded data (email, phone, name)
 - All Expected Results are specific (HTTP code + business logic)
@@ -246,7 +292,7 @@ Create file `docs/test-cases/test-scenarios.md`.
 ## Completion Contract
 
 ✅ SKILL COMPLETE: /test-cases
-├─ Artifact: docs/test-cases/test-scenarios.md (or folder audit/scenarios/)
+├─ Artifact: docs/test-cases/test-scenarios_{timestamp}.md (or folder audit/scenarios/) — **Each invocation creates a new timestamped file**
 ├─ Coverage: 100% found endpoints
 ├─ Scenarios: N (POS: X, NEG: Y, BVA: Z, SEC: W)
 └─ Ready for: /api-tests (Implementation)

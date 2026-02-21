@@ -63,7 +63,7 @@ The rest — **delegate** to specialized agents.
 | Skill                 | Owner    | Artifact                                              |
 |-----------------------|----------|-------------------------------------------------------|
 | `/repo-scout`         | **Self** | `audit/repo-scout-report.md`                          |
-| `/spec-audit`         | **Self** | Findings to chat (max 15 defects, 7 PO questions)     |
+| `/spec-audit`         | **Self** | `audit/spec-audit_{spec-name}_{date}.md` + summary table to chat |
 | `/init-project`       | **Self** | `CLAUDE.md` for the target test project               |
 | `/init-agent`         | **Self** | `.claude/qa_agent.md` for the target project          |
 | `/update-ai-setup`    | **Self** | `docs/ai-setup.md` + Health Metrics                   |
@@ -89,6 +89,28 @@ The rest — **delegate** to specialized agents.
 - [ ] All artifacts physically exist in FS
 - [ ] Auditor: `✅ PASS` or `🟡 PASS WITH WARNINGS`
 - [ ] Final report generated
+
+---
+
+## Dynamic Coverage Discovery
+
+Run BEFORE delegating to SDET for `/test-cases` or `/api-tests`.
+
+### Commands
+
+| Purpose | Command |
+|---------|---------|
+| List all production Kotlin files | `find src/main -name "*.kt" \| sort` |
+| List existing test files | `find src/test/kotlin -name "*Tests.kt" \| sort` |
+| Find public/suspend functions (complex coverage targets) | `grep -rn "^\s*\(suspend \)\?fun " src/main/kotlin --include="*.kt" \| grep -v "//\|private\|internal"` |
+| Find untested classes (basename diff) | Cross-reference: production files without a `*Tests.kt` counterpart |
+
+### Output
+
+Pass the discovery results as part of the Sub-Agent Protocol context:
+- **Scope:** list of production files/classes needing coverage
+- **Existing:** list of test files already present (SDET avoids duplicates)
+- **Gaps:** production files with no corresponding test file
 
 ---
 

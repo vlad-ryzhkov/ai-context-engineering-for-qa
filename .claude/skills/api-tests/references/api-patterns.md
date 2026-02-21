@@ -51,6 +51,10 @@ Full code examples: `references/examples.md`.
 | `Event published` | Awaitility check in Helper (async queue) |
 | `Content-Type` | `assertEquals` on `response.headers["Content-Type"]` |
 | `Cleanup:` | `delete{Entity}` in `@AfterEach` or try-finally |
+| `Idempotency-Key:` | `header("Idempotency-Key", idempotencyKey)` in request builder |
+| `Mock: SMS Gateway returns {code}` | WireMock stub in `@BeforeEach` |
+| `Wait >5 min` / `cache expired` | `@Disabled("Time-dependent scenario...")` if no testability hook |
+| `DB: Transaction rolled back` | `assertNull(helper.findByEmail(email), "DB rollback expected")` |
 
 ## 7. Coverage Matrix
 

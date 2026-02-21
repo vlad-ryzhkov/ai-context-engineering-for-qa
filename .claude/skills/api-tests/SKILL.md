@@ -43,9 +43,14 @@ Scenario source — `audit/test-scenarios.md` (result of /test-cases) or specifi
 2. **BANNED:** `Thread.sleep`, `delay`, `runBlocking` (use `runTest`), `HttpClient(` in `*Tests.kt` (inline HTTP in tests), manual `@AllureId`, `shouldBe` (use `assertEquals`), `LocalDateTime.now()` in strict assertions. **Zero-comment policy:** `//` and `/* */` in generated code are FORBIDDEN.
 2a. **Coroutine Tests:** Preferred: `fun test(): Unit = runTest { }` from `kotlinx-coroutines-test`. If `runBlocking` is unavoidable — explicit return type required: `fun test(): Unit = runBlocking { }`. FORBIDDEN: `delay()` as timing substitute — use Awaitility.
 2b. **Test Lifecycle:** `@BeforeEach`/`@AfterEach` for setup/teardown. `lateinit var` for resources requiring cleanup. **FORBIDDEN:** `@TestInstance(PER_CLASS)` with field initialization — JUnit skips class init on constructor failure.
-3. **Security Headers Rule:** Every positive test (POST/PUT/DELETE with 2xx) MUST verify `Content-Type`, `X-Content-Type-Options`, `Strict-Transport-Security` via `assertEquals` on `response.headers`.
+2c. **DRY API Clients:** FORBIDDEN: duplicating client method bodies to return different response types (e.g., `registerUser(): RegisterResponse` + `registerUserExpectError(): ErrorResponse` with identical request construction). Generate a single method returning `HttpResponse` or a generic `suspend inline fun <reified T> request(...)` and let the test parse the body as needed. (ref: `api/dry-api-client.md`)
+2d. **Fail Fast in Test Clients:** FORBIDDEN: wrapping API client HTTP calls or JSON deserialization in `try/catch` blocks that return empty stub objects (`catch (e: Exception) { return RegisterResponse() }`). Exceptions MUST propagate so the test runner reports the infrastructure failure at the point of failure, not on a later assertion. (ref: `api/silent-catch.md`)
+2e. **Ktor Body Extraction Rule:** FORBIDDEN: `response.toString()` to obtain response body — in Ktor this returns object metadata, not the body. Use `response.body<T>()` (typed, via `ContentNegotiation` plugin) or `response.bodyAsText()` if raw string is required. Manual `Json.decodeFromString(response.toString())` is a guaranteed runtime crash. (ref: `api/ktor-body-extraction.md`)
+2f. **Single Serialization Framework Rule:** Use exactly one JSON framework across the entire generation — either Jackson OR kotlinx.serialization. FORBIDDEN: mixing Jackson annotations (`@JsonProperty`, `@JsonNaming`, `@JsonIgnoreProperties`) with `kotlinx.serialization` parsing (`Json.decodeFromString`, `@Serializable`). If using Ktor with `ContentNegotiation(jackson())`, deserialize via `response.body<T>()` — never parse raw strings manually. If the stack is `jackson`, all DTOs use `@JsonNaming`/`@JsonProperty`. If the stack is `kotlinx.serialization`, all DTOs use `@Serializable` and no Jackson annotations appear anywhere.
+2g. **Time-Dependent Scenarios (TTL/Cache):** FORBIDDEN: Using `Thread.sleep` or `delay()` to simulate time passing for cache expiration, idempotency TTLs, or rate limits. Do not blindly execute sequential requests expecting time to advance instantly. For short asynchronous state changes, use Awaitility. For long temporal conditions (e.g., 5-minute cache expiration), if the specification does NOT explicitly provide a testability hook (e.g., `X-Test-Advance-Time` header or cache invalidation endpoint), you MUST generate the complete test logic and annotate the test method with `@Disabled("Time-dependent scenario: {Wait Time}. Requires testability hook (time-travel/cache-clear) or manual execution.")`.
+3. **Security Headers Rule:** Every positive test (POST/PUT/DELETE with 2xx) MUST verify `Content-Type`, `X-Content-Type-Options`, `Strict-Transport-Security` via `assertEquals` on `response.headers`. (ref: `api/missing-security-headers.md`)
 4. **Structure:**
-   - `requests/`: DTOs (`@JsonNaming`) + Request objects.
+   - `requests/`: DTOs + Request/Response objects. **ALL** data classes mapped to snake_case JSON (request AND response) MUST have `@JsonNaming(SnakeCaseStrategy::class)` + `@JsonIgnoreProperties(ignoreUnknown = true)`. Omitting `@JsonNaming` on response DTOs causes silent null fields.
    - `helpers/`: `@Step` annotated flows.
    - `tests/`: `@Epic` (from feature/package name), `@Feature` (from endpoint name), `@Severity`, `@DisplayName`. `@AllureId` — **NOT generated**: assigned manually or via utility after TMS binding. **MANDATORY TAGS:** Analyze business logic — add `@Tag("CRITICAL")` + `@Severity(SeverityLevel.CRITICAL)` for Money flows, Security/Auth, or Data integrity endpoints; add `@Tag("REGRESSION")` for all others.
    - **External Integrations:** If the endpoint under test calls 3rd-party services (payments, SMS, email providers), the test MUST configure a WireMock stub in `@BeforeEach`. Do not make real HTTP calls to external domains.
@@ -117,10 +122,17 @@ grep -q "^|" audit/test-scenarios.md || echo "WARNING"
 
 **Mandatory Checks:**
 ```bash
-grep -r "Thread.sleep\|delay(\|runBlocking\|shouldBe\|//\|body<\|@AllureId(\|LocalDateTime.now()" src/test/kotlin/
+grep -r "Thread.sleep\|delay(\|runBlocking\|shouldBe\|//\|@AllureId(\|LocalDateTime.now()\|response\.toString()\|catch.*Exception\|kotlinx\.serialization\|Json\.decodeFromString" src/test/kotlin/
 grep -rl "HttpClient(" src/test/kotlin/ | grep "Tests\.kt$"
 grep -r "Map<String, Any>" src/test/kotlin/
+grep -rL "Strict-Transport-Security" src/test/kotlin/*/tests/*Tests.kt
 ```
+Any POS-test file without HSTS check → FAIL (Protocol 3).
+```bash
+grep -rL "AfterEach\|finally" src/test/kotlin/*/tests/*Tests.kt
+```
+If `test-scenarios.md` contains `Cleanup:` for POS/L10N scenarios, every test file with POS tests MUST contain `@AfterEach` or `try/finally` → FAIL.
+
 ⛔ Any match → FAIL. **Lazy Load Anti-Pattern Fix:**
 1. Read `.claude/qa-antipatterns/_index.md` — find `{category}/{name}` matching the problem
 2. Read `.claude/qa-antipatterns/{category}/{name}.md` → apply Good Example → cite `(ref: {category}/{name}.md)`
@@ -129,6 +141,8 @@ grep -r "Map<String, Any>" src/test/kotlin/
 **Categories:** `platform/` · `api/` · `common/` · `security/`
 
 **Quality Gates:**
+- **Spec-Mandated Cleanup:** If the specification or test scenario explicitly declares a `Cleanup` step (e.g., `Cleanup: DELETE /users/{UUID}`), the generator MUST implement it: generate the client method (e.g., `deleteUser(uuid)`), extract the resource ID from the response, and call cleanup in a `try/finally` block or `@AfterEach`. Omitting spec-mandated cleanup is a BLOCKER. (ref: `common/no-cleanup-pattern.md`)
+- **Long Waits Policy:** Any scenario requiring a delay of > 5 seconds to verify a temporal condition (TTL expiry, cache invalidation, idempotency window) MUST be annotated with `@Disabled("Time-dependent scenario: {Wait Time}. Requires testability hook (time-travel/cache-clear) or manual execution.")` unless the specification explicitly provides a testability hook (e.g., `X-Test-Advance-Time` header, cache flush endpoint). Generating `Thread.sleep(>5000)` or `delay(>5000)` is a Quality Gate FAIL. If any test scenario's `@DisplayName` contains "cache expir", "after {N} min", or "TTL" — verify `@Disabled` on the same method. Missing `@Disabled` on time-dependent test without testability hook = Quality Gate FAIL.
 - Every mutating positive test (POST/PUT/DELETE) MUST contain a **Side Effects** check: DB state (`DB:`), queue events, or Cache — via Helper method call.
 - All negative tests MUST verify not only the HTTP code but also the **business error code** (`assertEquals(expectedCode, response.body.code, "error code mismatch")`).
 - **No duplication:** entity creation logic — only in Helpers; data logic — only in TestData/FakerService. Inline strings in tests are FORBIDDEN.

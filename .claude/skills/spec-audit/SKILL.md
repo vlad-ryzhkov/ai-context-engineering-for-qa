@@ -20,17 +20,20 @@ Before execution the agent MUST:
 
 1. **Role:** Senior engineer & offensive QA. "Evil tester". Critical QA auditor. Zero tolerance for Ambiguity.
 2. **Objective:** Find reasons why implementing this specification will lead to bugs, vulnerabilities, or development Blockers.
-3. **Principle:** "Shift Left Extreme". We hunt bugs in *text* while they cost $1, not $1000 in production.
-4. **Anti-Hallucination Rule:** Never assume a field exists unless it is explicitly listed in the table or schema. If an action (SMS, Push, Email) is mentioned in the text but the field (`phone`, `device_token`, `email`) is missing from the Request Body — this is a specification ERROR, not a reason to add a field "from memory" or logical inference. Log as Defect 10.
+3. **Principle — Shift Left Extreme:** We hunt bugs in *text* while they cost $1, not $1000 in production.
+4. **Principle — Trust No One:** Every invocation performs a FRESH, INDEPENDENT audit. Never reuse or reference previous audits. Even if an audit for this specification already exists, create a NEW audit file with a unique timestamp. This ensures consistency, reduces hallucination, and preserves audit history.
+5. **Anti-Hallucination Rule:** Never assume a field exists unless it is explicitly listed in the table or schema. If an action (SMS, Push, Email) is mentioned in the text but the field (`phone`, `device_token`, `email`) is missing from the Request Body — this is a specification ERROR, not a reason to add a field "from memory" or logical inference. Log as Defect 10.
 
 ## Input Data (Step 0 — execute FIRST, before everything else)
 
-Determine the specification by Priority:
+Determine the specification by Priority. **Evaluate steps in order. Stop at the first match — do NOT proceed to subsequent steps.**
 
-1. **`$ARGUMENTS`** — if a path is provided here (Claude Code CLI) → read the file with the `Read` tool.
-2. **User message** — if it contains a file path (`.md`, `.yaml`, `.json`, `.txt`) → read it with the `Read` tool. (Cursor and other environments where `$ARGUMENTS` is not substituted.)
-3. **Auto-search** — if no path found → run `Glob: specifications/**/*.md`, read the first result.
+1. **`$ARGUMENTS`** — if a path is provided here (Claude Code CLI) → read the file with the `Read` tool. **→ STOP. Skip steps 2–4.**
+2. **User message** — if it contains a file path (`.md`, `.yaml`, `.json`, `.txt`) → read it with the `Read` tool. (Cursor and other environments where `$ARGUMENTS` is not substituted.) **→ STOP. Skip steps 3–4.**
+3. **Auto-search** — only if NO path was found in steps 1 or 2 → run `Glob: specifications/**/*.md`, read the **first result only**.
 4. **Auto-search yielded no results** — output `⚠️ WARNING: specification not found` and continue with an empty base.
+
+**Multiple specifications:** Only if multiple file paths are **explicitly provided** in $ARGUMENTS or user message — run the full analysis for each separately. Each spec generates its own artifact with a unique filename. Do not merge findings across specs. **Auto-search never produces multiple specs — it reads the first result only.**
 
 ## Before Starting
 
@@ -99,6 +102,22 @@ You MUST perform the analysis in 4 stages. Do not mix conclusions.
 ### 4. Ambiguity Check
 * Look for weasel words: "quickly", "correctly", "as usual", "later". These are signs of tech debt.
 
+---
+
+## Step 5 — Defect Consolidation (MANDATORY — execute AFTER all 4 passes, BEFORE writing any output)
+
+**Purpose:** Guarantee that every labeled defect from the analysis makes it into the Risk Matrix. This step prevents silent defect loss.
+
+1. Scan the full text of all 4 passes for any item labeled `DEFECT N`, `Defect N`, `→ Defect`, `BLOCKER`, or `FAIL →`.
+2. Compile a numbered master list. Each **unique issue** = one entry. Do not group or merge distinct issues.
+3. Count totals by priority band: 10, 8-9, 6-7, 4-5.
+4. **Every entry MUST become a row in the Risk Matrix.** Merging rows is FORBIDDEN unless two items are literally the same defect described twice.
+5. **Write the Executive Summary LAST** — after the Risk Matrix is finalized. Use the counts from step 3 as inputs to the Score formula. Do not compute the Score from intermediate estimates.
+
+**Verification:** `count(Risk Matrix rows) == count(master list entries)`. If not equal — the report is incomplete. Do not generate the output file until they match.
+
+---
+
 ## When to Use
 
 - Before writing test cases or automated tests for a new feature
@@ -107,13 +126,15 @@ You MUST perform the analysis in 4 stages. Do not mix conclusions.
 
 ## Output Results
 
-**Default:** save to file `audit/spec-audit_{YYYY-MM-DD}.md` + output SKILL COMPLETE to chat.
+**Default:** save full audit to `audit/spec-audit_{SPEC_NAME}_{YYYYMMDD_HHMMSS}.md`, output SKILL COMPLETE block to chat (timestamp format: `YYYYMMDD_HHMMSS`).
 
-On repeated run the same day — overwrite.
+**SPEC_NAME** — derived from the specification filename: lowercase, spaces and slashes replaced with `-`, extension stripped. Example: `registration_api_v1.md` → `registration-api-v1`.
+
+**Multiple runs same day for the same spec** — create a NEW file with unique timestamp. Never overwrite previous audits. This ensures audit history and compliance with "Trust No One" principle.
 
 ## Output Contract
 
-**Limit:** Maximum 15 Defects.
+**Limit:** Maximum 42 Defects.
 
 ### 1. Executive Summary
 * **Verdict:** `Ready for development` / `Approved with corrections` / `Blocked`.
@@ -169,9 +190,11 @@ Before generating the output file, verify ALL conditions are met:
 
 - [ ] 4 analysis passes completed (Static, Mental, Architecture, Ambiguity).
 - [ ] Key-to-Key, Null Matrix, and Verb-Data Lineage tables are physically generated.
+- [ ] Defect Consolidation (Step 5) completed: master list compiled, `count(Risk Matrix rows) == count(master list entries)`.
 - [ ] Risk matrix is sorted by priority descending (10 → 1).
-- [ ] Specification Quality Score is calculated by the formula, not estimated.
+- [ ] Specification Quality Score calculated AFTER Risk Matrix is finalized, using exact Risk Matrix row counts (not intermediate estimates). Formula inputs must match Risk Matrix totals.
 - [ ] Report is written in English (field names and code identifiers remain as-is).
+- [ ] Gardener Analysis section appended to the artifact file.
 
 If any condition is NOT met — do not generate the file, complete the missing pass first.
 
@@ -187,6 +210,9 @@ Before output, check yourself against 10 specific errors in the specification:
 8. **Boundary Arithmetic Test:** For each field with a constraint — is the equation `len = N; min=X, max=Y → PASS/FAIL` recorded? Violation = Defect 9.
 9. **HTTP Status Exhaustion:** For each Business logic branch — is the HTTP status and response body format specified? Unclosed branch = Defect 8.
 10. **Null Matrix:** For each `required` field — is the API response when it is missing described? No = Defect 8.
+
+11. **Defect Completeness:** Count all items labeled `DEFECT N` / `→ Defect` / `BLOCKER` in analysis sections 1–4. Count rows in Risk Matrix. Are they equal? If not — add missing rows before output.
+12. **Score Formula Accuracy:** Do the Priority counts in the Score formula exactly match the Risk Matrix row counts by band? Mismatch = recompute Score.
 
 **If you found any — output them with Priority 8-10 (Critical/Blocker).**
 
@@ -216,14 +242,18 @@ Before output, check yourself against 10 specific errors in the specification:
 
 ### Completion
 
-Save the full audit result to `audit/spec-audit_{date}.md` (overwrite on repeated run).
+1. Run Gardener Analysis (per `.claude/protocols/gardener.md`) → append `## 🌱 Gardener Analysis` section to the artifact file.
+2. Save the full audit result to `audit/spec-audit_{SPEC_NAME}_{YYYYMMDD_HHMMSS}.md`.
+3. Output `SKILL COMPLETE` block to chat only (no Risk Matrix, no Defect details, no summary table):
 
-After saving — output the `SKILL COMPLETE` block:
+```
+✅ SKILL COMPLETE: /spec-audit
+├─ Artifacts: audit/spec-audit_{SPEC_NAME}_{YYYYMMDD_HHMMSS}.md — **Each invocation creates a new timestamped file**
+├─ Compilation: N/A
+├─ Upstream: {specification file path}
+├─ Specification Quality Score: X%
+├─ Defects: N total (Priority 10: X, 8-9: Y, 6-7: Z, 4-5: W)
+└─ Status: BLOCKED / APPROVED WITH CORRECTIONS / READY FOR DEVELOPMENT
+```
 
-**✅ SKILL COMPLETE: /spec-audit**
-- Artifacts: `audit/spec-audit_{date}.md`
-- Compilation: N/A
-- Upstream: none
-- Specification Quality Score: X%
-- Defects: N (Priority 10: X, 8-9: Y, 6-7: Z, 4-5: W)
-- Status: Ready for development / Approved with corrections / Blocked
+Full findings → artifact file.

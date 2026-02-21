@@ -14,6 +14,13 @@ infrastructure, and current test coverage. Gives AI and humans a complete pictur
 before planning test coverage.
 </purpose>
 
+## Scope (SINGLE AUTHORITY)
+
+**repo-scout is the ONLY skill responsible for initial repository discovery.**
+- It ONLY reads and catalogs.
+- It NEVER evaluates code quality, architecture patterns, or bugs.
+- It NEVER generates test files or execution plans.
+
 ## When to Use
 
 - First entry into a new backend repository
@@ -55,7 +62,7 @@ before planning test coverage.
 
 **Post-Check:** Inline before SKILL COMPLETE (5-7 line checklist), not a separate file.
 
-**Phases 1-5:** Silent execution. **Phase 6:** Only Summary table + "Report: audit/repo-scout-report.md".
+**Phases 1-5:** Silent execution. **Phase 6:** Only Summary table + "Report: audit/repo-scout-report_{timestamp}.md" (timestamp format: `YYYYMMDD_HHMMSS`).
 
 ### Before Starting
 
@@ -148,7 +155,8 @@ Glob: **/*.http, **/api.http
 ```
 
 If found — note as an additional source of examples.
-
+#### 2.5 Risk Classification
+Flag **Sensitive Endpoints** (auth, login, token, billing, pay, wallet, users, profile, export) in the report — SDET will apply `@Severity(CRITICAL)` patterns.
 ### Phase 3: Test Analysis
 
 **Goal:** Assess current test coverage.
@@ -171,40 +179,34 @@ If found — note as an additional source of examples.
 4. Check for external test repositories:
    - Search README for links to `indrive-api-tests-*` or `*-tests`
    - Check `.dev-platform/` for test runner configurations
-
 ### Phase 4: Infrastructure Scan
 
 **Goal:** Understand the infrastructure context.
 
-1. **CI/CD:**
-   ```
-   Glob: .github/workflows/*.yml, .gitlab-ci.yml, Jenkinsfile
-   ```
-   Brief: which pipelines, whether tests are in CI.
-
-2. **Docker:**
-   ```
-   Glob: **/Dockerfile, **/docker-compose.yaml, **/docker-compose.yml
-   ```
-   Which services in compose (DB, Redis, Kafka, etc.)
-
-3. **Database:**
-   ```
-   Glob: migrations/**, **/migrations/**, **/liquibase/**
-   ```
-   Migration type (Liquibase, goose, Atlas), number of changesets.
-
-4. **Configuration:**
-   ```
-   Glob: config/*.yaml, config/*.yml
-   ```
-   Environments (local, dev, prod), external services.
-
-5. **Dev-Platform:**
-   ```
-   Glob: .dev-platform/**
-   ```
-   If present — note shared services and dependencies.
+#### 4.1 CI/CD
+```
+Glob: .github/workflows/*.yml, .gitlab-ci.yml, Jenkinsfile
+```
+#### 4.2 Docker
+```
+Glob: **/Dockerfile, **/docker-compose.yaml, **/docker-compose.yml
+```
+#### 4.3 Database
+```
+Glob: migrations/**, **/migrations/**, **/liquibase/**
+```
+#### 4.4 Configuration
+```
+Glob: config/*.yaml, config/*.yml
+```
+#### 4.5 Dev-Platform
+```
+Glob: .dev-platform/**
+```
+#### 4.6 Security & Secrets Baseline
+1. **Secrets:** `ls -la .env .env.*`, grep for RSA/OPENSSH keys, api_key/secret_key
+2. **Dependencies:** `govulncheck ./...`
+3. **SQL Injection:** grep for unsafe `fmt.Sprintf` in SQL statements
 
 ### Phase 5: AI Setup Status
 
@@ -221,7 +223,7 @@ Check for AI files:
 
 ### Phase 6: Report Generation
 
-Compile the report and save to `audit/repo-scout-report.md`. Full report template with examples — in `references/report-template.md`.
+Compile the report and save to `audit/repo-scout-report_{timestamp}.md` (timestamp format: `YYYYMMDD_HHMMSS`). Full report template with examples — in `references/report-template.md`.
 
 **Required sections:**
 1. Repository Profile (module, Go version, service type, dependencies)
@@ -252,13 +254,13 @@ Before saving the report, verify:
 
 ## Completion
 
-After saving `audit/repo-scout-report.md` — print `SKILL COMPLETE` block (format in qa_agent.md § Skill Completion Protocol).
+After saving `audit/repo-scout-report_{timestamp}.md` — print `SKILL COMPLETE` block (format in qa_agent.md § Skill Completion Protocol).
 
 Self-Review for this skill **is not generated** (read-only scanning, not content generation).
 
 ```
 ✅ SKILL COMPLETE: /repo-scout
-├─ Artifacts: audit/repo-scout-report.md
+├─ Artifacts: audit/repo-scout-report_{timestamp}.md — **Each invocation creates a new timestamped file**
 ├─ Self-Review: N/A (scanning)
 ├─ Compilation: N/A
 ├─ Upstream: none
