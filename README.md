@@ -28,7 +28,7 @@ Disclaimer: I insist that you have to review any AI generated results even if it
 | 🟤 Codex          | Agent Skills        | via `AGENTS.md` + `.agents/skills/`                 |
 
 <details>
-<summary>Full compatibility matrix</summary>
+<summary>👇 <strong>Full compatibility matrix — click to expand</strong> 👇</summary>
 
 | Capability         | 🟣 Claude Code | 🟢 OpenCode  | ⚪️ Cursor               | 🔵 VS Code Copilot          | ⚫️ IntelliJ Copilot         | 🟤 Codex            | 💬 Generic Chat |
 |--------------------|----------------|--------------|-------------------------|-----------------------------|-----------------------------|---------------------|-----------------|
