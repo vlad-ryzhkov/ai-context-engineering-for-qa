@@ -15,7 +15,7 @@ what to check, and how to format the output. Originally built for a workshop, wo
 
 ---
 
-## 🚀 Getting Started
+### 🚀 Getting Started
 
 ### Prerequisites
 
@@ -70,7 +70,7 @@ Open your AI chat and follow the [QA Workflow Skills](#-qa-workflow-skills) pipe
 
 ---
 
-## 🏗️ Setup Skills
+### 🏗️ Setup Skills
 
 Generate and maintain the AI configuration files themselves.
 
@@ -80,7 +80,7 @@ Generate and maintain the AI configuration files themselves.
 | `/init-agent`   | `qa_agent.md` — QA agent role and principles     | Setting up AI agent behavior     |
 | `/init-skill`   | `SKILL.md` — new skill with checklist and phases | Automating a repeatable QA task  |
 
-## 🔬 QA Workflow Skills
+### 🔬 QA Workflow Skills
 
 Core pipeline — choose your starting point based on the scope:
 
@@ -103,7 +103,7 @@ Core pipeline — choose your starting point based on the scope:
 
 ---
 
-## 🧰 Other Skills
+### 🧰 Other Skills
 
 | Skill                 | Purpose                                                                            |
 |-----------------------|------------------------------------------------------------------------------------|
@@ -115,7 +115,7 @@ Core pipeline — choose your starting point based on the scope:
 
 ---
 
-## 🏛️ Project Patterns
+### 🏛️ Project Patterns
 
 - **Progressive Disclosure** — `CLAUDE.md` → `qa_agent.md` → `SKILL.md` load only on demand, saves tokens
 - **Gardener Protocol** — AI suggests improvements to the knowledge base at the end of each run
