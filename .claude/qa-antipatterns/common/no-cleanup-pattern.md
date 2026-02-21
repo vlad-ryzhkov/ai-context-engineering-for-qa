@@ -86,6 +86,34 @@ fun `user can register`() {
 | **try-finally** | Test creates a unique resource that must be deleted immediately |
 | **Cleanup-After (`@AfterEach`)** | Only if Cleanup-First is not possible (no idempotent DELETE) |
 
+## Spec-Mandated Cleanup (Generator Rule)
+
+When the test specification explicitly declares a `Cleanup` step (e.g., `Cleanup: DELETE /users/{UUID}`),
+the generator MUST implement it — no exceptions.
+
+**Required actions:**
+1. Generate the corresponding client method (e.g., `deleteUser(uuid: String)`) in the `requests/` layer
+2. Extract the resource ID from the creation response and store it in a `lateinit var` or nullable variable
+3. Call the cleanup method in a `try/finally` block or via `@AfterEach`
+
+```kotlin
+// ✅ GOOD: spec says "Cleanup: DELETE /users/{uuid}" — generator implements it
+@Test
+fun `positive registration creates user`(): Unit = runTest {
+    var createdUuid: String? = null
+    try {
+        val response = registrationClient.register(TestData.validRequest())
+        assertEquals(201, response.status.value, "expected 201 Created")
+        createdUuid = response.body<RegisterResponse>().uuid
+        // further assertions...
+    } finally {
+        createdUuid?.let { userClient.deleteUser(it) }
+    }
+}
+```
+
+**BLOCKER:** If the spec defines a Cleanup step but the generator omits it → treat as a Quality Gate failure.
+
 ## What to look for in code review
 
 - Missing `finally` block, `@BeforeEach` cleanup, or `@AfterEach`

@@ -31,6 +31,10 @@
 | `api/inline-http-calls.md` | `HttpClient(` created inline in test |
 | `api/missing-security-headers.md` | POS-test without security headers check |
 | `api/missing-business-error-assertion.md` | NEG-test without `body.code` check |
+| `api/ktor-body-extraction.md` | `response.toString()` instead of `bodyAsText()` / `body<T>()` |
+| `api/silent-catch.md` | Silent `catch` returning empty stub hides infrastructure failures |
+| `api/dry-api-client.md` | Duplicated client methods differing only by response type |
+| `api/serialization-mixing.md` | Mixing Jackson + kotlinx.serialization in same project |
 
 ### platform/ — Kotlin + JUnit5
 
@@ -65,7 +69,7 @@ When a problem is found in code:
 ls .claude/qa-antipatterns/api/
 
 # Grep in artifact
-grep -r "HttpClient(\|Map<String, Any>\|body<" src/test/kotlin/
+grep -r "HttpClient(\|Map<String, Any>\|response\.toString()\|catch.*Exception" src/test/kotlin/
 
 # Read file on match
 cat .claude/qa-antipatterns/api/inline-http-calls.md
