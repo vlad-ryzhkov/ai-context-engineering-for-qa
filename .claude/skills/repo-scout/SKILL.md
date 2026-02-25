@@ -1,6 +1,6 @@
 ---
 name: repo-scout
-description: Scans a backend repository (Go), catalogs API surface, infrastructure, and test coverage. Use when entering a new repo before writing tests. Do not use for QA projects — use /init-project for those.
+description: Scans a backend repository (Go, Python, Node.js, Java/Kotlin), catalogs API surface, infrastructure, and test coverage. Use when entering a new repo before writing tests. Do not use for QA projects — use /init-project for those.
 allowed-tools: "Read Glob Grep Bash(ls*) Bash(wc*)"
 agent: agents/sdet.md
 context: fork
@@ -72,7 +72,7 @@ Read `.claude/qa_agent.md` (if present in the working project). Output:
 📋 TASK BRIEF
 ├─ Target: {repo-name} — backend service reconnaissance
 ├─ Scope: API surface + infrastructure + test coverage
-├─ Constraint: Read-only, Go patterns only
+├─ Constraint: Read-only, backend patterns only (Go / Python / Node.js / Java/Kotlin)
 └─ Action: Invoking /repo-scout...
 ```
 
@@ -80,16 +80,17 @@ Read `.claude/qa_agent.md` (if present in the working project). Output:
 
 **Goal:** Determine language, build system, directory structure.
 
-1. Check for build files:
+1. **Detect language** — check build files using the detection table in `references/lang-patterns.md`:
    ```text
-   go.mod, go.sum, Makefile
+   Glob: go.mod, package.json, pom.xml, build.gradle.kts, requirements.txt, pyproject.toml, Cargo.toml
    ```
-   If `go.mod` not found — output: "⚠️ WARNING: go.mod not found, possibly not a Go project. Scanning available structure."
+   - Record detected language(s). If multiple → monorepo, note all.
+   - If none → ⚠️ WARNING: No known build file found. Generic scan only.
+   - All subsequent pattern lookups use `references/lang-patterns.md` section for detected language.
 
-2. Extract from `go.mod`:
-   - Module name (module path)
-   - Go version
-   - Key dependencies (HTTP framework, gRPC, DB driver, test libraries)
+2. Read primary build file for metadata:
+   If Go detected: extract from `go.mod`: module name, Go version, key dependencies.
+   For other languages: read primary build file for equivalent metadata.
 
 3. Determine structure:
    ```text
@@ -134,12 +135,7 @@ For each .proto file:
 
 #### 2.3 Route Registration (from code)
 
-Read `references/lang-patterns.md` for current patterns.
-
-Search Go files for route registration patterns:
-```text
-Grep: r\.HandleFunc|r\.Get\(|r\.Post\(|r\.Put\(|r\.Delete\(|r\.Route\(|\.GET\(|\.POST\(|echo\.
-```
+Read `references/lang-patterns.md` → section for detected language → use that language's **Grep String for Route Search**.
 
 For each found:
 - File + line
@@ -165,19 +161,13 @@ Flag **Sensitive Endpoints** (auth, login, token, billing, pay, wallet, users, p
 **Goal:** Assess current test coverage.
 
 1. Find all test files:
-   ```text
-   Glob: **/*_test.go
-   ```
+   Read `references/lang-patterns.md` → section for detected language → use that language's **Test Patterns** for file glob and classification rules.
 
 2. Classify by type:
-   - **Unit:** files without `//go:build integration` and without Docker/DB imports
-   - **Integration:** files with `//go:build integration` or with sqlmock/testcontainers
-   - **E2E/API:** separate test repositories (check README for links)
+   Classify per `lang-patterns.md` → Test Patterns table for detected language.
 
 3. Determine test frameworks:
-   ```text
-   Grep in go.mod: testify, gomock, go-sqlmock, testcontainers
-   ```
+   Determine test frameworks: read `lang-patterns.md` → Test Frameworks table for detected language → search in primary build file.
 
 4. Check for external test repositories:
    - Search README for links to `indrive-api-tests-*` or `*-tests`

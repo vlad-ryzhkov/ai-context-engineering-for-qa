@@ -82,6 +82,8 @@ For tasks > 3 files: Analysis → Plan → Execute → Verify
 
 ## Git Workflow
 
+**Main branch:** `main` — all PRs target `main`.
+
 Before pushing to any branch, explicitly confirm the target branch name with the user. Never assume `main` vs `master` or feature branch names.
 
 ## Editing Conventions

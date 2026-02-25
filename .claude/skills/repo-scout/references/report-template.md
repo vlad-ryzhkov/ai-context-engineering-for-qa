@@ -9,8 +9,9 @@
 
 | Parameter | Value |
 |-----------|-------|
-| Module | {module path from go.mod} |
-| Go Version | {version} |
+| Language | {Go / Python / Node.js / TypeScript / Java / Kotlin} |
+| Runtime/Version | {go 1.21 / python 3.11 / node 20 / jdk 17} |
+| Module/Package | {module path / package name / artifact ID} |
 | Service Type | {REST API / gRPC / Mixed / CLI / Consumer} |
 | Services | {list from cmd/} |
 | Source Files | {N .go files} |
@@ -20,11 +21,11 @@
 
 | Category | Library |
 |----------|---------|
-| HTTP | {chi / gin / echo / stdlib} |
-| gRPC | {google.golang.org/grpc / none} |
-| DB | {mysql / postgres / mongo} |
-| Queue | {sarama / segmentio-kafka / none} |
-| Cache | {go-redis / none} |
+| HTTP Framework | {gin / FastAPI / Express / Spring Boot / none} |
+| gRPC | {present / none} |
+| DB Driver | {driver name or ORM / none} |
+| Queue Client | {kafka / rabbitmq / none} |
+| Cache Client | {redis / none} |
 
 ## 2. API Surface Catalog
 
@@ -60,6 +61,8 @@ Formula: covered endpoints / (REST + gRPC) × 100
 | Integration | {N} | {path} | {testify + sqlmock} |
 | E2E/API | {N or "external repo"} | {path or link} | {framework} |
 
+> Coverage benchmarks for /test-cases planning: controllers 95% · services 90% · helpers 85% · config/infra 70% · third-party 60%
+
 ## 5. Infrastructure
 
 | Component | Present | Details |
@@ -87,7 +90,7 @@ Formula: covered endpoints / (REST + gRPC) × 100
 | Criterion | Status | Comment |
 |-----------|--------|---------|
 | API Specs | {🟢 Complete / 🟡 Partial / 🔴 Missing} | {details} |
-| Test Infrastructure | {🟢 Ready / 🟡 Needs Setup / 🔴 Missing} | {details} |
+| Test Infrastructure | {🟢 Ready / 🟡 Needs Setup / 🔴 Missing} | {unit: N files, integration: N files, e2e: present/absent. Benchmarks: controllers 95%, services 90%, helpers 85%} |
 | Documentation | {🟢 / 🟡 / 🔴} | {details} |
 | AI Setup | {🟢 / 🟡 / 🔴} | {details} |
 
