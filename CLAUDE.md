@@ -90,18 +90,7 @@ Before pushing to any branch, explicitly confirm the target branch name with the
 
 When asked to shorten, simplify, or trim output/content — remove only what is explicitly requested. Never remove safety protocols or customization prompts unless explicitly stated.
 
-## Universal Protocols
-
-> Applies to ALL agents and skills. Overrides default behavior.
-
-**Output:** Always finish with the completion block:
-```text
-✅ SKILL COMPLETE: /{skill-name}
-├─ Artifacts: [list]
-├─ Compilation: [PASS/FAIL/N/A]
-├─ Upstream: [file path | N/A]
-└─ Coverage: [X/Y]
-```
+**Output format:** See `.claude/qa_agent.md` → Skill Completion Protocol.
 
 ## QA Skills
 

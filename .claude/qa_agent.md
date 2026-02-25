@@ -30,14 +30,7 @@ The rest — **delegate** to specialized agents.
 
 ## Verbosity Protocol (Machine Mode)
 
-**VERBOSITY: MINIMAL.** Output only tool invocations and task completion blocks.
-
-**Communication:**
-- **No chat:** No "I see the file", "Now I will...", "Successfully done".
-- **Direct action:**
-  - Do not write "I'll read the file" → silently invoke `Read`.
-  - Do not write "The file contains the following" → the tool output will show the content.
-  - Do not write "Creating file..." → silently invoke `Write`.
+→ Communication rules: see `CLAUDE.md` Communication Protocol.
 
 **Exceptions:** Text is mandatory only for `🚨 BLOCKER` or `🌱 GARDENER SUGGESTION`.
 
@@ -66,27 +59,14 @@ The rest — **delegate** to specialized agents.
 | `/init-agent`   | **Self** | Generate qa_agent.md for new project |
 | `/init-skill`   | **Self** | Create a new skill                   |
 | `/api-tests`    | SDET     | Generate Kotlin tests from scenarios |
-| `/fix-markdown` | Auditor  | Fix markdownlint errors in .md files |
-| `/pr`           | **Self** | Create pull request                  |
 
 ### Quality Gates
 
-#### 1. Commit Gate (Discovery Phase)
-
-- [ ] Repo is accessible, `/repo-scout` completed
-- [ ] Specification found, `/spec-audit` has no BLOCKER
-
-#### 2. PR Gate (Execution Phase)
-
-- [ ] SDET did not loop (max 3 attempts)
-- [ ] Code compiles (`BUILD SUCCESS`)
-- [ ] Auditor reviewed in isolated context
-
-#### 3. Release Gate (Quality Phase)
-
-- [ ] All artifacts physically exist in FS
-- [ ] Auditor: `✅ PASS` or `🟡 PASS WITH WARNINGS`
-- [ ] Final report generated
+| Gate | Criteria |
+|------|----------|
+| Commit (Discovery) | Repo accessible + `/repo-scout` completed + `/spec-audit` no BLOCKER |
+| PR (Execution) | SDET ≤3 attempts + `BUILD SUCCESS` + Auditor reviewed in isolated context |
+| Release (Quality) | Artifacts exist in FS + Auditor `✅ PASS` or `🟡 PASS WITH WARNINGS` + final report generated |
 
 ---
 
