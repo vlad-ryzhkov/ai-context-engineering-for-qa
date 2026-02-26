@@ -231,7 +231,7 @@ For non-Russian texts **add a translation**:
 
 Output to chat only:
 ```text
-📊 L10n: {N} issues (CRITICAL: X, ERROR: Y) → analysis-report.html
+📊 L10n: {N} issues (CRITICAL: X, ERROR: Y) → analysis-report_{YYYYMMDD_HHMMSS}.html
 ```
 
 **Limits:**
@@ -241,12 +241,14 @@ Output to chat only:
 
 Generated in the screenshots directory.
 
+**Filename:** `analysis-report_{YYYYMMDD_HHMMSS}.html` — timestamped to preserve history across runs. Never overwrite previous reports.
+
 **Title:** `L10n Report — {COUNTRY_NAME}`
 **Structure:** Summary Cards → Context Banner → Per-Screenshot Sections
 
 **Template:** `references/html-template.md`
 
-**MUST:** Open the report with `open {path}/analysis-report.html`
+**MUST:** Open the report with `open {path}/analysis-report_{YYYYMMDD_HHMMSS}.html`
 
 ---
 

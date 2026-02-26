@@ -66,6 +66,16 @@ src/
 ✅ **MANDATORY:** Backup before destructive operations
 ⚠️ **OVERRIDE:** Requires the word **DESTROY** from the user
 
+## Secrets — Never Commit
+
+Forbidden patterns: see `.gitignore` (Security section).
+Enforcement: `scripts/pre-commit.sh` (blocks commit), `scripts/pre-push.sh` (blocks push).
+
+Setup hooks once: `bash scripts/setup-hooks.sh`
+
+If a secret was already committed → **rotate immediately**, then remove from history:
+`git filter-repo --path-glob '*.env' --invert-paths`
+
 ## Token Economy
 
 - PAUSE on tasks > 20,000 tokens

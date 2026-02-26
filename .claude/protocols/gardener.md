@@ -42,3 +42,14 @@ If no proposals:
 - Only if the rule is **missing** from SKILL.md — do not duplicate existing rules
 - If >5 observations — group by topic (max 5 rows in the table)
 - Do not apply independently — suggestion only, the user decides
+
+## Examples: Good vs. Bad Observations
+
+| Quality | Observation | Proposed rule | Why |
+|---------|-------------|---------------|-----|
+| ✅ Good | `validateBodyContains` used in test body instead of helper | BANNED: call `validateBodyContains` directly in `@Test` — extract to `@Step` helper | Specific, actionable, maps to an existing convention |
+| ✅ Good | `Thread.sleep(2000)` appeared in generated test | BANNED: `Thread.sleep` — use Awaitility polling instead | Missing from BANNED at time of run; prevents recurrence |
+| ❌ Bad | "Consider adding more assertions" | — (too vague) | Not a prohibition or specific requirement — a wish |
+| ❌ Bad | "Tests should be readable" | — (not actionable) | Already implied by ktlint + existing rules; adds no new constraint |
+
+**Noise filter:** Before adding a row, ask — "Would this rule, written exactly as proposed, prevent the same mistake on the next run?" If no → drop it.

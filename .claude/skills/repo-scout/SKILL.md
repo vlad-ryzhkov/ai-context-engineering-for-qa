@@ -231,7 +231,7 @@ Check for AI files:
 Compile the report and save to `audit/repo-scout-report_{timestamp}.md` (timestamp format: `YYYYMMDD_HHMMSS`). Full report template with examples — in `references/report-template.md`.
 
 **Required sections:**
-1. Repository Profile (module, Go version, service type, dependencies)
+1. Repository Profile (module, programming language version, service type, dependencies)
 2. API Surface Catalog (REST + gRPC endpoints with Summary)
 3. Specification Inventory (coverage formula)
 4. Existing Test Coverage (unit/integration/e2e)
@@ -241,7 +241,7 @@ Compile the report and save to `audit/repo-scout-report_{timestamp}.md` (timesta
 
 ## Quality Gates
 
-- [ ] go.mod found and parsed
+- [ ] for "go" language - go.mod found and parsed
 - [ ] All proto files read and RPCs cataloged
 - [ ] All swagger/openapi files read and endpoints cataloged
 - [ ] Endpoint counts are correct (formula shown)

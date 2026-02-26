@@ -74,3 +74,7 @@ fun `user registration flow`() {
 - Multiple assertions in a row without context
 - Missing Allure `step()` in integration tests
 - Assertions on nested fields without explanation of the structure
+
+## See Also
+
+- `common/hardcoded-test-data.md` — test data context is often missing alongside assertion messages

@@ -55,3 +55,5 @@ grep -A3 "} catch" src/test/kotlin/ | grep -E "return \w+\(\)"
 
 - (ref: api/silent-catch.md)
 - Related: `common/no-abstraction-layer.md`
+- Related: `api/wrap-infrastructure-errors.md`
+- Related: `platform/controlled-retries.md`

@@ -48,3 +48,5 @@ grep -rn "HttpClient(" src/test/kotlin/
 
 - (ref: inline-http-calls.md)
 - General principle: `common/no-abstraction-layer.md`
+- Related: `api/configure-http-client.md`
+- Related: `api/dry-api-client.md`

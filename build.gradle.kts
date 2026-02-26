@@ -1,3 +1,5 @@
+import java.nio.file.Files
+
 plugins {
     kotlin("jvm") version "1.9.22"
 }
@@ -51,4 +53,32 @@ tasks.test {
 
 kotlin {
     jvmToolchain(17)
+}
+
+tasks.register("installGitHooks") {
+    group = "setup"
+    description = "Installs pre-commit and pre-push hooks from scripts/"
+
+    val hooksDir = rootDir.resolve(".git/hooks")
+    val scriptsDir = rootDir.resolve("scripts")
+
+    doLast {
+        mapOf(
+            "pre-commit" to "pre-commit.sh",
+            "pre-push" to "pre-push.sh",
+        ).forEach { (hookName, scriptName) ->
+            val hookFile = hooksDir.resolve(hookName)
+            val scriptFile = scriptsDir.resolve(scriptName)
+
+            if (hookFile.exists() || Files.isSymbolicLink(hookFile.toPath())) hookFile.delete()
+
+            Files.createSymbolicLink(
+                hookFile.toPath(),
+                hookFile.parentFile.toPath().relativize(scriptFile.toPath()),
+            )
+
+            scriptFile.setExecutable(true)
+            println("Installed: .git/hooks/$hookName -> scripts/$scriptName")
+        }
+    }
 }

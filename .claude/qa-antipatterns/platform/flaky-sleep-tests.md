@@ -55,3 +55,8 @@ await()
 - Magic numbers in timeouts without explanation
 - Comments like "wait for async operation"
 - Tests that "sometimes fail"
+
+## See Also
+
+- `platform/controlled-retries.md` — the correct replacement for sleep-based async waiting
+- `platform/no-hardcoded-timeouts.md` — hardcoded sleep durations are a form of hardcoded timeouts

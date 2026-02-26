@@ -10,7 +10,8 @@ what to check, and how to format the output. Originally built for a workshop, wo
 </p>
 
 ___
-### 🔬 QA Workflow Skills
+
+## 🔬 QA Workflow Skills
 
 Core pipeline — choose your starting point based on the scope:
 
@@ -34,7 +35,7 @@ Core pipeline — choose your starting point based on the scope:
 - Note: While the `/api-tests` output provides great coverage out of the box, it is designed to be adapted to your team's specific architectural guidelines.
 ___
 
-### 🏗️ Setup Skills
+## 🏗️ Setup Skills
 
 Generate and maintain the AI configuration files themselves.
 
@@ -48,15 +49,15 @@ Generate and maintain the AI configuration files themselves.
 
 > **⚠️ Disclaimer:** Always review AI-generated results. Even with well-crafted prompts and agents, outputs must be validated by a human before being merged or executed.
 
-### 🚀 Getting Started
+## 🚀 Getting Started
 
-### Prerequisites
+## Prerequisites
 
 - An active subscription or API key for your AI tool of choice (Claude, OpenAI, etc.)
 - Git
 - IDE or CLI tool (see compatibility matrix below)
 
-### 🔧 1. Pick your tool
+## 🔧 1. Pick your tool
 
 | Tool              | Setup method        | Context loading                                     |
 |-------------------|---------------------|-----------------------------------------------------|
@@ -90,12 +91,12 @@ Generate and maintain the AI configuration files themselves.
 
 </details>
 
-### 📦 2. Installation
+## 📦 2. Installation
 
 - **For Claude Code / OpenCode:** Copy the `.claude/` folder from this repo into your project root. Then run `/init-project` in your AI chat to automatically generate your `CLAUDE.md` config.
 - **For other IDEs:** Check the compatibility matrix above to see how to load the context properly.
 
-### ▶️ 3. Run your first audit
+## ▶️ 3. Run your first audit
 
 Open your AI chat and follow the [QA Workflow Skills](#-qa-workflow-skills) pipeline below.
 
@@ -104,7 +105,7 @@ Open your AI chat and follow the [QA Workflow Skills](#-qa-workflow-skills) pipe
 
 ---
 
-### 🧰 Other Skills
+## 🧰 Other Skills
 
 | Skill                 | Purpose                                                                            |
 |-----------------------|------------------------------------------------------------------------------------|
@@ -116,7 +117,7 @@ Open your AI chat and follow the [QA Workflow Skills](#-qa-workflow-skills) pipe
 
 ---
 
-### 🏛️ Project Patterns
+## 🏛️ Project Patterns
 
 - **Progressive Disclosure** — `CLAUDE.md` → `qa_agent.md` → `SKILL.md` load only on demand, saves tokens
 - **Gardener Protocol** — AI suggests improvements to the knowledge base at the end of each run
@@ -128,7 +129,7 @@ Open your AI chat and follow the [QA Workflow Skills](#-qa-workflow-skills) pipe
 
 ---
 
-### 🏛️ How to adapt these approaches for your project and style
+## 🏛️ How to adapt these approaches for your project and style
 
 - Run any skill and review the output critically
 - Expect gaps — invest time in refining the skill file to better fit your context
@@ -139,7 +140,7 @@ Open your AI chat and follow the [QA Workflow Skills](#-qa-workflow-skills) pipe
 
 ---
 
-### ⚙️ Tech Stack (for generated tests)
+## ⚙️ Tech Stack (for generated tests)
 
 | Component      | Technology             |
 |----------------|------------------------|
@@ -152,7 +153,7 @@ Open your AI chat and follow the [QA Workflow Skills](#-qa-workflow-skills) pipe
 
 ---
 
-### 📄 Workshop Materials
+## 📄 Workshop Materials
 
 - 📺 [Demo Video](https://youtu.be/7VnjM44qkmc) — 🎤 Presented at Podlodka AI Crew #2, February 2026.
 - 📊 [Presentation (PDF)](presentation/Workshop_AI_for_QA.pdf)
@@ -161,39 +162,39 @@ Open your AI chat and follow the [QA Workflow Skills](#-qa-workflow-skills) pipe
 
 ---
 
-### 📚 Resources
+## 📚 Resources
 
 <details>
 <summary>👇 <strong>Click to expand</strong></summary>
 
-#### 🧠 Prompt Engineering
+### 🧠 Prompt Engineering
 
 - [Anthropic Prompt Guide](https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview)
 
-#### 🟣 Anthropic (Claude)
+### 🟣 Anthropic (Claude)
 
 - [Anthropic Cookbook](https://github.com/anthropics/anthropic-cookbook)
 - [The Complete Guide to Building Skills for Claude (PDF)](https://resources.anthropic.com/hubfs/The-Complete-Guide-to-Building-Skill-for-Claude.pdf?hsLang=en)
 - [Sub-agents](https://code.claude.com/docs/en/sub-agents)
 
-#### 🔵 VS Code & GitHub Copilot
+### 🔵 VS Code & GitHub Copilot
 
 - [Custom Instructions](https://code.visualstudio.com/docs/copilot/customization/custom-instructions) — configuring `.github/copilot-instructions.md`
 
-#### 🔵 Cursor
+### 🔵 Cursor
 
 - [Skills](https://cursor.com/docs/context/skills)
 - [Subagents](https://cursor.com/docs/context/subagents)
 
-#### 🔵 Codex
+### 🔵 Codex
 
 - [Agent Skills](https://developers.openai.com/codex/skills/)
 
-#### 🧠 Vibe Coding
+### 🧠 Vibe Coding
 
 - [Vibe coding tips](https://www.threads.com/@boris_cherny/post/DTBVlMIkpcm)
 
-#### 🌐 Translations
+### 🌐 Translations
 
 - [Translated version of this repository (ru)](https://github.com/vlad-ryzhkov/AI-QA-workshop-feb19)
 

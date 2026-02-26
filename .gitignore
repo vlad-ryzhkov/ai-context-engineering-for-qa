@@ -55,3 +55,16 @@ src/test/kotlin/rawResults/**
 
 # Local drafts (never push)
 drafts/
+
+### Security ###
+gradle.properties
+local.properties
+.env
+.env.*
+*credentials*
+*-credentials.toml
+*.pem
+*.p12
+*.key
+*.keystore
+*.jks

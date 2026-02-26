@@ -62,3 +62,9 @@ fun `user can register`() {
 - Missing Request classes extending `ApiRequestBaseJson<T>`
 - Hardcoded URLs in tests (`"https://..."`)
 - Custom `ApiClient`/`ApiResponse` wrappers instead of common-test-libs
+
+## See Also
+
+- `api/configure-http-client.md` — shared client configuration is part of the abstraction layer
+- `api/inline-http-calls.md` — inline HTTP calls are the primary symptom of a missing abstraction
+- `api/dry-api-client.md` — DRY violations in request classes extend the same root problem

@@ -59,3 +59,8 @@ fun `user can register`() {
 - `Map<String, Any>`, `Map<String, String>` in signatures
 - JSON strings assembled via string interpolation
 - Missing models in `models/` or `dto/` directory
+
+## See Also
+
+- `api/serialization-mixing.md` — typed DTOs require a consistent serialization library
+- `api/ktor-body-extraction.md` — typed DTOs must be extracted via `body<T>()`, not manual Jackson
