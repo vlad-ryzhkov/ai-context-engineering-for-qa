@@ -13,9 +13,9 @@
 | Runtime/Version | {go 1.21 / python 3.11 / node 20 / jdk 17} |
 | Module/Package | {module path / package name / artifact ID} |
 | Service Type | {REST API / gRPC / Mixed / CLI / Consumer} |
-| Services | {list from cmd/} |
-| Source Files | {N .go files} |
-| Test Files | {N _test.go files} |
+| Services | {list of entry points / service modules} |
+| Source Files | {N source files} |
+| Test Files | {N test files} |
 
 ### Key Dependencies
 
@@ -29,11 +29,11 @@
 
 ## 2. API Surface Catalog
 
-**Summary:** {N REST endpoints} + {M gRPC RPCs} = {total}
+**Summary:** {N REST endpoints} + {M gRPC RPCs} + {K GraphQL queries/mutations} = {total}
 
 ### REST Endpoints
-| # | Method | Path | Description | Auth |
-|---|--------|------|-------------|------|
+| # | Method | Path | Description | Auth | Risk |
+|---|--------|------|-------------|------|------|
 
 ### gRPC RPCs
 | # | Service | Method | Request → Response | Streaming |
@@ -43,39 +43,69 @@
 - [ ] HTTP client files: {path or "none"}
 - [ ] Postman collections: {path or "none"}
 
-## 3. Specification Inventory
+## 3. Validation Rules
 
-| File | Format | Endpoints | Completeness |
-|------|--------|-----------|--------------|
-| {path} | {OpenAPI 3.0 / Swagger 2.0 / Proto3} | {N} | {Complete / Partial / Stale} |
+| # | Endpoint/RPC | Field | Rule | Error Code |
+|---|-------------|-------|------|------------|
+
+## 4. Error Mapping
+
+| Error Constant | gRPC Code | HTTP Code | Trigger Condition |
+|---------------|-----------|-----------|-------------------|
+
+## 5. Auth & Access Control
+
+### Auth Mechanisms
+
+| Mechanism | Type | Details |
+|-----------|------|---------|
+| {JWT / Session / OAuth / API Key} | {Header / Cookie / Query} | {library, config location} |
+
+### Auth Flow
+
+> {token extraction method} → {validation step} → {permission check} → {handler dispatch}
+> On auth failure: {status code} + {error body}
+
+### Endpoint Auth Matrix
+
+| # | Endpoint/RPC | Auth Required | Role/Permission |
+|---|-------------|---------------|-----------------|
+
+## 6. Specification Inventory
+
+> Exact relative file paths are MANDATORY — downstream skills read these files directly.
+
+| File (relative path) | Format | Endpoints | Completeness |
+|----------------------|--------|-----------|--------------|
+| {exact/relative/path/to/file} | {OpenAPI 3.0 / Swagger 2.0 / Proto3} | {N} | {Complete / Partial / Stale} |
 
 **Coverage:** {X}/{total} endpoints have specification = {%}
 
 Formula: covered endpoints / (REST + gRPC) × 100
 
-## 4. Existing Test Coverage
+## 7. Existing Test Coverage
 
 | Type | Files | Location | Framework |
 |------|-------|----------|-----------|
-| Unit | {N} | {internal/...} | {testify / stdlib} |
-| Integration | {N} | {path} | {testify + sqlmock} |
+| Unit | {N} | {test directory} | {test framework} |
+| Integration | {N} | {path} | {test framework + mock library} |
 | E2E/API | {N or "external repo"} | {path or link} | {framework} |
 
-> Coverage benchmarks for /test-cases planning: controllers 95% · services 90% · helpers 85% · config/infra 70% · third-party 60%
+> Coverage benchmarks for /api-isolated-tests planning: controllers 95% · services 90% · helpers 85% · config/infra 70% · third-party 60%
 
-## 5. Infrastructure
+## 8. Infrastructure
 
 | Component | Present | Details |
 |-----------|---------|---------|
 | CI/CD | {✅/❌} | {GitHub Actions / GitLab CI} |
 | Docker | {✅/❌} | {N services in compose} |
 | DB | {✅/❌} | {MySQL / PostgreSQL / MongoDB} |
-| Migrations | {✅/❌} | {Liquibase / goose}, {N changesets} |
+| Migrations | {✅/❌} | {Liquibase / Flyway / goose / Alembic / Knex}, {N changesets} |
 | Message Queue | {✅/❌} | {Kafka / RabbitMQ / NATS} |
 | Cache | {✅/❌} | {Redis / Memcached} |
 | Dev-Platform | {✅/❌} | {shared services} |
 
-## 6. AI Setup Status
+## 9. AI Setup Status
 
 | File | Status |
 |------|--------|
@@ -85,7 +115,7 @@ Formula: covered endpoints / (REST + gRPC) × 100
 | .agents/ | {✅ / ❌} |
 | .cursor/rules/ | {✅ / ❌} |
 
-## 7. Readiness Assessment
+## 10. Readiness Assessment
 
 | Criterion | Status | Comment |
 |-----------|--------|---------|
@@ -100,5 +130,170 @@ Formula: covered endpoints / (REST + gRPC) × 100
 
 ### Recommended Next Step
 
-{Specific recommendation: /test-cases, /init-project, "obtain specification from the team", etc.}
+{Specific recommendation: /api-isolated-tests, /init-project, "obtain specification from the team", etc.}
+
+## 11. State Transition Matrix
+
+> CONDITIONAL: Include only if state machine patterns detected in Phase 3.5.
+
+### State Enum: {EntityName}
+
+| # | From | To | Trigger | Guard | Error on Rejection |
+|---|------|----|---------|-------|--------------------|
+
+### Unreachable States
+
+| State | Why Unreachable | Risk |
+|-------|----------------|------|
+
+### Multi-Step Transition Sequences
+
+| # | Sequence | Business Flow | Priority |
+|---|----------|--------------|----------|
+| {N} | {state1 → state2 → state3 → ...} | {description of business lifecycle} | {P0/P1} |
+
+## 12. Entity & Data Model
+
+> CONDITIONAL: Include only if entity relationship patterns detected in Phase 3.6.
+
+### CRUD Matrix
+
+| # | Entity | Create | Read | Update | Delete | Soft Delete |
+|---|--------|--------|------|--------|--------|-------------|
+
+### Create-Order Chain
+
+> Entities MUST be created in this order (FK dependencies). Cleanup MUST proceed in REVERSE order.
+
+```text
+{Entity A} → {Entity B} → {Entity C}
+```
+
+### Entity Relationships
+
+| Parent | Child | FK Field | On Delete | On Update |
+|--------|-------|----------|-----------|-----------|
+
+### Pagination
+
+| Endpoint | Strategy | Parameters | Default Page Size | Max Page Size |
+|----------|----------|------------|-------------------|---------------|
+
+### Data Consistency Model
+
+| Operation | Consistency | Mechanism | Test Implication |
+|-----------|-------------|-----------|------------------|
+| {Write X → Read X} | {Strong / Eventual} | {Transaction / Kafka / Cache TTL} | {Immediate assert / Awaitility polling} |
+
+### Type Handling
+
+| Field | Source Type | Target Type | Conversion | Edge Cases |
+|-------|------------|-------------|------------|------------|
+
+## 13. Behavioral Nuances
+
+> CONDITIONAL: Include only if nuances detected in Phase 3.7.
+
+### Internal vs External Endpoints
+
+| Endpoint | Visibility | Caller | Auth Difference |
+|----------|-----------|--------|----------------|
+
+### Conditional Behavior
+
+| Endpoint | Condition | Behavior A | Behavior B |
+|----------|-----------|------------|------------|
+
+### Search / Filter Semantics
+
+| Endpoint | Parameter | Empty Value Behavior | Case Sensitivity | Partial Match |
+|----------|-----------|---------------------|------------------|---------------|
+
+### Non-Existent Resource Handling
+
+| Endpoint | Resource Not Found | Response Code | Response Body |
+|----------|--------------------|---------------|---------------|
+
+### Enum / Value Range
+
+| Field | Valid Values | Out-of-Range Behavior | Default |
+|-------|-------------|----------------------|---------|
+
+## 14. Config & Host Context
+
+> CONDITIONAL: Include only if config/host patterns detected in Phase 3.8.
+
+### Whitelisted / Hardcoded Values
+
+| Config Key | Values | Source File | Used By |
+|------------|--------|-------------|---------|
+
+### Host System
+
+| Component | Type | Integration Point | Test Impact |
+|-----------|------|-------------------|-------------|
+
+### Request Lifecycle Layers
+
+| # | Layer | Component | Errors Generated | Config Location |
+|---|-------|-----------|-----------------|-----------------|
+| {order} | {Gateway / Mesh / Middleware / Handler} | {Envoy / Istio / custom} | {401 JWT / 403 RBAC / 429 Rate Limit} | {file path} |
+
+### Access Path Variants
+
+| # | Path | Route | Whitelist Applied | Auth Difference |
+|---|------|-------|-------------------|-----------------|
+| 1 | Direct | {domain:port/endpoint} | {none / service-level} | {service JWT} |
+| 2 | API Gateway | {gateway/endpoint} | {gateway whitelist} | {gateway + service} |
+| 3 | Sidecar | {mesh-internal} | {mesh policy} | {mTLS} |
+
+### Dead Config Detection
+
+| Config Key | Defined In | Referenced By | Status |
+|------------|-----------|---------------|--------|
+| {key} | {config file} | {none — unreferenced} | DEAD |
+
+### Test Environment Setup
+
+| Dependency | Local Setup | CI Setup | Config Override |
+|------------|-------------|----------|----------------|
+
+### Cross-Repo Prerequisites
+
+| # | Dependency Repo | What's Needed | Type | Status |
+|---|----------------|---------------|------|--------|
+| {N} | {repo-name} | {shared proto update / gateway config} | {PR / Config / Deploy} | {Merged / Pending / Blocked} |
+
+## 15. QA Scenario Matrix
+
+> CONDITIONAL: Include only if business logic analysis yielded testable scenarios in Phases 3.5–3.8.
+
+### Priority Summary
+
+| Priority | Count | Description |
+|----------|-------|-------------|
+| P0 — Smoke | {N} | Core happy paths, auth, create-order chain |
+| P1 — Regression | {N} | State transitions, CRUD, pagination, error codes |
+| P2 — Edge | {N} | Boundary values, type coercion, dead config |
+| Skip | {N} | Requires infrastructure not available in test env |
+
+### Cross-Cutting Scenarios
+
+| # | RPC/Endpoint | Test Case | Key Input | Expected Result | Priority | Affected Endpoints |
+|---|-------------|-----------|-----------|----------------|----------|--------------------|
+
+### Per-Domain Scenarios
+
+| # | RPC/Endpoint | Test Case | Key Input | Expected Result | Priority | Source Section |
+|---|-------------|-----------|-----------|----------------|----------|---------------|
+
+### Entity Lifecycle Scenarios
+
+| # | Entity | Lifecycle Step | Priority | Dependencies | Cleanup Order |
+|---|--------|---------------|----------|--------------|---------------|
+
+### Skip List
+
+| # | Scenario | Reason | Unblock Condition |
+|---|----------|--------|-------------------|
 ```

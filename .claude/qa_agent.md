@@ -42,7 +42,7 @@ The rest — **delegate** to specialized agents.
 
 | Role        | File                | Skills                                                                                | When to invoke                               |
 |-------------|---------------------|---------------------------------------------------------------------------------------|----------------------------------------------|
-| **SDET**    | `agents/sdet.md`    | `/test-cases`, `/api-tests`, `/init-skill`                                            | Code generation                              |
+| **SDET**    | `agents/sdet.md`    | `/api-isolated-tests`, `/api-test-cases`, `/api-tests`, `/init-skill`                         | Code generation                              |
 | **Auditor** | `agents/auditor.md` | `/output-review`, `/skill-audit`, `/doc-lint`, `/screenshot-analyze` | Artifact quality review AFTER generation     |
 
 ### What You Do NOT Do
@@ -72,7 +72,7 @@ The rest — **delegate** to specialized agents.
 
 ## Dynamic Coverage Discovery
 
-Run BEFORE delegating to SDET for `/test-cases` or `/api-tests`.
+Run BEFORE delegating to SDET for `/api-isolated-tests` or `/api-tests`.
 
 | Purpose | Command |
 |---------|---------|
@@ -92,7 +92,7 @@ Pass results to SDET as **Scope** (files to cover), **Existing** (avoid duplicat
 | Phase            | Agent       | Action / Skill                | Gate (Transition criteria)                                                      | Output                                                |
 |:-----------------|:------------|:------------------------------|:--------------------------------------------------------------------------------|:------------------------------------------------------|
 | **1. Discovery** | **Self**    | `/repo-scout` → `/spec-audit` | **Issue Check:** No API/access? → Form a recommendation, continue pipeline.     | `audit/repo-scout-report.md` + findings               |
-| **2. Execution** | **SDET**    | `/test-cases` → `/api-tests`  | **Build Check:** `Compilation PASS` + `@Link` traceability.                     | `audit/test-scenarios.md` + `src/test/kotlin/**/*.kt` |
+| **2. Execution** | **SDET**    | `/api-test-cases` or `/api-isolated-tests` → `/api-tests`  | **Build Check:** `Compilation PASS` + `@Link` traceability.                     | `docs/api-test-cases/*_{ts}.md` + `src/test/kotlin/**/*.kt` |
 | **3. Quality**   | **Auditor** | `/output-review`              | **Score Check:** Quality Score ≥ 70%. Otherwise → Fix (max 1).                  | `audit/output-review_{skill}_{date}.md`               |
 
 ### Ad-Hoc Routing
@@ -100,9 +100,10 @@ Pass results to SDET as **Scope** (files to cover), **Existing** (avoid duplicat
 | User request                               | Action                                                                         |
 |--------------------------------------------|--------------------------------------------------------------------------------|
 | "Analyze the specification / requirements" | Self: `/spec-audit`                                                            |
-| "Create a complete list of tests"          | SDET: `/test-cases`                                                            |
-| "Write tests for /endpoint"               | CHECK: test-scenarios exist? NO → SDET: `/test-cases`. YES → SDET: `/api-tests` |
-| "Create test cases"                        | CHECK: analysis exists? NO → Self: `/spec-audit`. YES → SDET: `/test-cases`   |
+| "Create a complete list of tests"          | SDET: `/api-isolated-tests` (single endpoint) or `/api-test-cases` (bulk)              |
+| "Cover all endpoints / full API coverage"  | SDET: `/api-test-cases`                                                                |
+| "Write tests for /endpoint"               | CHECK: test-scenarios exist? NO → SDET: `/api-isolated-tests`. YES → SDET: `/api-tests` |
+| "Create test cases"                        | CHECK: analysis exists? NO → Self: `/spec-audit`. YES → SDET: `/api-isolated-tests`   |
 | "Check screenshot / L10n"                  | → Auditor: `/screenshot-analyze`                                               |
 | "Check quality / do a review"              | → Auditor: `/output-review` or `/skill-audit`                                 |
 | "Update AI registry"                       | Self: `/update-ai-setup`                                                       |
@@ -135,6 +136,8 @@ Sub-agents operate in `context: fork` — pass **exhaustive context** in the pro
 - **Constraints:** tech stack, standards
 - **Upstream:** artifacts from previous skills (spec-audit findings, repo-scout-report)
 
+**Anti-pattern Constraint:** When delegating to SDET, include in prompt: "Check `.claude/qa-antipatterns/_index.md` before code generation. Apply `api/eventual-consistency-writes.md` for eventual-consistency write→read pairs and `api/batch-partial-failure.md` for batch endpoints."
+
 **ESCALATION:** On blocker from agent — analyze the cause, choose:
 - Replan (Auditor: update plan, exclude endpoint)
 - User escalation (technical issue: update dependencies)
@@ -142,7 +145,17 @@ Sub-agents operate in `context: fork` — pass **exhaustive context** in the pro
 
 ### Cross-Skill Dependencies
 
-`/repo-scout` → `/spec-audit` → `/test-cases` **(SDET)** → `/api-tests` **(SDET)** → `/output-review` **(Auditor)**
+`/repo-scout` → `/spec-audit` → `/api-test-cases` | `/api-isolated-tests` **(SDET)** → `/api-tests` **(SDET)** → `/output-review` **(Auditor)**
+
+#### Repo-Scout Data Flow (§11–§15 → Downstream Skills)
+
+| Report Section | Consumer Skill | How It's Used |
+|---------------|---------------|---------------|
+| §11 State Transition Matrix | `/api-isolated-tests`, `/api-tests` | Generate transition + rejected-transition test cases |
+| §12 Entity & Data Model | `/api-tests` | Create-order chain → setup/teardown order; consistency model → assert strategy (immediate vs Awaitility) |
+| §13 Behavioral Nuances | `/api-isolated-tests`, `/api-tests` | Conditional behavior → parameterized tests; search semantics → edge case scenarios |
+| §14 Config & Host Context | `/api-tests` | Test env setup → `@BeforeAll`; dead config → skip list |
+| §15 QA Scenario Matrix | `/api-isolated-tests`, `/api-tests` | P0/P1/P2 priorities → generation order; Skip list → `@Disabled` annotations |
 
 ---
 

@@ -35,6 +35,8 @@
 | `api/silent-catch.md` | Silent `catch` returning empty stub hides infrastructure failures |
 | `api/dry-api-client.md` | Duplicated client methods differing only by response type |
 | `api/serialization-mixing.md` | Mixing Jackson + kotlinx.serialization in same project |
+| `api/eventual-consistency-writes.md` | Asserting read immediately after write in eventually-consistent system |
+| `api/batch-partial-failure.md` | Not testing batch error propagation strategy |
 
 ### platform/ — Kotlin + JUnit5
 

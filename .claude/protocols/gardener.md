@@ -34,7 +34,7 @@ If no proposals:
 | Config/init file (`CLAUDE.md`, `qa_agent.md`) | Output to chat |
 | No file (chat-only skill) | Output to chat |
 
-**Markdown skills** (append to artifact): `test-cases`, `spec-audit`, `output-review`, `repo-scout`, `doc-lint`, `skill-audit`
+**Markdown skills** (append to artifact): `api-isolated-tests`, `api-test-cases`, `spec-audit`, `output-review`, `repo-scout`, `doc-lint`, `skill-audit`
 
 ## Generation Rules
 

@@ -69,7 +69,7 @@ In RTL locales (ar, he, fa, ur) the entire UI is mirrored. Mirror: margins, navi
 
 ### 4. Currency ≠ Locale
 
-Currency is determined by **region**, not language. inDrive Brazil → R$ (BRL) in ANY UI language. DO NOT flag R$ in a ru-RU interface as a bug.
+Currency is determined by **region**, not language. Ride-hailing app in Brazil → R$ (BRL) in ANY UI language. DO NOT flag R$ in a ru-RU interface as a bug.
 
 ---
 

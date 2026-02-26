@@ -20,7 +20,7 @@ Core pipeline — choose your starting point based on the scope:
                                     ↓
 [Micro] /spec-audit (single spec)  ──→  audit/spec-audit_{date}.md
                                     ↓
-         /test-cases               ──→  docs/test-cases/test-scenarios.md
+         /api-isolated-tests               ──→  docs/api-isolated-tests/test-scenarios.md
                                     ↓
          /api-tests                ──→  src/test/kotlin/...Tests.kt
 ```
@@ -29,7 +29,7 @@ Core pipeline — choose your starting point based on the scope:
 |---------------|--------------------------------|-----------------------------------------------------|----------------------------------------------------|
 | `/repo-scout` | Backend repository             | API surface, infrastructure, test coverage map      | Catalog of endpoints, gaps, entry points for tests |
 | `/spec-audit` | API specification              | QA audit report: gaps, contradictions, OWASP issues | defects, PO questions, risk matrix                 |
-| `/test-cases` | Specification + audit          | Exhaustive test scenario matrix (Markdown)          | Markdown table: ~50–80 test scenarios per spec     |
+| `/api-isolated-tests` | Specification + audit          | Exhaustive test scenario matrix (Markdown)          | Markdown table: ~50–80 test scenarios per spec     |
 | `/api-tests`  | Test scenarios + specification | Production-ready Kotlin tests (JUnit 5, Allure)     | Kotlin test class, ready to run: `./gradlew test`  |
 
 - Note: While the `/api-tests` output provides great coverage out of the box, it is designed to be adapted to your team's specific architectural guidelines.

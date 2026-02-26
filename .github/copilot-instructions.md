@@ -40,7 +40,7 @@ GitHub Copilot does not read instructions automatically. To execute a task:
 |--------------------|------------------------------------------------------|----------------------------------------|
 | Repo Scout         | `.claude/skills/repo-scout/SKILL.md`                 | Repository scanning                    |
 | Spec Audit         | `.claude/skills/spec-audit/SKILL.md`                 | QA audit of specification              |
-| Test Cases         | `.claude/skills/test-cases/SKILL.md`                 | Test cases from specification          |
+| Test Cases         | `.claude/skills/api-isolated-tests/SKILL.md`                 | Test cases from specification          |
 | API Tests          | `.claude/skills/api-tests/SKILL.md`                  | API automated tests (JUnit 5, Allure)  |
 | Screenshot         | `.claude/skills/screenshot-analyze/SKILL.md`         | L10N and UI defects                    |
 | Doc Lint           | `.claude/skills/doc-lint/SKILL.md`                   | Documentation audit                    |

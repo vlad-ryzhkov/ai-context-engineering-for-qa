@@ -43,10 +43,10 @@ Creates a new account. Public method.
 
 The following aspects are **not tested** at this endpoint level:
 
-| Scenario | Owner | What to test instead |
-|----------|-------|----------------------|
-| **Format validation** (`email`, `phone`, `full_name`): Regex, special characters | Middleware (Zod/Pydantic) | Field presence only: missing → 400 |
-| **Uniqueness (Race Condition)**: parallel requests with same email/phone | Unique Index in DB | Only 409 on conflict (sequential requests) |
-| **PII Logic (substrings, tokens)**: "name in password" combinations | Unit tests of shared-library | Only basic happy/sad path at API level |
-| **SMS Delivery Guarantee**: user actually receiving the OTP | Notification Service | Only 201 on successful queue submission; 503 when gateway is unavailable |
-| **Boundary value lengths** (e.g. 101 characters in `full_name`) | DB level | — |
+| Scenario                                                                         | Owner                        | What to test instead                                                     |
+|----------------------------------------------------------------------------------|------------------------------|--------------------------------------------------------------------------|
+| **Format validation** (`email`, `phone`, `full_name`): Regex, special characters | Middleware (Zod/Pydantic)    | Field presence only: missing → 400                                       |
+| **Uniqueness (Race Condition)**: parallel requests with same email/phone         | Unique Index in DB           | Only 409 on conflict (sequential requests)                               |
+| **PII Logic (substrings, tokens)**: "name in password" combinations              | Unit tests of shared-library | Only basic happy/sad path at API level                                   |
+| **SMS Delivery Guarantee**: user actually receiving the OTP                      | Notification Service         | Only 201 on successful queue submission; 503 when gateway is unavailable |
+| **Boundary value lengths** (e.g. 101 characters in `full_name`)                  | DB level                     | —                                                                        |

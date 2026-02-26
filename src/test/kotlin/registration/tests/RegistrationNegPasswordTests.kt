@@ -1,99 +1,180 @@
 package registration.tests
 
+import io.ktor.client.call.body
+import io.ktor.http.HttpStatusCode
 import io.qameta.allure.Epic
 import io.qameta.allure.Feature
 import io.qameta.allure.Link
 import io.qameta.allure.Severity
 import io.qameta.allure.SeverityLevel
-import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Tag
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.Arguments
-import org.junit.jupiter.params.provider.MethodSource
-import registration.helpers.RegistrationHelper
+import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.DisplayName
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
+import registration.helpers.MockServerExtension
 import registration.helpers.TestData
+import registration.requests.ErrorResponse
+import registration.requests.RegisterApiClient
 import registration.requests.RegisterRequest
-import java.util.stream.Stream
 
 @Epic("User Registration")
-@Feature("POST /api/v1/users/register — Password Validation")
+@Feature("POST /api/v1/users/register")
+@ExtendWith(MockServerExtension::class)
 @Tag("CRITICAL")
+@Severity(SeverityLevel.CRITICAL)
 class RegistrationNegPasswordTests {
 
-    companion object {
-        @JvmStatic
-        fun passwordValidationProvider(): Stream<Arguments> = Stream.of(
-            Arguments.of("REG-NEG-PWD-01", "Pass1@", "at least 8"),
-            Arguments.of("REG-NEG-PWD-02", "safe1@pass", "uppercase"),
-            Arguments.of("REG-NEG-PWD-03", "SafePass@", "digit"),
-            Arguments.of("REG-NEG-PWD-04", "SafePass1", "special")
-        )
-
-        @JvmStatic
-        fun piiTokenProvider(): Stream<Arguments> = Stream.of(
-            Arguments.of(
-                "REG-NEG-PWD-05", "John1@Test", "John Doe", "user_pii05@example.com"
-            ),
-            Arguments.of(
-                "REG-NEG-PWD-06", "John.smith1@Pass", "Jane Doe", "john.smith@example.com"
-            )
-        )
-    }
-
-    @ParameterizedTest(name = "{0}: password=''{1}'' expects message containing ''{2}''")
-    @MethodSource("passwordValidationProvider")
-    @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("Password validation rules")
-    @Link(name = "Scenario REG-NEG-PWD-01..04", url = "file://audit/test-scenarios.md")
-    fun passwordValidationRules(
-        scenarioId: String,
-        password: String,
-        expectedMessageContains: String
-    ) = runTest {
+    @Test
+    @Link(name = "Scenario REG-24", url = "file://docs/api-isolated-tests/test-scenarios_20260226_120000.md")
+    @DisplayName("REG-24: password too short — 7 chars (below min:8) → 400 VALIDATION_ERROR")
+    fun `REG-24 password too short 7 chars`(): Unit = runTest {
         val request = RegisterRequest(
             email = TestData.uniqueEmail(),
             phone = TestData.uniquePhone(),
-            password = password,
-            fullName = TestData.fullName()
+            password = TestData.pass7CharsValidComplexity(),
+            fullName = TestData.validName(),
         )
 
-        val response = RegistrationHelper.registerUser(request)
+        val response = RegisterApiClient.register(request)
 
-        RegistrationHelper.verifyValidationError(
-            response = response,
-            expectedHttpStatus = 400,
-            expectedCode = "VALIDATION_ERROR",
-            expectedField = "password",
-            expectedMessageContains = expectedMessageContains
-        )
+        assertEquals(HttpStatusCode.BadRequest, response.status, "Expected 400 Bad Request")
+        val body = response.body<ErrorResponse>()
+        assertEquals("VALIDATION_ERROR", body.code, "error code mismatch")
+        assertEquals("password", body.field, "error field mismatch")
     }
 
-    @ParameterizedTest(name = "{0}: password=''{1}'' contains PII token from ''{2}''/''{3}''")
-    @MethodSource("piiTokenProvider")
-    @Severity(SeverityLevel.CRITICAL)
-    @DisplayName("Password contains PII token")
-    @Link(name = "Scenario REG-NEG-PWD-05..06", url = "file://audit/test-scenarios.md")
-    fun passwordContainsPiiToken(
-        scenarioId: String,
-        password: String,
-        fullName: String,
-        email: String
-    ) = runTest {
+    @Test
+    @Link(name = "Scenario REG-25", url = "file://docs/api-isolated-tests/test-scenarios_20260226_120000.md")
+    @DisplayName("REG-25: password too long — 65 chars (above max:64) → 400 VALIDATION_ERROR")
+    fun `REG-25 password too long 65 chars`(): Unit = runTest {
         val request = RegisterRequest(
-            email = email,
+            email = TestData.uniqueEmail(),
             phone = TestData.uniquePhone(),
-            password = password,
-            fullName = fullName
+            password = TestData.pass65CharsValidComplexity(),
+            fullName = TestData.validName(),
         )
 
-        val response = RegistrationHelper.registerUser(request)
+        val response = RegisterApiClient.register(request)
 
-        RegistrationHelper.verifyValidationError(
-            response = response,
-            expectedHttpStatus = 400,
-            expectedCode = "VALIDATION_ERROR",
-            expectedField = "password"
+        assertEquals(HttpStatusCode.BadRequest, response.status, "Expected 400 Bad Request")
+        val body = response.body<ErrorResponse>()
+        assertEquals("VALIDATION_ERROR", body.code, "error code mismatch")
+        assertEquals("password", body.field, "error field mismatch")
+    }
+
+    @Test
+    @Link(name = "Scenario REG-26", url = "file://docs/api-isolated-tests/test-scenarios_20260226_120000.md")
+    @DisplayName("REG-26: password missing uppercase letter → 400 VALIDATION_ERROR")
+    fun `REG-26 password missing uppercase`(): Unit = runTest {
+        val request = RegisterRequest(
+            email = TestData.uniqueEmail(),
+            phone = TestData.uniquePhone(),
+            password = TestData.passAllLowerDigitSpecial(),
+            fullName = TestData.validName(),
         )
+
+        val response = RegisterApiClient.register(request)
+
+        assertEquals(HttpStatusCode.BadRequest, response.status, "Expected 400 Bad Request")
+        val body = response.body<ErrorResponse>()
+        assertEquals("VALIDATION_ERROR", body.code, "error code mismatch")
+        assertEquals("password", body.field, "error field mismatch")
+    }
+
+    @Test
+    @Link(name = "Scenario REG-27", url = "file://docs/api-isolated-tests/test-scenarios_20260226_120000.md")
+    @DisplayName("REG-27: password missing digit → 400 VALIDATION_ERROR")
+    fun `REG-27 password missing digit`(): Unit = runTest {
+        val request = RegisterRequest(
+            email = TestData.uniqueEmail(),
+            phone = TestData.uniquePhone(),
+            password = TestData.passUpperLowerSpecialNoDigit(),
+            fullName = TestData.validName(),
+        )
+
+        val response = RegisterApiClient.register(request)
+
+        assertEquals(HttpStatusCode.BadRequest, response.status, "Expected 400 Bad Request")
+        val body = response.body<ErrorResponse>()
+        assertEquals("VALIDATION_ERROR", body.code, "error code mismatch")
+        assertEquals("password", body.field, "error field mismatch")
+    }
+
+    @Test
+    @Link(name = "Scenario REG-28", url = "file://docs/api-isolated-tests/test-scenarios_20260226_120000.md")
+    @DisplayName("REG-28: password missing special character → 400 VALIDATION_ERROR")
+    fun `REG-28 password missing special char`(): Unit = runTest {
+        val request = RegisterRequest(
+            email = TestData.uniqueEmail(),
+            phone = TestData.uniquePhone(),
+            password = TestData.passUpperLowerDigitNoSpecial(),
+            fullName = TestData.validName(),
+        )
+
+        val response = RegisterApiClient.register(request)
+
+        assertEquals(HttpStatusCode.BadRequest, response.status, "Expected 400 Bad Request")
+        val body = response.body<ErrorResponse>()
+        assertEquals("VALIDATION_ERROR", body.code, "error code mismatch")
+        assertEquals("password", body.field, "error field mismatch")
+    }
+
+    @Test
+    @Link(name = "Scenario REG-29", url = "file://docs/api-isolated-tests/test-scenarios_20260226_120000.md")
+    @DisplayName("REG-29: password contains token from full_name — basic PII sad path → 400 VALIDATION_ERROR")
+    fun `REG-29 password contains token from full name`(): Unit = runTest {
+        val request = RegisterRequest(
+            email = TestData.uniqueEmail(),
+            phone = TestData.uniquePhone(),
+            password = "Smith_Safe2026!",
+            fullName = "Smith Jones",
+        )
+
+        val response = RegisterApiClient.register(request)
+
+        assertEquals(HttpStatusCode.BadRequest, response.status, "Expected 400 Bad Request")
+        val body = response.body<ErrorResponse>()
+        assertEquals("VALIDATION_ERROR", body.code, "error code mismatch")
+        assertEquals("password", body.field, "error field mismatch")
+    }
+
+    @Test
+    @Link(name = "Scenario REG-30", url = "file://docs/api-isolated-tests/test-scenarios_20260226_120000.md")
+    @DisplayName("REG-30: password contains token from email local-part — basic PII sad path → 400 VALIDATION_ERROR")
+    fun `REG-30 password contains token from email local part`(): Unit = runTest {
+        val request = RegisterRequest(
+            email = "johndoe@example.com",
+            phone = TestData.uniquePhone(),
+            password = "Johndoe_123!",
+            fullName = TestData.validName(),
+        )
+
+        val response = RegisterApiClient.register(request)
+
+        assertEquals(HttpStatusCode.BadRequest, response.status, "Expected 400 Bad Request")
+        val body = response.body<ErrorResponse>()
+        assertEquals("VALIDATION_ERROR", body.code, "error code mismatch")
+        assertEquals("password", body.field, "error field mismatch")
+    }
+
+    @Test
+    @Link(name = "Scenario REG-31", url = "file://docs/api-isolated-tests/test-scenarios_20260226_120000.md")
+    @DisplayName("REG-31: password PII check is case-insensitive — uppercase token variant → 400 VALIDATION_ERROR")
+    fun `REG-31 password pii check case insensitive`(): Unit = runTest {
+        val request = RegisterRequest(
+            email = "alex@example.com",
+            phone = TestData.uniquePhone(),
+            password = "ALEX_Safe2026!",
+            fullName = TestData.validName(),
+        )
+
+        val response = RegisterApiClient.register(request)
+
+        assertEquals(HttpStatusCode.BadRequest, response.status, "Expected 400 Bad Request")
+        val body = response.body<ErrorResponse>()
+        assertEquals("VALIDATION_ERROR", body.code, "error code mismatch")
+        assertEquals("password", body.field, "error field mismatch")
     }
 }

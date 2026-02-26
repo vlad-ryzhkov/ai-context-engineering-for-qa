@@ -7,41 +7,51 @@ object TestData {
 
     private val faker = Faker()
 
-    fun uniqueEmail(): String {
-        val uuid = UUID.randomUUID().toString().replace("-", "").take(12)
-        return "user_$uuid@example.com"
-    }
-
-    fun longEmail(targetLength: Int): String {
-        val domain = "@example.com"
-        val localPartLength = targetLength - domain.length
-        val uuid = UUID.randomUUID().toString().replace("-", "")
-        val padding = "a".repeat((localPartLength - uuid.length).coerceAtLeast(0))
-        return (uuid + padding).take(localPartLength) + domain
-    }
+    fun uniqueEmail(): String = "test_${UUID.randomUUID().toString().replace("-", "")}@example.com"
 
     fun uniquePhone(): String {
-        val digits = (1000000..9999999).random()
-        return "+7999$digits"
+        val digits = (1..9).map { faker.number().digit() }.joinToString("")
+        return "+1555${digits.take(7)}"
     }
 
-    fun alternativePhone(): String {
-        val digits = (1000000..9999999).random()
-        return "+1212$digits"
-    }
+    fun validPassword(): String = "Safe_Password_2026!"
 
-    fun validPassword(): String = "Safe1@Pass"
+    fun minValidName(): String = "Al"
 
-    fun fullName(): String = "${faker.name().firstName()} ${faker.name().lastName()}"
+    fun validName(): String = "Alex Smith"
 
-    fun idempotencyKey(): String = UUID.randomUUID().toString()
+    fun hyphenatedUnicodeName(): String = "Marie-Élise"
 
-    fun validRequest(): registration.requests.RegisterRequest {
-        return registration.requests.RegisterRequest(
-            email = uniqueEmail(),
-            phone = uniquePhone(),
-            password = validPassword(),
-            fullName = fullName()
-        )
+    fun pass8CharsValid(): String = "aB1!xyzQ"
+
+    fun pass64CharsValid(): String = "aB1!" + "x".repeat(60)
+
+    fun pass7CharsValidComplexity(): String = "aB1!xyz"
+
+    fun pass65CharsValidComplexity(): String = "aB1!" + "x".repeat(61)
+
+    fun passAllLowerDigitSpecial(): String = "ab1!xyzqwert"
+
+    fun passUpperLowerSpecialNoDigit(): String = "AbXyZq!@#"
+
+    fun passUpperLowerDigitNoSpecial(): String = "AbXyZq123"
+
+    fun name100Chars(): String = "A" + "b".repeat(99)
+
+    fun name101Chars(): String = "A" + "b".repeat(100)
+
+    fun cyrillicName(): String = "Александр"
+
+    fun arabicName(): String = "أحمد علي"
+
+    fun chineseName(): String = "张伟"
+
+    fun emojiName(): String = "Alex 😊"
+
+    fun htmlSpecialCharsName(): String = "Smith & Jones"
+
+    fun oversizedBody(): String {
+        val padding = "x".repeat(1_100_000)
+        return """{"email":"test@example.com","phone":"+12345678","password":"Safe_Password_2026!","full_name":"$padding"}"""
     }
 }

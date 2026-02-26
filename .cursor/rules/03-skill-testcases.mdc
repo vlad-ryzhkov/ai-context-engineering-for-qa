@@ -1,17 +1,17 @@
 ---
-description: SKILL: Generate Test Scenarios Matrix from API spec (use for /test-cases)
+description: SKILL: Generate Test Scenarios Matrix from API spec (use for /api-isolated-tests)
 globs: "audit/**,specifications/**"
 alwaysApply: false
 ---
 # SKILL: TEST CASES
 
 ## TRIGGER
-User explicitly types `/test-cases` or asks to generate a test scenarios matrix from an API specification.
+User explicitly types `/api-isolated-tests` or asks to generate a test scenarios matrix from an API specification.
 
 ## EXECUTION INSTRUCTIONS
 DO NOT guess the procedure and DO NOT output anything yet.
 To perform this skill, you MUST dynamically read the instructions using your file-reading capabilities.
 
 1. First, read the core agent context: `.claude/qa_agent.md`
-2. Second, read the specific skill protocol: `.claude/skills/test-cases/SKILL.md`
+2. Second, read the specific skill protocol: `.claude/skills/api-isolated-tests/SKILL.md`
 3. Execute based STRICTLY on the logic and output format defined in those files.

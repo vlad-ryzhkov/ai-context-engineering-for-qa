@@ -1,6 +1,6 @@
 ---
 name: api-tests
-description: Generates production-ready API automated tests in Kotlin (JUnit5, Allure). Use when you need to cover REST endpoints with tests from test-scenarios.md or specification. Do not use for test case generation — use /test-cases for that.
+description: Generates production-ready API automated tests in Kotlin (JUnit5, Allure). Use when you need to cover REST endpoints with tests from test-scenarios.md or specification. Do not use for test case generation — use /api-isolated-tests for that.
 allowed-tools: "Read Write Edit Glob Grep Bash(./gradlew*)"
 agent: agents/sdet.md
 context: fork
@@ -8,7 +8,7 @@ context: fork
 
 ## Recommended Flow
 
-For best results: `/spec-audit` → `/test-cases` → `/api-tests`. Running directly on a specification also works — the skill will generate tests without a scenario matrix, but traceability `@Link` annotations will reference the spec instead of scenario IDs.
+For best results: `/spec-audit` → `/api-isolated-tests` → `/api-tests`. Running directly on a specification also works — the skill will generate tests without a scenario matrix, but traceability `@Link` annotations will reference the spec instead of scenario IDs.
 
 ---
 
@@ -22,7 +22,7 @@ Before execution the agent MUST load: `.claude/protocols/gardener.md`
 
 <purpose>
 Generates a complete set of Kotlin automated tests for REST API: models, HTTP client, helpers, tests.
-Scenario source — `audit/test-scenarios.md` (result of /test-cases) or specification directly.
+Scenario source — `audit/test-scenarios.md` (result of /api-isolated-tests) or specification directly.
 </purpose>
 
 ## When to Use
@@ -51,6 +51,13 @@ Scenario source — `audit/test-scenarios.md` (result of /test-cases) or specifi
 2g. **Time-Dependent Scenarios (TTL/Cache):** FORBIDDEN: Using `Thread.sleep` or `delay()` to simulate time passing for cache expiration, idempotency TTLs, or rate limits. Do not blindly execute sequential requests expecting time to advance instantly. For short asynchronous state changes, use Awaitility. For long temporal conditions (e.g., 5-minute cache expiration), if the specification does NOT explicitly provide a testability hook (e.g., `X-Test-Advance-Time` header or cache invalidation endpoint), you MUST generate the complete test logic and annotate the test method with `@Disabled("Time-dependent scenario: {Wait Time}. Requires testability hook (time-travel/cache-clear) or manual execution.")`.
 2h. **Timestamp Response Validation:** If the specification defines a time-based response field (e.g., `expires_at = request_time + N minutes`, JWT `exp` claim), the test MUST validate it with a relative drift check: `assertTrue(abs(actual - expected) < driftToleranceSeconds, "timestamp drift")`. Using `Instant.now()` + offset is acceptable; using `isNotBlank()` or `> 0` alone is INSUFFICIENT. FORBIDDEN: `LocalDateTime.now()` in assertions.
 2i. **WireMock Integration for External Services:** When a test configures WireMock stubs for external services (SMS gateway, payment provider, etc.), the test MUST connect the mock to the application under test. At minimum: set a system property or environment variable (e.g., `System.setProperty("SMS_GATEWAY_URL", "http://localhost:${wireMockServer.port()}")`) in `@BeforeEach` and clear it in `@AfterEach`. A disconnected WireMock server (started but not referenced by the app) is a SILENT TEST BUG — the test passes/fails based on real service state, not mock behavior.
+2k. **Eventual Consistency Writes:** If `repo-scout-report` §12 marks a write→read pair as "Eventual", FORBIDDEN to assert the read immediately after write. Use Awaitility polling with bounded timeout. (ref: `api/eventual-consistency-writes.md`)
+2l. **Batch Partial Failure:** If `repo-scout-report` §12 lists batch operations, tests MUST include a mixed valid+invalid input case to verify error propagation strategy (atomic rollback vs partial 207 Multi-Status). Testing only all-valid and all-invalid is INSUFFICIENT. (ref: `api/batch-partial-failure.md`)
+2j. **Mock-First Architecture:** Generated tests MUST NOT rely on a live API server.
+If `ConnectException` appears in Smoke Run → run `/api-mocks` to generate mock infrastructure,
+then re-run tests. API client `BASE_URL` MUST be a computed property:
+`val BASE_URL: String get() = System.getProperty("BASE_URL", "http://localhost:8080")`.
+TLS-enforcement tests cannot pass with HTTP mock — acceptable as documented infra limitation.
 3. **Security Headers Rule:** Every positive test (POST/PUT/DELETE with 2xx) MUST verify `Content-Type`, `X-Content-Type-Options`, `Strict-Transport-Security` via `assertEquals` on `response.headers`. (ref: `api/missing-security-headers.md`)
 4. **Structure:**
    - `requests/`: DTOs + Request/Response objects. **ALL** data classes mapped to snake_case JSON (request AND response) MUST have `@JsonNaming(SnakeCaseStrategy::class)` + `@JsonIgnoreProperties(ignoreUnknown = true)`. Omitting `@JsonNaming` on response DTOs causes silent null fields.
@@ -61,7 +68,7 @@ Scenario source — `audit/test-scenarios.md` (result of /test-cases) or specifi
 
 ## Input Source Strategy
 
-**Primary Source:** `audit/test-scenarios.md` — result of /test-cases. Each table row → automated test.
+**Primary Source:** `audit/test-scenarios.md` — result of /api-isolated-tests. Each table row → automated test.
 **Secondary Source:** Specification directly — if test-scenarios.md is missing.
 
 ## Input Validation (Mandatory Check)
@@ -93,14 +100,12 @@ grep -q "^|" audit/test-scenarios.md || echo "WARNING"
 ### If all checks pass:
 
 - Read `audit/test-scenarios.md` — extract all table rows (each row = one automated test)
-- Read `audit/test-plan.md` (if exists) for generation order prioritization (P0 → P1 → P2)
 
 ### Parsing test-scenarios.md
 
 1. Read `audit/test-scenarios.md`
 2. For each table row extract: ID, Type, Scenario, Input, Expected
 3. BVA values from the Input column → transfer to the automated test EXACTLY
-4. Generation order: by priority from `audit/test-plan.md` (if available) or row by row
 
 **If User requests an endpoint without scenarios in the table:**
 ```text
@@ -155,6 +160,7 @@ If `test-scenarios.md` contains `Cleanup:` for POS/L10N scenarios, every test fi
 - **Time/Date Assertions:** Never use exact match for timestamps. Use relative matchers: `assertTrue(ChronoUnit.SECONDS.between(expected, actual) < 5, "timestamp drift")`. Never use `LocalDateTime.now()` in assertions.
 - **Anti-Pattern "The Giant":** One `@Test` method MUST NOT exceed 30 lines. Extract setup into `@Step`-annotated Helper methods.
 - **Anti-Pattern "The Liar":** Every `@Test` MUST contain at least one `assertEquals` or `assertTrue` evaluating the response body or side-effects.
+- **Create-Order Cleanup:** If `repo-scout-report` §12 defines a create-order chain (e.g., `A → B → C`), cleanup in `@AfterEach` MUST proceed in REVERSE order (`C → B → A`). Deleting a parent before its children causes FK constraint violations and flaky tests.
 
 ## Workflow
 
@@ -184,10 +190,11 @@ If `test-scenarios.md` contains `Cleanup:` for POS/L10N scenarios, every test fi
 3. **Translation & Grouping:** Apply mapping from `references/api-patterns.md#translation-rules`. NEG/BVA grouping — from `api-patterns.md#grouping-strategy`.
 4. **Compile:** `./gradlew compileTestKotlin && ./gradlew ktlintCheck`. If > 1 failed compilations → ESCALATION (see below)
 4a. **Smoke Run:** `./gradlew test 2>&1 | tail -80`. Classify failures:
-   - `ConnectException`/`Connection refused` → ⚠️ Infrastructure. API server not running. NOT a code bug — do NOT fix. Report: `"Smoke: API unreachable on {BASE_URL}. Tests require running service or mock."`
+   - `ConnectException`/`Connection refused` → 🐛 Missing mock server. Apply Protocol 2j: generate `RegistrationMockServer` + `MockServerExtension`, set `BASE_URL` system property, register `MockServerExtension` via ServiceLoader. Do NOT report as infra-blocked — fix → re-compile → re-run.
    - `JsonMappingException`/`MismatchedInputException`/`Unrecognized field` → 🐛 DTO bug in generated code. Fix `@JsonNaming`/field names/defaults → re-compile → re-run (max 2 fix iterations).
    - `NoSuchMethodError`/`ClassNotFoundException` → Dependency mismatch → ESCALATION.
-   - All failures = Infrastructure-only → **Smoke Run: PASS** (infra-blocked).
+   - Assertion failure on TLS test (`plain HTTP rejected`) → ⚠️ Infra-level. HTTP mock cannot enforce TLS. Mark test `@Disabled("TLS enforcement: requires HTTPS infrastructure")` or accept as known limitation.
+   - All other failures = Infrastructure-only → **Smoke Run: PASS** (infra-blocked).
 5. **Verify:** Grep BANNED patterns (see Post-Check above). Fix violations → re-compile.
 
 ### Escalation (3-Strike Rule)
@@ -226,11 +233,25 @@ Status of remaining items:
 2. Check against **Protocol** + `references/api-patterns.md#architecture` + `qa-antipatterns/_index.md`.
 3. Report: `⛔ Violation (ref: antipattern)` / `✅ Pass`. DO NOT EDIT.
 
+## Repo-Scout Cross-References
+
+If `audit/repo-scout-report*.md` exists, read sections §11–§15 for test generation context:
+
+| Report Section | Impact on Test Generation |
+|---------------|--------------------------|
+| §11 State Transition Matrix | Generate tests for each valid `From→To` transition + rejected transitions (guard failures) |
+| §12 Entity & Data Model | Use create-order chain for setup/teardown; apply consistency model for assert strategy |
+| §13 Behavioral Nuances | Generate conditional tests (internal vs external, search semantics, non-existent resource) |
+| §14 Config & Host Context | Use test env setup for `@BeforeAll`; skip tests requiring unavailable host system |
+| §15 QA Scenario Matrix | Use P0/P1/P2 priorities for generation order; respect Skip list |
+
 ## References
 
 - Architecture & patterns: `references/api-patterns.md` (Architecture, Translation Rules, Coverage Matrix, Grouping)
 - Code examples: `references/examples.md`
 - Anti-patterns: `.claude/qa-antipatterns/_index.md` → `platform/`, `api/`, `common/`, `security/`
+- Repo-scout report: `audit/repo-scout-report*.md` (§11–§15 for entity/state/nuance context)
+- Anti-patterns (new): `api/eventual-consistency-writes.md`, `api/batch-partial-failure.md`
 
 ## Completion Contract
 
@@ -245,7 +266,7 @@ Status of remaining items:
 ├─ Coverage: N/M scenarios implemented (NN%)
 ├─ Traceability: @Link(scenario ID) in N/N tests (100% mandatory)
 ├─ BANNED check: PASS
-└─ Smoke Run: PASS | WARN (API unreachable on {host:port}) | FAIL (N DTO bugs fixed)
+└─ Smoke Run: PASS | FAIL (N DTO bugs fixed) | INFRA (TLS-enforcement test only)
 ```
 
 ### Partial (With Blockers)

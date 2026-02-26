@@ -1,6 +1,6 @@
 ---
 name: repo-scout
-description: Scan backend repository (Go), catalog API surface, infrastructure and test coverage.
+description: Scans a backend repository (Go, Python, Node.js, Java/Kotlin), catalogs API surface, infrastructure, and test coverage.
 ---
 # INSTRUCTIONS
 
@@ -17,4 +17,4 @@ You MUST use your file-reading tool to fetch and strictly follow the instruction
 
 - Use when entering a new repo before writing tests.
 - Do NOT use for QA projects — use `$init-project` for those.
-- First step in the recommended workflow: `$repo-scout` → `$spec-audit` → `$test-cases` → `$api-tests`.
+- First step in the recommended workflow: `$repo-scout` → `$spec-audit` → `$api-isolated-tests` → `$api-tests`.

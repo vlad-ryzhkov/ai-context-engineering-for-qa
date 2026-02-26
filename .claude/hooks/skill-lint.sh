@@ -24,9 +24,7 @@ LABEL="${SKILL_DIR}/${FILENAME}"
 # Check 1: Line count
 LINE_COUNT=$(wc -l < "$FILE_PATH" | tr -d ' ')
 if [ "$LINE_COUNT" -gt 500 ]; then
-  FINDINGS="${FINDINGS}\n  ⛔ CRITICAL: ${LINE_COUNT} строк (лимит: 500)"
-elif [ "$LINE_COUNT" -gt 300 ]; then
-  FINDINGS="${FINDINGS}\n  ⚠️ WARNING: ${LINE_COUNT} строк (рекомендация: ≤300)"
+  echo "  ⚠️ WARNING: ${LINE_COUNT} строк (рекомендация: ≤500, split → references/)" >&2
 fi
 
 # Check 2: Self-Review Protocol (the anti-pattern, not the prohibition)

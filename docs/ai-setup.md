@@ -59,7 +59,7 @@ Three layers, loaded on demand (not all at once):
 │   │
 │   │   Agent routing:
 │   │   qa_agent.md (Orchestrator)
-│   │     ├── agents/sdet.md      →  /test-cases, /api-tests, /init-skill
+│   │     ├── agents/sdet.md      →  /api-isolated-tests, /api-tests, /init-skill
 │   │     └── agents/auditor.md   →  /skill-audit, /doc-lint, /screenshot-analyze
 │   │
 │   ├── protocols/                   # Agent behavior protocols
@@ -89,7 +89,7 @@ Three layers, loaded on demand (not all at once):
 │       ├── screenshot-analyze/      # /screenshot-analyze — L10n UI audit
 │       ├── skill-audit/             # /skill-audit — SKILL.md audit
 │       ├── spec-audit/              # /spec-audit — QA audit of requirements
-│       ├── test-cases/              # /test-cases — test case generation
+│       ├── api-isolated-tests/              # /api-isolated-tests — test case generation
 │       └── update-ai-setup/         # /update-ai-setup — registry update
 │
 ├── .cursor/rules/                   # Cursor wrappers → reference .claude/ files
@@ -99,7 +99,7 @@ Three layers, loaded on demand (not all at once):
 │
 ├── docs/
 │   ├── ai-setup.md                  # This file
-│   ├── test-cases/                  # Manual test scenarios
+│   ├── api-isolated-tests/                  # Manual test scenarios
 │   └── workshop-commands.md         # Workshop commands per IDE
 │
 ├── specifications/                  # API specifications for analysis
@@ -139,7 +139,7 @@ Three layers, loaded on demand (not all at once):
 | `/screenshot-analyze` | `.claude/skills/screenshot-analyze/SKILL.md` |   289 | Analysis   | L10N and UI defects                        |
 | `/skill-audit`        | `.claude/skills/skill-audit/SKILL.md`        |   211 | Analysis   | SKILL.md audit                             |
 | `/spec-audit`         | `.claude/skills/spec-audit/SKILL.md`         |   229 | Analysis   | QA audit of requirements                   |
-| `/test-cases`         | `.claude/skills/test-cases/SKILL.md`         |   246 | Generation | Manual test cases                          |
+| `/api-isolated-tests`         | `.claude/skills/api-isolated-tests/SKILL.md`         |   246 | Generation | Manual test cases                          |
 | `/update-ai-setup`    | `.claude/skills/update-ai-setup/SKILL.md`    |   168 | Meta       | This registry update                       |
 
 ### Anti-Patterns
@@ -273,7 +273,7 @@ Approaches used in this project. Each pattern solves a specific problem.
 ### 9. Cross-Skill Pipeline
 
 **Problem:** Skills run in isolation, not building on each other's output.
-**Solution:** `/spec-audit` → `/test-cases` → `/api-tests` — each skill expects upstream artifacts.
+**Solution:** `/spec-audit` → `/api-isolated-tests` → `/api-tests` — each skill expects upstream artifacts.
 
 ### 10. Compilation Gate
 
@@ -343,7 +343,7 @@ How the system improves over time:
 ┌─────────────┐     ┌───────────┐     ┌───────────┐
 │  Discovery  │────▶│ Strategy  │────▶│ Execution │
 │ /repo-scout │     │           │     │ /api-tests│
-│ /spec-audit │     │           │     │/test-cases│
+│ /spec-audit │     │           │     │/api-isolated-tests│
 └─────────────┘     └───────────┘     └─────┬─────┘
        ▲                                     │
        │            ┌──────────────────────┐ │

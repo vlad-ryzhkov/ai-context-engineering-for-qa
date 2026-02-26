@@ -33,7 +33,7 @@ Invoke with `$skill-name` or via the skill selector:
 |---------------------|----------------------------------------------|
 | `$repo-scout`       | Repository scanning                          |
 | `$spec-audit`       | QA audit of requirements                     |
-| `$test-cases`       | Test cases from specification                |
+| `$api-isolated-tests`       | Test cases from specification                |
 | `$api-tests`        | API automated tests (Kotlin)                 |
 | `$screenshot-analyze` | Screenshot analysis for L10N defects       |
 | `$doc-lint`         | Documentation audit                          |
@@ -46,4 +46,4 @@ Invoke with `$skill-name` or via the skill selector:
 | `$agents-checker`   | Agent setup validation                       |
 | `$qa-translate`     | Technical translation RU→EN                  |
 
-**Recommended Workflow:** `$repo-scout` → `$spec-audit` → `$test-cases` → `$api-tests`
+**Recommended Workflow:** `$repo-scout` → `$spec-audit` → `$api-isolated-tests` → `$api-tests`

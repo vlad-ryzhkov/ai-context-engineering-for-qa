@@ -10,7 +10,7 @@ We build a linked chain of artifacts. The result of each step becomes the founda
 graph TD
     Spec[📄 Specification]
     Audit(🔍 /spec-audit)
-    Manual(✍️ /test-cases)
+    Manual(✍️ /api-isolated-tests)
     Auto(🤖 /api-tests)
 
     Spec --> Audit --> Manual
@@ -58,11 +58,11 @@ git checkout main
 
 ---
 
-**Step 2. Manual test cases** — `/test-cases`
+**Step 2. Manual test cases** — `/api-isolated-tests`
 📥 **Input:** The agent automatically finds and reads `audit/spec-audit.md` to account for risks.
 *Goal: Write detailed scenarios in Kotlin DSL.*
 ```bash
-/test-cases specifications/specifications_v1/registration_api_v1.md
+/api-isolated-tests specifications/specifications_v1/registration_api_v1.md
 ```
 💾 **Output:** `audit/test-scenarios.md`
 
@@ -98,10 +98,10 @@ Analyze @specifications/specifications_v1/registration_api_v1.md
 following instructions from @.claude/skills/spec-audit/SKILL.md
 ```
 
-**Step 2. Test cases** — `/test-cases`
+**Step 2. Test cases** — `/api-isolated-tests`
 ```plaintext
 Generate test cases for @specifications/specifications_v1/registration_api_v1.md
-following instructions from @.claude/skills/test-cases/SKILL.md
+following instructions from @.claude/skills/api-isolated-tests/SKILL.md
 Account for audit results from @audit/
 ```
 
@@ -132,11 +132,11 @@ Perform QA audit of file #file:registration_api_v1.md, strictly following the al
 #file:.claude/skills/spec-audit/SKILL.md
 ```
 
-**Step 2. Test cases** — `/test-cases`
+**Step 2. Test cases** — `/api-isolated-tests`
 ```plaintext
 Generate manual test cases from the specification, using instructions from the skill.
 
-#file:.claude/skills/test-cases/SKILL.md
+#file:.claude/skills/api-isolated-tests/SKILL.md
 #file:specifications/specifications_v1/registration_api_v1.md
 ```
 
@@ -174,9 +174,9 @@ Analyze screenshots for L10N defects following instructions from the skill.
 Perform QA audit of specification registration_api_v1.md following instructions from .claude/skills/spec-audit/SKILL.md.
 ```
 
-**Step 2. Test cases** — `/test-cases`
+**Step 2. Test cases** — `/api-isolated-tests`
 
-📂 Open in adjacent tabs: `.claude/skills/test-cases/SKILL.md` + `registration_api_v1.md`
+📂 Open in adjacent tabs: `.claude/skills/api-isolated-tests/SKILL.md` + `registration_api_v1.md`
 💡 **Tip:** highlight scenarios from `audit/spec-audit.md` that need coverage — this focuses generation.
 ```plaintext
 Generate manual test cases for registration_api_v1.md following instructions from SKILL.md.
@@ -209,9 +209,9 @@ Account for test cases from audit/test-scenarios.md (open in editor).
 Here is the instruction (SKILL.md) and the specification. Perform QA audit following the instruction.
 ```
 
-**Step 2. Test cases** — `/test-cases`
+**Step 2. Test cases** — `/api-isolated-tests`
 
-📋 Copy: `test-cases/SKILL.md` + `registration_api_v1.md` + **step 1 result** (`audit/spec-audit.md`)
+📋 Copy: `api-isolated-tests/SKILL.md` + `registration_api_v1.md` + **step 1 result** (`audit/spec-audit.md`)
 ```plaintext
 Here is the instruction (SKILL.md), specification, and audit report (spec-audit.md).
 Generate manual test cases following the instruction, based on the identified risks.

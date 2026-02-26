@@ -101,7 +101,7 @@ When reviewing changes (`context: diff` provided):
 
 ## Anti-Pattern Detection (Dynamic Loading)
 
-When reviewing `/api-tests` and `/test-cases` artifacts:
+When reviewing `/api-tests` and `/api-isolated-tests` artifacts:
 1. Check input metadata for `Origin Agent` (e.g., SDET).
 2. Load rules: `cat .claude/qa-antipatterns/_index.md`.
 3. **Instruction:** "Scan diff for any pattern listed in the index."

@@ -56,7 +56,7 @@ Verify `qa_agent.md` contains all required sections:
 | `## Core Mindset` present | Must have 3–5 principles listed | 🔴 CRITICAL |
 | `## Anti-Patterns (BANNED)` present | Table with ≥ 5 rows | 🔴 CRITICAL |
 | `## Quality Gates` present | Must contain Before Commit + Before PR sections | 🟠 MAJOR |
-| `## Cross-Skill Protocol` present | Must reference `/spec-audit` → `/test-cases` → `/api-tests` | 🟠 MAJOR |
+| `## Cross-Skill Protocol` present | Must reference `/spec-audit` → `/api-isolated-tests` → `/api-tests` | 🟠 MAJOR |
 | No placeholders | Grep for `[xxx]` pattern — none allowed | 🟠 MAJOR |
 | Anti-patterns match role | qa_agent.md is an Orchestrator — anti-patterns must cover orchestration failures (e.g. micro-management, blind approval, silent looping). Universal code-level patterns (Thread.sleep, assertEquals) belong in agent files, NOT here. | 🟡 MINOR |
 

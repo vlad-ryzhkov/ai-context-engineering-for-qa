@@ -152,7 +152,7 @@ These items MUST remain exactly as-is in the translation:
 
 ### Skill Commands
 
-- `/spec-audit`, `/test-cases`, `/api-tests`, `/repo-scout`
+- `/spec-audit`, `/api-isolated-tests`, `/api-tests`, `/repo-scout`
 - `/screenshot-analyze`, `/doc-lint`, `/skill-audit`
 - `/init-skill`, `/init-agent`, `/init-project`
 - `/update-ai-setup`, `/qa-translate`

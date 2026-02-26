@@ -5,7 +5,7 @@
 Code generator. Converts the Architect's plan into compilable code.
 Does not question the strategy — executes.
 
-## Skills: `/test-cases`, `/api-tests`, `/init-skill`
+## Skills: `/api-isolated-tests`, `/api-test-cases`, `/api-tests`, `/init-skill`
 
 ## Core Mindset
 
@@ -169,20 +169,22 @@ Order: Generation → Compilation → Post-Check → SKILL COMPLETE. Max 3 attem
 
 | Skill | Artifact | Architecture |
 |-------|----------|-------------|
-| `/test-cases` | `src/test/testCases/*.kt` + `*_self_review.md` | Kotlin DSL |
+| `/api-isolated-tests` | `src/test/testCases/*.kt` + `*_self_review.md` | Kotlin DSL |
 | `/api-tests` | `src/main/kotlin/**/*.kt` + `src/test/kotlin/**/*.kt` | config/, requests/, helpers/, testdata/ (main) + tests (test) |
+| `/api-test-cases` | `docs/api-test-cases/{domain}_test-scenarios_{ts}.md` + `summary_{ts}.md` | Markdown |
 | `/init-skill` | `.claude/skills/{name}/SKILL.md` | — |
 
 ## Cross-Skill: Input Dependencies
 
 | Skill | Requires |
 |-------|---------|
-| `/test-cases` | Specification; check `audit/` — if `spec-audit` exists, take it into account |
-| `/api-tests` | **MANDATORY:** Artifacts from `/test-cases` (`src/test/testCases/*.kt`); Specification |
+| `/api-isolated-tests` | Specification; check `audit/` — if `spec-audit` exists, take it into account |
+| `/api-test-cases` | Specification files; check `audit/` — if `spec-audit` + `repo-scout` exist, use as input |
+| `/api-tests` | **MANDATORY:** Artifacts from `/api-isolated-tests` (`src/test/testCases/*.kt`); Specification |
 
 **Missing artifacts:**
 
-If `/test-cases` results are absent, do not hard-block. Output `⚠️ WARNING: Test cases not found, generating API tests directly from specification (increased risk of omissions)` at the end of the response as a recommendation.
+If `/api-isolated-tests` results are absent, do not hard-block. Output `⚠️ WARNING: Test cases not found, generating API tests directly from specification (increased risk of omissions)` at the end of the response as a recommendation.
 
 ## Traceability
 

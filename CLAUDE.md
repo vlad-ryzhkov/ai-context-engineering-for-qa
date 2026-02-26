@@ -104,13 +104,14 @@ When asked to shorten, simplify, or trim output/content — remove only what is 
 
 ## QA Skills
 
-**Agent context:** `.claude/qa_agent.md` — for core testing and orchestration skills (`/spec-audit`, `/test-cases`, `/api-tests`) you MUST read this file before proceeding.
+**Agent context:** `.claude/qa_agent.md` — for core testing and orchestration skills (`/spec-audit`, `/api-isolated-tests`, `/api-test-cases`, `/api-tests`) you MUST read this file before proceeding.
 
 | Skill | Purpose |
 |-------|---------|
 | `/repo-scout` | Repository scanning |
 | `/spec-audit` | QA audit of requirements |
-| `/test-cases` | Test cases from specification |
+| `/api-isolated-tests` | Test cases from specification |
+| `/api-test-cases` | Bulk test cases for entire API |
 | `/api-tests` | API automated tests (Kotlin) |
 | `/screenshot-analyze` | Screenshot analysis for L10N defects |
 | `/doc-lint` | Documentation audit |
@@ -123,6 +124,6 @@ When asked to shorten, simplify, or trim output/content — remove only what is 
 | `/update-ai-setup` | AI setup registry update |
 | `/qa-translate` | Technical translation RU→EN |
 
-**Workflow:** `/repo-scout` → `/spec-audit` → `/test-cases` → `/api-tests`
+**Workflow:** `/repo-scout` → `/spec-audit` → `/api-test-cases` | `/api-isolated-tests` → `/api-tests`
 
 **Structure:** `.claude/` → `qa_agent.md`, `agents/`, `skills/`, `qa-antipatterns/`, `references/`

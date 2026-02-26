@@ -1,5 +1,5 @@
 ---
-name: test-cases
+name: api-isolated-tests
 description: Generate exhaustive test case matrix (Markdown) from API specifications.
 ---
 # INSTRUCTIONS
@@ -13,7 +13,7 @@ Do NOT guess the procedure and do NOT output anything yet.
 You MUST use your file-reading tool to fetch and strictly follow:
 
 1. First, read the core agent context: `.claude/qa_agent.md`
-2. Second, read the specific skill protocol: `.claude/skills/test-cases/SKILL.md`
+2. Second, read the specific skill protocol: `.claude/skills/api-isolated-tests/SKILL.md`
 3. Execute based STRICTLY on the logic and output format defined in those files.
 
 ## CRITICAL REMINDERS

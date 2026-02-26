@@ -11,7 +11,7 @@
   - No "claude", "anthropic" prefixes
   - Unique within the project
 - **Examples:**
-  - ✅ `test-cases`, `api-tests`, `screenshot-analyze`
+  - ✅ `api-isolated-tests`, `api-tests`, `screenshot-analyze`
   - ❌ `TestPlan`, `api_tests`, `claude-helper`
 
 ### description

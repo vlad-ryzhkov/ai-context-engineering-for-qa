@@ -78,10 +78,10 @@ For tasks > 3 files: Analysis → Plan → Execute → Verify
 | Skill | Purpose |
 |-------|---------|
 | `/spec-audit` | QA audit of requirements |
-| `/test-cases` | Test cases from specification |
+| `/api-isolated-tests` | Test cases from specification |
 | `/api-tests` | API automated tests |
 
-**Workflow:** `/spec-audit` → `/test-cases` → `/api-tests`
+**Workflow:** `/spec-audit` → `/api-isolated-tests` → `/api-tests`
 ````
 
 ---
