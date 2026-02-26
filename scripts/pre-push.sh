@@ -34,7 +34,7 @@ fi
 FOUND_FORBIDDEN=0
 for file in $DIFF_FILES; do
   for pattern in "${FORBIDDEN_FILES[@]}"; do
-    if echo "$file" | grep -qiE "$pattern"; then
+    if echo "$file" | grep -qiE -- "$pattern"; then
       echo -e "${RED}[pre-push] BLOCKED: forbidden file in diff: $file${NC}"
       FOUND_FORBIDDEN=1
     fi
