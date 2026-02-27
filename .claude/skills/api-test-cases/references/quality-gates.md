@@ -41,15 +41,29 @@ Active deletion step. Go through every generated row and apply rules in order. F
 4. Row's Type is in `EXCLUDED_TYPES` → **DELETE**
 5. Row matches any remaining `EXCLUDED_SCENARIOS` pattern → **DELETE**
 
+### PROXY_HEURISTICS Safety Net (apply FIRST when `service_type: proxy-filter`, skip if `mode: full-matrix`)
+
+Apply BEFORE DEFAULT_HEURISTICS. Catches unit-test-only rows:
+
+- **PH-01:** Row requires internal state manipulation (storage fields, cache internals) → **DELETE**
+- **PH-02:** Row requires mock injection (component replacement, error simulation) → **DELETE**
+- **PH-03:** Row requires filling internal structures to capacity → **DELETE**
+- **PH-04:** Row tests inapplicable attack vector (SQLi, XSS, CSRF, SSRF on proxy with no SQL/HTML/sessions/URL-forwarding) → **DELETE**
+- **PH-05:** Row requires nanosecond timing control on internal TTL/expiry → **DELETE**
+
+**API-Testability check before deleting:** Is the input constructible from HTTP elements? Is the result observable in HTTP response? If both YES → do NOT delete.
+
 ### DEFAULT_HEURISTICS Safety Net (skip if `mode: full-matrix`)
 
-Apply AFTER spec-driven rules. Catches unit-level rows that slipped past generation:
+Apply AFTER PROXY_HEURISTICS (if applicable) and spec-driven rules. Catches unit-level rows that slipped past generation:
 
 - **DH-01:** Validation repeating across N fields with same error code → keep 1 per check type, **DELETE** rest
 - **DH-02:** M complexity sub-rules for single field → keep 1 NEG, **DELETE** rest
-- **DH-03:** BVA for infrastructure-only field → keep 1 BVA pair for 1 field, **DELETE** rest
+- **DH-03:** BVA for schema/proto validate tag field WITHOUT named checklist rule → classify as [INFRA_BVA], **MOVE** to `unit-like_test-scenarios.md`. Exception: if boundary is named in checklist → keep.
 - **DH-04:** 3+ regex/whitespace variants for same field → keep 1, **DELETE** rest
 - **DH-05:** NEG row = same boundary as BVA row → keep BVA, **DELETE** NEG
+- **DH-06:** IDEM for read-only endpoint (List, Get, no mutation) → **SKIP** entirely, log as "IDEM_READONLY"
+- **DH-07:** NEG scenario requires degraded service state (uninitialized client, missing dependency) → classify as [INFRA_STATE], **MOVE** to `unit-like_test-scenarios.md`
 
 **Check exceptions before deleting:** Named business rule, different error code/status, state-dependent validation, `[CRITICAL]` security/data-integrity.
 
@@ -85,9 +99,17 @@ Run after generating each domain batch:
 - [ ] External API endpoints: `Mock: {System} returns {Response}`
 - [ ] L10N present for text fields (if `L10N ∉ EXCLUDED_TYPES`) — **CRITICAL/HIGH only** (MEDIUM endpoints skip L10N per risk tier scope reduction)
 - [ ] IDEM present for POST/PUT (if `IDEM ∉ EXCLUDED_TYPES`) — CRITICAL/HIGH only
-- [ ] DEFAULT_HEURISTICS evaluated (DH-01..DH-05), unless `mode: full-matrix`
+- [ ] DEFAULT_HEURISTICS evaluated (DH-01..DH-08), unless `mode: full-matrix`
+- [ ] Data-Driven blocks used where ≥3 same-endpoint variants exist (DH-08)
 - [ ] Risk tags assigned: every endpoint header has `[CRITICAL]`, `[HIGH]`, or `[MEDIUM]`
 - [ ] Mode declaration in file header
+- [ ] No [INFRA_BVA] scenarios (DH-03): BVA from schema/proto validate tag without named checklist rule → moved to `unit-like_test-scenarios.md`
+- [ ] No [IDEM_READONLY] scenarios (DH-06): IDEM for non-mutating endpoints (List, Get) removed
+- [ ] No [INFRA_STATE] scenarios (DH-07): degraded-state NEG (uninitialized client, missing dependency) moved to `unit-like_test-scenarios.md`
+- [ ] FLOW scenarios present for services with inheritance/propagation (if spec mentions "inherits from parent", "override restores inheritance") — CRITICAL/HIGH only
+- [ ] **Proxy-filter only:** PROXY_HEURISTICS evaluated (PH-01..PH-05)
+- [ ] **Proxy-filter only:** Zero unit-test-only scenarios remain (API-Testability check passed)
+- [ ] **Proxy-filter only:** IDEM and L10N skipped (proxy does not create resources or process user text)
 
 ---
 
@@ -97,6 +119,9 @@ Run after generating each domain batch:
 - [ ] Summary file `summary_{timestamp}.md` exists with aggregated statistics
 - [ ] Cross-domain dependency map present
 - [ ] No duplicate scenarios across domain files (same endpoint in two files)
+- [ ] `developer-questions_{timestamp}.md` generated with all SPEC AMBIGUITY items (if any ⚠️ SPEC AMBIGUITY were found)
+- [ ] `unit-like_test-scenarios.md` generated and populated (if any [INFRA_BVA], [INFRA_STATE], [IDEM_READONLY], [UNIT_TEST_CANDIDATE] were removed from domain files)
+- [ ] `security_middleware` domain file generated (for services with auth middleware detected)
 
 ---
 

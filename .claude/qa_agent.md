@@ -159,6 +159,13 @@ Sub-agents operate in `context: fork` — pass **exhaustive context** in the pro
 
 ---
 
+## Markdown Artifact Quality Rules
+
+All skills that generate `.md` artifacts MUST follow these rules:
+
+- **MD040:** Every fenced code block MUST have a language tag (`json`, `text`, `bash`, etc.)
+- **MD056:** Pipe `|` inside a table cell MUST be escaped as `\|`
+
 ## Skill Completion Protocol
 
 Each skill ends with one of the following blocks:

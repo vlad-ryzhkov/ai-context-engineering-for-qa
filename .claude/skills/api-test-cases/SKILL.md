@@ -25,6 +25,8 @@ Before execution the agent MUST load (via `Read` tool):
 3. `.claude/skills/api-test-cases/references/quality-gates.md`
 4. `.claude/skills/api-test-cases/references/output-template.md`
 
+**Load validation:** If ANY of the 4 files above fails to load (Read error, empty content, file not found) → output `🚨 BLOCKER: Required reference file missing: {path}` → STOP. Do NOT proceed with partial context — heuristics and quality gates will be absent.
+
 ---
 
 ## EXCLUDED_SCENARIOS (TOP-LEVEL IMPERATIVE)
@@ -54,15 +56,36 @@ If no exclusions found → `EXCLUDED_TYPES = []`, `EXCLUDED_SCENARIOS = []`, app
 ## Input Strategy (Auto-Discovery)
 
 1. **Primary:** `audit/repo-scout-report.md` — extract endpoint catalog from API Surface section.
-2. **Fallback:** Scan `specifications/` directory for `*.md`, `*.yaml`, `*.json`, `*.proto` files.
+2. **Fallback:** Scan `specifications/` directory for `*.md`, `*.yaml`, `*.json`, `*.proto`, `*.graphql`, `*.gql` files.
 3. **Direct:** `$ARGUMENTS` path or user-provided file path.
 4. **Enrichment:** `audit/spec-audit-report.md` (if exists) — incorporate findings.
-5. **If no specs found** → `⚠️ WARNING: No specifications found. Provide a path or run /repo-scout first.` → STOP.
+5. **Checklist enrichment:** `docs/qa-checklist.md` (if exists) — extract explicitly named business rules, test cases, and edge cases that supplement specs. Named boundaries in checklist OVERRIDE DH-03 (schema-only BVA is kept as API test when checklist explicitly names the boundary). Read via `Read` tool.
+6. **repo-scout enrichment** (if `audit/repo-scout-report.md` exists):
+   - §11 State Transition Matrix → pre-populate state-conflict NEG scenarios
+   - §12 Entity & Data Model → use Create-Order chain for Cross-Domain Dependencies (Phase 5) and cleanup order; use Consistency Model for assertion strategy hints
+   - §13 Behavioral Nuances → extract conditional behaviors as edge-case scenarios
+   - §15 QA Scenario Matrix → merge P0/P1/P2 priorities into risk classification; merge Skip list into EXCLUDED_SCENARIOS
+7. **If no specs found** → `⚠️ WARNING: No specifications found. Provide a path or run /repo-scout first.` → STOP.
 
 ## Mode
 
 `mode: api-integration` (DEFAULT) — applies DEFAULT_HEURISTICS to reduce unit-level noise.
 `mode: full-matrix` — disables all heuristics. Trigger when arguments contain `full-matrix`, `full`, or `exhaustive`.
+
+## Service Type (Auto-Detection)
+
+Detect from `audit/repo-scout-report.md` or override via `$ARGUMENTS`:
+
+| `service_type` | Detection Signal | Behavior |
+|----------------|-----------------|----------|
+| `api-service` (DEFAULT) | Has own REST/gRPC endpoints | Standard algorithm, all dimensions |
+| `proxy-filter` | 0 own endpoints + filter decision points + host system context (Envoy/Nginx/istio) | Apply PROXY_HEURISTICS (PH-01..PH-05) before DEFAULT_HEURISTICS. Group by decision domain, not URL path. |
+
+**Auto-detection from repo-scout-report:**
+- Look for: `Endpoints: 0` or `No API surface` + keywords: `filter`, `proxy`, `middleware`, `envoy`, `wasm`, `interceptor`
+- If detected → `service_type: proxy-filter`
+
+**Manual override:** If `$ARGUMENTS` contains `proxy`, `filter`, or `middleware` → force `service_type: proxy-filter`.
 
 ---
 
@@ -70,17 +93,25 @@ If no exclusions found → `EXCLUDED_TYPES = []`, `EXCLUDED_SCENARIOS = []`, app
 
 ### Phase 1: Scout — Endpoint Catalog
 
-1. Parse `audit/repo-scout-report.md` (via `Read` tool) to extract exact file paths of all API specifications from the API Surface section. If the report is missing, fallback to scanning `specifications/` directory via `Glob` for `*.md`, `*.yaml`, `*.json`, `*.proto`.
-2. Read each discovered specification file via `Read` tool.
-3. Extract every endpoint: `{METHOD} {path}` + description + request/response schema.
-4. Compile a flat endpoint list with source file reference.
+1. Parse `audit/repo-scout-report.md` (via `Read` tool) to extract exact file paths of all API specifications from the API Surface section. If the report is missing, fallback to scanning `specifications/` directory via `Glob` for `*.md`, `*.yaml`, `*.json`, `*.proto`, `*.graphql`, `*.gql`.
+2. **Detect `service_type`** from repo-scout-report (see Service Type section above).
+3. Read each discovered specification file via `Read` tool.
+4. **`api-service`:** Extract every endpoint: `{METHOD} {path}` + description + request/response schema. Compile a flat endpoint list with source file reference.
+5. **`proxy-filter`:** Extract every **decision point** (accept/reject/modify logic) + **external input surface** (headers, URL, query params, body fields the proxy inspects). No own endpoints — the "endpoints" are the filter's decision paths.
 
 ### Phase 2: Map — Domain Grouping & Risk Classification
 
-1. **Group by domain/resource tag** (Auth, Users, Orders, Payments, etc.):
+1. **Group by domain/resource tag:**
+
+   **`api-service`:** (Auth, Users, Orders, Payments, etc.):
    - Parse URL path segments: `/api/v1/{domain}/...`
    - Use spec section headers or OpenAPI tags as grouping hints.
    - Ungrouped endpoints → domain `_misc`.
+
+   **`proxy-filter`:** Group by **decision domain** (the logical function, not URL):
+   - Examples: `token-validation`, `ban-enforcement`, `revocation-check`, `routing`, `public-url-bypass`
+   - Each decision domain maps to a set of filter decision points with shared input surface.
+   - Use filter code structure (handler functions, switch cases) as grouping hints.
 
 2. **Classify risk** per endpoint:
    - **[CRITICAL]** — Money (payment, refund, balance), Security (auth, tokens, permissions, password reset), Data Integrity (user deletion, account merge).
@@ -121,11 +152,15 @@ FOR each selected domain batch:
      (silent — not to chat, forces context reinforcement before each batch)
   2. Load specification for this domain's endpoints
   3. Parse EXCLUDED_TYPES and EXCLUDED_SCENARIOS from the spec (merge with active set)
+  3.5. Load anti-patterns: Read `.claude/qa-antipatterns/_index.md`. Apply relevant patterns
+       as generation constraints (e.g., `api/eventual-consistency-writes.md` for write→read pairs,
+       `api/batch-partial-failure.md` for batch endpoints).
   4. Apply coverage matrix (→ references/coverage-matrix.md):
      - CRITICAL: 7 dimensions + expanded NEG (race conditions, double execution, partial failure)
      - HIGH: 7 dimensions (POS/NEG/BVA/SEC/L10N/IDEM/HEADERS)
      - MEDIUM: POS + key NEG + SEC + HEADERS only (skip BVA/L10N/IDEM)
-  5. Apply DEFAULT_HEURISTICS (DH-01..DH-05) as **generation constraints** (prevention-first: do NOT generate unit-level scenarios, apply heuristics DURING generation, not as post-filters). Skip when `mode: full-matrix`.
+  5. **If `service_type: proxy-filter`:** Apply PROXY_HEURISTICS (PH-01..PH-05) as generation constraints FIRST (→ references/coverage-matrix.md § PROXY_HEURISTICS). Then apply DEFAULT_HEURISTICS. Skip both when `mode: full-matrix`.
+     **If `service_type: api-service`:** Apply DEFAULT_HEURISTICS (DH-01..DH-07) as **generation constraints** (prevention-first: do NOT generate unit-level scenarios, apply heuristics DURING generation, not as post-filters). Skip when `mode: full-matrix`.
   6. Execute Scope Purge Pass (→ references/quality-gates.md)
   7. Run Quality Gates checklist for this domain
   8. Save to docs/api-test-cases/{domain}_test-scenarios_{timestamp}.md
@@ -145,6 +180,18 @@ For MEDIUM-risk endpoints, generate ONLY:
 
 Skip: BVA, L10N, IDEM. Log skipped dimensions in Scope Reduction Log with reason: `MEDIUM risk — reduced scope per risk tier`.
 
+**Security Middleware Domain [Conditional]:**
+For services with auth middleware (detected from repo-scout §5 Auth & Access Control or spec mentions: interceptor, middleware, filter chain, guard): automatically add `security_middleware` domain if not already in the domain list.
+- **Sources:** `docs/qa-checklist.md` § Security & Middleware (if exists); otherwise derive from middleware/interceptor analysis in spec or repo-scout §5.
+- **Scenarios (protocol-adaptive):**
+  - Auth token: no token, invalid token, malformed token (missing prefix/scheme)
+  - Rate limiting (if detected): burst without auth → error, burst with auth → all OK
+  - Access control: correct token + authorized, correct token + unauthorized, wildcard match
+- **Error codes:** Use protocol-appropriate codes: gRPC → `Unauthenticated`/`PermissionDenied`/`ResourceExhausted`; REST → `401`/`403`/`429`.
+- **Representative endpoint:** most-called read endpoint.
+- **Skip condition:** If no auth middleware detected → skip entirely, do not generate empty file.
+- **Output:** `docs/api-test-cases/security_middleware_test-scenarios_{timestamp}.md`
+
 ### Phase 5: Cross-Domain Analysis
 
 After all domain batches complete:
@@ -160,6 +207,7 @@ Generate `docs/api-test-cases/summary_{timestamp}.md`:
 # API Test Cases — Cross-Domain Summary
 > Generated: {YYYY-MM-DD HH:MM:SS}
 > Mode: {api-integration|full-matrix}
+> Service Type: {api-service|proxy-filter}
 > Specs analyzed: {count}
 > Skill: /api-test-cases
 
@@ -186,6 +234,38 @@ Generate `docs/api-test-cases/summary_{timestamp}.md`:
 ## Spec Ambiguities
 [aggregated from all domains]
 ```
+
+Invoke Gardener Analysis (per `protocols/gardener.md`): append `## 🌱 Gardener Analysis` section to the summary file with observations, proposed rules, and target sections.
+
+### Phase 6.5: Handoff Consolidation
+
+Merge all per-domain test scenario files into `audit/test-scenarios.md`:
+1. Concatenate domain tables preserving all columns (ID, Type, Scenario, Input, Expected Result)
+2. Add cross-domain dependency header from Phase 5
+3. Preserve domain section headers for navigation
+4. Remove Scope Reduction Logs (already archived in per-domain files)
+
+This file is the PRIMARY input for `/api-tests`.
+
+### Phase 7: Developer Questions File
+
+Generate `docs/api-test-cases/developer-questions_{timestamp}.md` if any of the following were found across all domain files:
+1. `⚠️ SPEC AMBIGUITY` items — prioritize as P0 (security/auth), P1 (business logic/state), P2 (edge cases/implementation details)
+2. `[UNIT_TEST_CANDIDATE]` scenarios — streaming/server lifecycle scenarios not testable via API harness
+3. `[INFRA_STATE]` scenarios — removed degraded-state NEG tests
+
+Per-question format:
+
+```markdown
+## Q{N} [P0/P1/P2] — {Brief name}
+**Context:** {code location / proto field}
+**Current behavior (by code):** {observed or inferred behavior}
+**Question:** {actionable question}?
+**Related tests:** {test IDs}
+**Impact on autotests:** {what to change if answer is X vs Y}
+```
+
+Skip Phase 7 if no SPEC AMBIGUITY, UNIT_TEST_CANDIDATE, or INFRA_STATE items were found.
 
 ---
 
@@ -233,16 +313,19 @@ Generate `docs/api-test-cases/summary_{timestamp}.md`:
 
 ```text
 ✅ SKILL COMPLETE: /api-test-cases
+├─ Service Type: {api-service|proxy-filter}
 ├─ Artifacts: docs/api-test-cases/{domain}_test-scenarios_{ts}.md (×{D} domains) + summary_{ts}.md
 ├─ Coverage: {M}/{T} endpoints ({P}%)
 ├─ Scenarios: {N} total (POS:{X}, NEG:{Y}, BVA:{Z}, SEC:{W}, L10N:{V}, IDEM:{U}, HEADERS:{H})
 ├─ Domains: {D} generated, {S} skipped
 ├─ Excluded: EXCLUDED_TYPES={list}, EXCLUDED_SCENARIOS={count} patterns
+├─ PROXY_HEURISTICS: {count} scenarios filtered (proxy-filter only, omit for api-service)
 └─ Ready for: /api-tests (Implementation)
 ```
 
 ```text
 ⚠️ SKILL PARTIAL: /api-test-cases
+├─ Service Type: {api-service|proxy-filter}
 ├─ Artifacts: [list (✅/❌ per domain)]
 ├─ Coverage: {M}/{T} endpoints ({P}%)
 ├─ Scenarios: {N} total

@@ -20,13 +20,13 @@ Fix all markdownlint errors in .md files across the repository.
 1. Auto-fix what's possible:
 
    ```bash
-   npx markdownlint-cli --fix "**/*.md" --ignore node_modules --ignore ".gradle" --ignore build
+   npx markdownlint-cli --fix "**/*.md" --ignore node_modules --ignore ".gradle" --ignore build --ignore audit
    ```
 
 2. Re-run to find remaining issues:
 
    ```bash
-   npx markdownlint-cli "**/*.md" --ignore node_modules --ignore ".gradle" --ignore build
+   npx markdownlint-cli "**/*.md" --ignore node_modules --ignore ".gradle" --ignore build --ignore audit
    ```
 
 3. Fix remaining errors manually using Edit tool (line length, heading levels, inline HTML)

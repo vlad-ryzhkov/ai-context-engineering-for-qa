@@ -38,7 +38,7 @@ Expected: data saved and returned without corruption (UTF-8 round-trip).
 Four scenarios:
 1. Repeated request with identical `Idempotency-Key` within cache window → same result without duplicate.
 2. Repeated request after successful creation (no/different key) → `409 Conflict`.
-3. **Cache-expiry + uniqueness conflict** — same data, same key, after window expires AND entity persisted → `409 Conflict` (uniqueness wins, NOT `201`).
+3. **Cache-expiry + uniqueness conflict** `[TIME_DEPENDENT]` — same data, same key, after window expires AND entity persisted → `409 Conflict` (uniqueness wins, NOT `201`). Mark with `[TIME_DEPENDENT]` tag in Scenario column. Downstream `/api-tests` translates to `@Disabled("Time-dependent: requires cache expiry control")`.
 4. **Body mismatch** — same key within cache window, different body → `400 BAD_REQUEST` + `IDEMPOTENCY_KEY_MISMATCH` (if spec defines) OR `⚠️ SPEC AMBIGUITY`.
 
 **If endpoint is non-idempotent by design** (always 409) — cover only scenario (2) with note: `IDEM:success_variant: not applicable`.
@@ -48,6 +48,29 @@ Four scenarios:
 For POS Happy Path of each endpoint add a header verification row (`Type: HEADERS`):
 - `Content-Type: application/json; charset=utf-8` — mandatory
 - Security headers: `X-Content-Type-Options: nosniff`
+
+---
+
+### FLOW (End-to-End Inheritance) [Conditional]
+
+Apply for services with inheritance/propagation (configuration services, RBAC).
+**Mandatory** when spec mentions: "inherits from parent", "propagates to children", "override restores inheritance".
+
+Scenarios:
+1. Set value on parent → verify child inherits (read after write).
+2. Override on child → Delete override → verify child re-inherits from parent.
+
+Rules:
+- Risk: CRITICAL/HIGH only. 1–2 scenarios per inheritance chain.
+- ID prefix: `{CHAIN}-FLOW-{NN}` (e.g., `SETP-FLOW-01`).
+- **Exclusion marker:** `FLOW: out of scope`.
+
+---
+
+### Streaming Test Classification
+
+- `[UNIT_TEST_CANDIDATE]` — scenario tests server lifecycle (timer expiry, context cancellation, shutdown). Cannot be executed via gRPC client alone. **Recommendation:** unit test with mock timer/context. Move to `unit-like_test-scenarios.md`.
+- `[MANUAL]` — scenario requires external coordination (parallel terminal, specific timing, concurrency). Mark as manual in Scope Reduction Log; do not generate automated test row.
 
 ---
 
@@ -109,9 +132,12 @@ Read-only → `Cleanup: N/A`.
 |---|---|---|
 | DH-01 | Repeating Validation Pattern — null/empty/wrong-type across N fields, same error code | Keep 1 representative field per check type |
 | DH-02 | Complexity Rule Combinatorics — M sub-rules for one field | Keep 1 representative NEG |
-| DH-03 | Infrastructure BVA — schema-only length, no named business rule | Keep 1 BVA pair for 1 representative field |
+| DH-03 | Infrastructure BVA — boundary defined by schema/proto validate tag WITHOUT named business rule in spec/checklist | Classify as [INFRA_BVA]: move to `unit-like_test-scenarios.md`. Exception: if boundary is named in checklist → keep as API test. Rule: "Named in checklist = API test. Schema-only = unit-like." |
 | DH-04 | Format/Whitespace Consolidation — 3+ regex/spacing variants for same field | Keep 1 representative |
 | DH-05 | Length Boundary Deduplication — NEG row = same boundary as BVA row | Keep BVA row, remove NEG duplicate |
+| DH-06 | Read-Only IDEM — IDEM for endpoint without state mutation (List, Get) | SKIP entirely. Log in Scope Reduction Log: "IDEM_READONLY: read-only endpoint, no state mutation, idempotency not applicable" |
+| DH-07 | Degraded-State NEG — scenario requires intentionally broken service (uninitialized client, missing dependency, infrastructure failure) | Classify as [INFRA_STATE]: move to `unit-like_test-scenarios.md`. Not testable via API test harness. |
+| DH-08 | Data-Driven Consolidation — ≥3 scenarios for same endpoint differing only in 1-2 input fields with predictable expected results (e.g., auth variants, role-based access, locale variants, error code variants) | Consolidate into Data-Driven block: 1 parent row + parameter table. Threshold: ≥3 variants of the same check type for same endpoint. Preserves coverage while reducing table rows ≥3:1. Exception: Do NOT consolidate if expected HTTP status differs across variants (each status needs its own row for traceability). |
 
 ### Exceptions (heuristic does NOT reduce)
 - Scenario tests an explicitly named business rule from spec
@@ -121,6 +147,50 @@ Read-only → `Cleanup: N/A`.
 
 ### API Coverage Guarantee (heuristics NEVER reduce)
 All POS, SEC, IDEM, L10N, HEADERS; scenarios with distinct error code/HTTP status; explicitly named business rules; state-dependent and cross-field validation; `[CRITICAL]` security/data-integrity; ≥1 NEG per validation class; ≥1 BVA pair for field with business rule.
+
+---
+
+## PROXY_HEURISTICS (service_type: proxy-filter)
+
+> Applied BEFORE DEFAULT_HEURISTICS when `service_type: proxy-filter`. Skipped entirely when `mode: full-matrix` or `service_type: api-service`.
+
+### Proxy Heuristic Rules
+
+| ID | Rule | Filters Out |
+|----|------|-------------|
+| PH-01 | Internal State Manipulation | BVA on storage/cache internals (ExpiresAt ±1ns, capacity limits) — requires code-level access, not external HTTP input |
+| PH-02 | Mock Injection Required | Scenarios needing component replacement (storage errors, HTTP client failures, dependency injection) |
+| PH-03 | Capacity/Stress Internal | Filling internal structures to limits (10K bans, 100K JTIs) — not controllable via single HTTP request |
+| PH-04 | Inapplicable Attack Vector | SQL injection (no SQL), XSS (no HTML rendering), CSRF (no sessions), SSRF (no URL forwarding from input) |
+| PH-05 | Nanosecond Timing Control | BVA on internal TTL/expiry fields not settable via external input |
+
+### Proxy-Specific Scope Adjustments
+
+When `service_type: proxy-filter`, override default dimension rules:
+
+| Dimension | Proxy Scope |
+|-----------|-------------|
+| **BVA** | Only for externally-controllable values: header length, URL length, query param count, JWT claim values |
+| **SEC** | Only for applicable vectors: JWT manipulation, header injection, path traversal, authorization bypass. Skip: SQLi, XSS, CSRF, SSRF |
+| **NEG concurrency** | Max 1 representative per decision domain, observable behavior only (HTTP response code/body) |
+| **IDEM** | Skip entirely — proxy does not create/mutate resources |
+| **L10N** | Skip unless proxy processes user text (e.g., transforms header values containing Unicode) |
+
+### API-Testability Classification
+
+For proxy-filter services, classify every candidate scenario before generation:
+
+**API-testable** (generate):
+- Input constructible from standard HTTP elements (headers, URL, method, query params, body)
+- Result observable in HTTP response (status code, headers, body text)
+- No mock injection or internal state manipulation required
+
+**Unit-test-only** (do NOT generate — log in Scope Reduction Log with `PH-XX` reference):
+- Requires nanosecond timing control on internal fields
+- Requires filling internal data structures to capacity
+- Requires mocking internal components (storage, HTTP client, cache)
+- Requires manipulating internal state not reachable via HTTP
+- Tests attack vectors inapplicable to the proxy's technology stack
 
 ---
 

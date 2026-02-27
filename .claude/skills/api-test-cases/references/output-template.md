@@ -20,11 +20,12 @@ Examples:
 ```markdown
 # {Domain} API Test Scenarios
 > Mode: api-integration | Generated: {YYYYMMDD_HHMMSS}
+> Service Type: {api-service|proxy-filter}
 > Source: {spec_path}
 > Skill: /api-test-cases
 
 ## Domain Summary
-- Endpoints: {count}
+- Endpoints: {count} (or Decision Points for proxy-filter)
 - Risk Level: {CRITICAL|HIGH|MEDIUM}
 - EXCLUDED_TYPES: {list or "none"}
 - EXCLUDED_SCENARIOS: {count} patterns applied
@@ -49,6 +50,55 @@ Examples:
 | {PREFIX}-IDEM-02 | IDEM | Duplicate entity (no key) | Same data, no Idempotency-Key | 409 Conflict + body.code: '{ERROR_CODE}' |
 | {PREFIX}-IDEM-03 | IDEM | Cache-expiry + uniqueness | Same data + same key after window expires | 409 Conflict + body.code: '{ERROR_CODE}' |
 | {PREFIX}-IDEM-04 | IDEM | Body mismatch | Same key + different body | 400 Bad Request + body.code: 'IDEMPOTENCY_KEY_MISMATCH' |
+```
+
+### Data-Driven Block Format (DH-08)
+
+When ≥3 scenarios for the same endpoint differ only in 1-2 fields, use this format:
+
+```markdown
+| ID | Type | Scenario | Input Data | Expected Result |
+|----|------|----------|------------|-----------------|
+| {PREFIX}-SEC-01 | SEC | Auth variants [Data-Driven: {N} params] | [see params] | [see params] |
+
+**{PREFIX}-SEC-01 Parameters:**
+| # | Variant | Input | Expected |
+|---|---------|-------|----------|
+| a | No token | — (no Authorization) | 401 + body.code: 'UNAUTHORIZED' |
+| b | Invalid token | Bearer {INVALID_TOKEN} | 401 + body.code: 'INVALID_TOKEN' |
+| c | Expired token | Bearer {EXPIRED_TOKEN} | 401 + body.code: 'TOKEN_EXPIRED' |
+| d | Wrong role | Bearer {VIEWER_TOKEN} | 403 + body.code: 'FORBIDDEN' |
+```
+
+Rules:
+- Parent row Type = the common type (SEC, NEG, L10N)
+- Parameter table inherits parent ID with letter suffix (SEC-01a, SEC-01b, ...)
+- Each parameter row is a separate test in api-tests (`@ParameterizedTest`)
+- Do NOT use for scenarios with different HTTP status groups (2xx vs 4xx must be separate parent rows)
+
+### Proxy-Filter Table Variant (service_type: proxy-filter)
+
+Use this table format instead of the standard one when `service_type: proxy-filter`:
+
+```markdown
+## Decision Domain: [{Name}] [{RISK}]
+
+| ID | Type | Scenario | Input (External) | Expected Result (HTTP + Logic) |
+|----|------|----------|------------------|--------------------------------|
+| {PREFIX}-POS-01 | POS | Valid request passes through | Authorization: Bearer {VALID_TOKEN}, GET {PATH} | 200 OK. Upstream response forwarded |
+| {PREFIX}-NEG-01 | NEG | Invalid token rejected | Authorization: Bearer {INVALID_TOKEN} | 401 Unauthorized + body: '{ERROR_TEXT}' |
+| {PREFIX}-SEC-01 | SEC | No auth header | — (no Authorization header) | 403 Forbidden + body: 'RBAC: access denied' |
+| {PREFIX}-BVA-01 | BVA | Header at max length | Authorization: Bearer {MAX_LEN_TOKEN} | {expected behavior} |
+
+Key differences from api-service template:
+- "Decision Domain" replaces "Feature"
+- "Input (External)" column explicitly names the HTTP element (header, URL, method, query param)
+- No IDEM or L10N rows (proxy does not create resources or process user text)
+- No Contract Match (proxy forwards upstream response, does not define its own schema)
+- No Cleanup (proxy is stateless from HTTP perspective — internal state managed by event bus)
+```
+
+```markdown
 
 ---
 
@@ -58,6 +108,16 @@ Examples:
 | {ID} | {Description} | {Rule reference: EXCLUDED_SCENARIOS pattern or DH-XX} |
 
 > No rows removed. ← (use this if nothing was removed)
+
+---
+
+## Unit-Like Scenarios (Moved to unit-like_test-scenarios.md)
+
+| ID     | Type                                                       | Reason                          | Recommendation                                      |
+|--------|------------------------------------------------------------|---------------------------------|-----------------------------------------------------|
+| {ID}   | [INFRA_BVA/INFRA_STATE/IDEM_READONLY/UNIT_TEST_CANDIDATE] | {DH-XX rule reference}          | {unit test / skip / N/A}                            |
+
+> None identified. ← (use this if none)
 
 ---
 
@@ -99,6 +159,7 @@ HEADERS rows: append `h` to the POS ID (e.g., `REG-POS-01h`)
 # API Test Cases — Cross-Domain Summary
 > Generated: {YYYY-MM-DD HH:MM:SS}
 > Mode: {api-integration|full-matrix}
+> Service Type: {api-service|proxy-filter}
 > Specs analyzed: {count}
 > Skill: /api-test-cases
 
@@ -119,6 +180,7 @@ HEADERS rows: append `h` to the POS ID (e.g., `REG-POS-01h`)
 - EXCLUDED_TYPES: {list or "none"}
 - EXCLUDED_SCENARIOS: {count} patterns applied across all domains
 - MEDIUM risk reductions: {count} dimensions skipped
+- PROXY_HEURISTICS: {count} scenarios filtered (proxy-filter only, omit for api-service)
 
 ## Spec Ambiguities (Aggregated)
 | Domain | Ambiguity | Interpretation |
