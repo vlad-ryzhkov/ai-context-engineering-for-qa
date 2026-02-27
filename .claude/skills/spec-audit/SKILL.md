@@ -23,6 +23,7 @@ Before execution the agent MUST:
 3. **Principle — Shift Left Extreme:** We hunt bugs in *text* while they cost $1, not $1000 in production.
 4. **Principle — Trust No One:** Every invocation performs a FRESH, INDEPENDENT audit. Never reuse or reference previous audits. Even if an audit for this specification already exists, create a NEW audit file with a unique timestamp. This ensures consistency, reduces hallucination, and preserves audit history.
 5. **Anti-Hallucination Rule:** Never assume a field exists unless it is explicitly listed in the table or schema. If an action (SMS, Push, Email) is mentioned in the text but the field (`phone`, `device_token`, `email`) is missing from the Request Body — this is a specification ERROR, not a reason to add a field "from memory" or logical inference. Log as Defect 10.
+6. **Principle — API Integration Lens:** This audit evaluates specification readiness for **API integration testing**, not unit testing. Prioritize defects that affect the HTTP contract (status codes, response schema, headers, error codes), business logic at the API boundary, and cross-system behavior. Per-field validation gaps that are typically handled by framework-level validators (Zod, Pydantic, Bean Validation) are valid spec-consistency findings but should be deprioritized to Minor (4-5) unless they represent a named business rule or affect the API error contract.
 
 ## Input Data (Step 0 — execute FIRST, before everything else)
 
@@ -97,6 +98,8 @@ You MUST perform the analysis in 4 stages. Do not mix conclusions.
   - *Boundary values:* Maximum length, negative numbers, special characters, emoji.
   - *Status Conflicts:* What if the status is already "Completed" and we send "Cancel"?
 
+  **Focus:** Prioritize scenarios testable at the API boundary (HTTP request → response). Internal implementation concerns (how the validator parses each character class, regex engine behavior) are unit-test scope — note them as Minor if the spec is inconsistent, but do not escalate.
+
 ### 3. Architecture and NFR (Non-Functional Requirements)
 
 - **Concurrency:** What happens with two simultaneous requests? (Is an Idempotency Key required?)
@@ -169,11 +172,19 @@ Sort by Priority (10 → 1).
 - **6-7 (Major):** Architectural risk (no Idempotency, poor data format), standards violations.
 - **4-5 (Minor):** Ambiguity in wording, missing error examples, missing auxiliary schema attributes (required, max for email).
 
-| Priority | Category | Issue | Scenario / Evidence | Recommendation |
-|:---:|---|---|---|---|
-| **10** | Data Gap | No `phone` for SMS | Logic requires 2FA, but `POST /register` has no phone field. | Add a field or retrieve from profile. |
-| **8** | Security | IDOR risk | `GET /orders/{id}` does not require owner verification in the description. | Explicitly state the rule: "Order.userId == CurrentUser.id". |
-| **7** | Fuzzing | Negative price | Behavior for `amount: -100` is not described. | Add validation `min: 0.01`. |
+**Scope-Priority interaction:** A per-field validation defect (`Scope: VAL`) that does NOT represent a named business rule MUST NOT exceed Priority 6. Named business rules (e.g., "password must not contain personal data") retain their natural priority regardless of scope. This prevents field-level spec-consistency findings from dominating the Risk Matrix over API-contract issues.
+
+| Priority | Scope | Category | Issue | Scenario / Evidence | Recommendation |
+|:---:|:---:|---|---|---|---|
+| **10** | API | Data Gap | No `phone` for SMS | Logic requires 2FA, but `POST /register` has no phone field. | Add a field or retrieve from profile. |
+| **8** | API | Security | IDOR risk | `GET /orders/{id}` does not require owner verification in the description. | Explicitly state the rule: "Order.userId == CurrentUser.id". |
+| **7** | API | Fuzzing | Negative price | Behavior for `amount: -100` is not described. | Add validation `min: 0.01`. |
+| **5** | VAL | Spec Consistency | Example violates max length | `len("value") = 120; max=100 → FAIL` | Fix example or update constraint. |
+
+Scope values:
+- **API** — affects HTTP contract, business logic, cross-system behavior (status codes, error routing, auth, idempotency, state transitions)
+- **VAL** — field-level validation consistency (per-field constraint violations, regex mismatches, boundary arithmetic failures in examples). Relevant for spec quality but typically covered by framework validators at unit level.
+- **ARCH** — non-functional / architectural (concurrency, PII exposure, observability gaps)
 
 ### 3. Readiness Checklist (Gap Analysis)
 
@@ -206,6 +217,7 @@ Before generating the output file, verify ALL conditions are met:
 - [ ] Specification Quality Score calculated AFTER Risk Matrix is finalized, using exact Risk Matrix row counts (not intermediate estimates). Formula inputs must match Risk Matrix totals.
 - [ ] Report is written in English (field names and code identifiers remain as-is).
 - [ ] Gardener Analysis section appended to the artifact file.
+- [ ] Every Risk Matrix row has a Scope tag (API/VAL/ARCH). No VAL-scoped defect without named business rule exceeds Priority 6.
 
 If any condition is NOT met — do not generate the file, complete the missing pass first.
 
@@ -225,6 +237,7 @@ Before output, check yourself against 10 specific errors in the specification:
 
 11. **Defect Completeness:** Count all items labeled `DEFECT N` / `→ Defect` / `BLOCKER` in analysis sections 1–4. Count rows in Risk Matrix. Are they equal? If not — add missing rows before output.
 12. **Score Formula Accuracy:** Do the Priority counts in the Score formula exactly match the Risk Matrix row counts by band? Mismatch = recompute Score.
+13. **Scope Tags:** Every Risk Matrix row has a Scope tag (API/VAL/ARCH). VAL-scoped defects without a named business rule do not exceed Priority 6.
 
 **If you found any — output them with Priority 8-10 (Critical/Blocker).**
 
