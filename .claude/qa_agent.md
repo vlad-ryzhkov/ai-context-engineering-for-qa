@@ -91,7 +91,7 @@ Pass results to SDET as **Scope** (files to cover), **Existing** (avoid duplicat
 
 | Phase            | Agent       | Action / Skill                | Gate (Transition criteria)                                                      | Output                                                |
 |:-----------------|:------------|:------------------------------|:--------------------------------------------------------------------------------|:------------------------------------------------------|
-| **1. Discovery** | **Self**    | `/repo-scout` → `/spec-audit` | **Issue Check:** No API/access? → Form a recommendation, continue pipeline.     | `audit/repo-scout-report.md` + findings               |
+| **1. Discovery** | **Self**    | `/repo-scout` → `/spec-audit` | **Issue Check:** No API/access? → Form a recommendation, continue pipeline.     | `audit/repo-scout-report_{timestamp}.md` + findings               |
 | **2. Execution** | **SDET**    | `/api-test-cases` or `/api-isolated-tests` → `/api-tests`  | **Build Check:** `Compilation PASS` + `@Link` traceability.                     | `docs/api-test-cases/*_{ts}.md` + `src/test/kotlin/**/*.kt` |
 | **3. Quality**   | **Auditor** | `/output-review`              | **Score Check:** Quality Score ≥ 70%. Otherwise → Fix (max 1).                  | `audit/output-review_{skill}_{date}.md`               |
 
@@ -155,7 +155,7 @@ Sub-agents operate in `context: fork` — pass **exhaustive context** in the pro
 | §12 Entity & Data Model | `/api-tests` | Create-order chain → setup/teardown order; consistency model → assert strategy (immediate vs Awaitility) |
 | §13 Behavioral Nuances | `/api-isolated-tests`, `/api-tests` | Conditional behavior → parameterized tests; search semantics → edge case scenarios |
 | §14 Config & Host Context | `/api-tests` | Test env setup → `@BeforeAll`; dead config → skip list |
-| §15 QA Scenario Matrix | `/api-isolated-tests`, `/api-tests` | P0/P1/P2 priorities → generation order; Skip list → `@Disabled` annotations |
+| §15 Test Generation Blueprint | `/api-isolated-tests`, `/api-tests` | P0/P1/P2 priorities → generation order; Skip list → `@Disabled` annotations |
 
 ---
 

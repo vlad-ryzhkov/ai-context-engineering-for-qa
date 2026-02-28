@@ -82,6 +82,13 @@ For tasks > 3 files: Analysis → Plan → Execute → Verify
 | `/api-tests` | API automated tests |
 
 **Workflow:** `/spec-audit` → `/api-isolated-tests` → `/api-tests`
+
+<!-- SECTION: API Documentation — only if swagger/proto/graphql/.http/postman files found -->
+## API Documentation
+
+| Type | Path |
+|------|------|
+| [OpenAPI / gRPC / GraphQL / HTTP / Postman] | `[relative/path/to/file]` |
 ````
 
 ---

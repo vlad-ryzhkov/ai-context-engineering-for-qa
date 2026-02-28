@@ -111,6 +111,24 @@ Based on Step 1, determine the type:
 
 **CI/CD Flow:** include if CI configs are found (`.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`). Format — diagram as a code block.
 
+### Step 1.7: API Documentation Discovery
+
+Scan for machine-readable API specs and link them in CLAUDE.md.
+
+```text
+Glob: **/swagger.json, **/swagger.yaml, **/swagger.yml
+      **/openapi.json, **/openapi.yaml, **/openapi.yml, **/*.swagger.json
+      **/*.proto
+      **/*.graphql, **/schema.graphqls
+      **/*.http, **/api.http
+      **/postman_collection.json, **/*.postman_collection.json
+```
+
+For each found file — record: type (OpenAPI / gRPC / GraphQL / HTTP / Postman) and relative path.
+Do NOT read file contents. Discovery only.
+
+If nothing found — skip the `## API Documentation` section in CLAUDE.md entirely.
+
 ### Step 2: Determine Tech Stack
 
 Based on dependencies, determine:
@@ -129,6 +147,8 @@ Read and use the template from `references/claude-md-template.md`.
 
 Fill in all `[xxx]` placeholders with data from Steps 1-2. Select the appropriate Tech Stack by project language ("Tech Stack by languages" section in the template).
 
+**API Documentation section:** fill from Step 1.7 results. Include only if spec files were found; omit entirely otherwise.
+
 **Key Values:** if the project has configuration files with non-trivial defaults (`values.yaml`, `.env.example`, `application.yml`) — add a `## Key Values` section explaining critical settings (not obvious from the name).
 
 **Architecture (for infra/backend projects):** describe key design decisions — components, interaction schema, non-trivial implementation details. Use prose format.
@@ -146,6 +166,7 @@ Before saving, verify:
 - [ ] QA Skills present **only if** `.claude/skills/` exists
 - [ ] CI/CD Flow present if CI configs were found
 - [ ] Architecture present for infra/backend projects
+- [ ] API Documentation section present **only if** spec files were found
 
 ## Output
 

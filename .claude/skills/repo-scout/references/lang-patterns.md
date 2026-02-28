@@ -1,5 +1,17 @@
 # Backend Patterns — Reference for /repo-scout
 
+## Table of Contents
+
+- [Language Detection](#language-detection)
+- [Per-Language Pattern Files](#per-language-pattern-files)
+- [Testing Libraries Detection](#testing-libraries-detection-all-languages)
+- [Concurrency Model Detection](#concurrency-model-detection-all-languages)
+- [Common Patterns](#common-patterns-all-languages)
+- [gRPC Streaming Patterns](#grpc-streaming-patterns-l5-all-languages)
+- [WebSocket & SSE Patterns](#websocket--sse-patterns-l6-all-languages)
+
+---
+
 ## Language Detection
 
 | Build File | Language |
@@ -13,186 +25,174 @@
 If multiple build files → monorepo. Note all detected languages and scan each independently.
 If none found → ⚠️ WARNING: Unknown stack. Generic scan only.
 
+## Per-Language Pattern Files
+
+| Language | Reference File |
+|----------|---------------|
+| Go | `references/lang-go.md` |
+| Python | `references/lang-python.md` |
+| Node.js / TypeScript | `references/lang-nodejs.md` |
+| Java / Kotlin | `references/lang-jvm.md` |
+
 ---
 
-## Go Backend Patterns
+## Testing Libraries Detection (All Languages)
 
-### Build Files
+> Used by Phase 4.1 to identify test libraries beyond the primary framework.
 
-| File | Purpose |
-|------|---------|
-| `go.mod` | Module, Go version, dependencies |
-| `go.sum` | Dependency checksums |
-| `Makefile` | Build targets, utilities |
-| `.golangci.yaml` / `.golangci.yml` | Linter config |
+### Grep by Build File
 
-### Route Registration Patterns
+| Language | Build File(s) | Grep Pattern |
+|----------|--------------|-------------|
+| Go | `go.mod` | `testify\|mockery\|testcontainers\|dockertest\|gomock\|go-sqlmock` |
+| Python | `requirements*.txt`, `pyproject.toml` | `pytest-cov\|factory.boy\|faker\|pytest-mock\|httpx\|pytest-asyncio` |
+| JS/TS | `package.json` | `supertest\|nock\|@testing-library\|msw\|testcontainers\|sinon` |
+| Java/Kotlin | `build.gradle.kts`, `build.gradle`, `pom.xml` | `mockk\|kotest\|testcontainers\|mockito\|assertj\|rest-assured` |
 
-#### REST Frameworks
+### Test File Naming Conventions
 
-| Framework | Import | Route Patterns |
-|-----------|--------|----------------|
-| **go-chi** | `github.com/go-chi/chi` | `r.Get(`, `r.Post(`, `r.Put(`, `r.Delete(`, `r.Route(`, `r.HandleFunc(` |
-| **gin** | `github.com/gin-gonic/gin` | `gin.GET(`, `gin.POST(`, `engine.GET(`, `group.GET(` |
-| **echo** | `github.com/labstack/echo` | `e.GET(`, `e.POST(`, `echo.GET(` |
-| **stdlib** | `net/http` | `http.HandleFunc(`, `mux.Handle(`, `mux.HandleFunc(` |
-| **gorilla/mux** | `github.com/gorilla/mux` | `r.HandleFunc(`, `r.Methods(` |
-| **fiber** | `github.com/gofiber/fiber` | `app.Get(`, `app.Post(` |
+| Language | Unit Tests | Integration Tests |
+|----------|-----------|------------------|
+| Go | `*_test.go` | `*_test.go` + `//go:build integration` |
+| Python | `test_*.py`, `*_test.py` | `test_*.py` + `@pytest.mark.integration` |
+| JS/TS | `*.test.js`, `*.spec.js`, `*.test.ts`, `*.spec.ts` | `*.integration.spec.ts`, `*.e2e-spec.ts` |
+| Java | `*Test.java`, `*Tests.java` | `*IT.java`, `*IntegrationTest.java` |
+| Kotlin | `*Test.kt`, `*Tests.kt` | `*IT.kt`, `*IntegrationTest.kt` |
 
-#### gRPC
+---
+
+## Concurrency Model Detection (All Languages)
+
+> Used by Phase 3.7.5 for detecting concurrency model and associated QA risks.
+
+| Language | Model | Grep Pattern | QA Risk |
+|----------|-------|-------------|---------|
+| Go | goroutines + channels | `go func\|sync\.Mutex\|sync\.WaitGroup\|sync\.RWMutex\|<-chan\|chan<-` | goroutine leaks, race conditions, deadlocks |
+| Python | asyncio / threading | `async def\|asyncio\.gather\|threading\.Lock\|ThreadPoolExecutor\|asyncio\.create_task` | GIL contention, event loop blocking |
+| Node.js | event loop + promises | `Promise\.all\|Promise\.allSettled\|async/await\|new Worker\|worker_threads` | unhandled rejections, worker thread crashes |
+| Kotlin | coroutines | `suspend fun\|launch\|async\s*\{\|withContext\|Dispatchers\.\|CoroutineScope` | structured concurrency violations, dispatcher misuse |
+| Java | threads + virtual threads | `ExecutorService\|CompletableFuture\|synchronized\|ReentrantLock\|Thread\.startVirtualThread` | thread pool exhaustion, deadlocks |
+
+### Grep String for Concurrency Detection
+
+```text
+go func\|sync\.Mutex|sync\.WaitGroup|async def|asyncio\.gather|threading\.Lock|Promise\.all|new Worker|suspend fun|launch\s*\{|async\s*\{|withContext|ExecutorService|CompletableFuture|synchronized
+```
+
+---
+
+## Common Patterns (All Languages)
+
+### Documentation Discovery Patterns (L-DOC)
+
+> Used by Phase 3.0 (S-DOC) to find ALL existing documentation before handler analysis.
+
+#### Machine-Readable API Specifications
+
+| Glob | Format |
+|------|--------|
+| `**/swagger.json`, `**/swagger.yaml`, `**/swagger.yml` | Swagger 2.0 |
+| `**/openapi.json`, `**/openapi.yaml`, `**/openapi.yml` | OpenAPI 3.x |
+| `**/*.swagger.json` | gRPC-gateway generated |
+| `**/*.proto` | Protocol Buffers |
+| `**/*.graphql`, `**/schema.graphqls` | GraphQL schema |
+| `**/*.http`, `**/api.http` | JetBrains HTTP Client |
+| `**/postman_collection.json`, `**/*.postman_collection.json` | Postman |
+
+#### Human-Readable Documentation
+
+| Glob | Content Type |
+|------|-------------|
+| `docs/**/*.md` | General documentation |
+| `**/README.md` | Project overview |
+| `**/API.md`, `**/api-docs*` | API reference |
+| `**/GUIDE.md`, `**/CONTRIBUTING.md` | Developer guides |
+| `**/qa-checklist*` | QA test checklist |
+| `**/qa-environment*` | Test environment setup |
+| `**/testing*.md`, `**/TESTING.md` | Test documentation |
+| `**/architecture*.md`, `**/design*.md` | Architecture docs |
+| `**/ADR*.md`, `**/adr-*.md` | Architecture Decision Records |
+
+#### Grep String for Documentation Search
+
+```text
+qa.checklist|qa.environment|api.doc|test.guide|test.setup|architecture|design.doc|ADR
+```
+
+### Proto Validate Tag Patterns (L1)
+
+> Used by Phase 2.2 and 3.2 for extracting protobuf validation constraints.
+
+| Library | Import / Option | Tag Patterns |
+|---------|-----------------|-------------|
+| **protoc-gen-validate (PGV)** | `import "validate/validate.proto"` | `[(validate.rules).string.min_len = N]`, `[(validate.rules).int64.gt = 0]`, `[(validate.rules).message.required = true]` |
+| **buf validate (protovalidate)** | `import "buf/validate/validate.proto"` | `[(buf.validate.field).required = true]`, `[(buf.validate.field).string.min_len = N]` |
+| **@gotags** | `// @gotags: validate:"required"` | Go struct tags injected via comments |
+| **custom options** | `import "options.proto"` | Service-specific custom validation extensions |
+
+#### Grep String for Proto Validation Search
+
+```text
+validate\.rules|buf\.validate|@gotags|validate:"required|validate:"min|validate:"max|option \(validate
+```
+
+### Read/Write Topology Patterns (L3)
+
+> Used by Phase 3.6 step 8 (S5) for detecting master/replica configurations.
 
 | Pattern | Purpose |
 |---------|---------|
-| `pb.Register*Server(` | gRPC service registration |
-| `google.golang.org/grpc` | gRPC framework import |
-| `*.proto` files | Service + RPC definitions |
-| `protoc-gen-go-grpc` | Go code generator from proto |
+| `master` / `primary` / `leader` | Write-target DB/service identifier |
+| `replica` / `secondary` / `follower` / `slave` | Read-target DB/service identifier |
+| `readDB` / `writeDB` / `readConn` / `writeConn` | Separate DB connection handles |
+| `ReadPreference` / `readPreference` | MongoDB read preference |
+| `ReplicaMode` / `replica_mode` / `read_only` | Service replica mode flag |
+| `MASTER_ONLY` / `REPLICA_SAFE` | Operation classification |
+| `PermissionDenied` near write operations | Write blocked on replica |
+| `binlog` / `replication_lag` / `sync_delay` | Replication mechanism indicators |
 
-#### Grep String for Route Search
+#### Grep String for Read/Write Topology Search
 
 ```text
-r\.Get\(|r\.Post\(|r\.Put\(|r\.Delete\(|r\.Route\(|r\.HandleFunc\(|\.GET\(|\.POST\(|\.PUT\(|\.DELETE\(|HandleFunc\(|pb\.Register|echo\.|fiber\.
+master|primary|leader|replica|secondary|follower|readDB|writeDB|ReadPreference|ReplicaMode|replica_mode|read_only|MASTER_ONLY|REPLICA_SAFE|binlog|replication_lag
 ```
 
-### Test Patterns
+### Deployment Topology Patterns (L4)
 
-| Type | Indicators |
+> Used by Phase 6.6 (S6) for infrastructure discovery.
+
+| Glob / Pattern | What It Finds |
+|----------------|---------------|
+| `**/Chart.yaml` | Helm chart definition |
+| `**/values*.yaml` (in Helm dir) | Helm values per environment |
+| `**/templates/*.yaml` (in Helm dir) | Helm K8s templates |
+| `**/kustomization.yaml` / `.yml` | Kustomize overlay |
+| `**/terraform/*.tf`, `**/main.tf` | Terraform infrastructure |
+| `**/skaffold.yaml` | Skaffold dev config |
+| `**/Tiltfile` | Tilt dev config |
+| `**/docker-compose*.yaml` / `.yml` | Docker Compose variants |
+
+#### Grep String for Deployment Topology Search
+
+```text
+Chart\.yaml|values.*\.yaml|kustomization|terraform|skaffold|Tiltfile|replicas:|resources:|limits:|requests:
+```
+
+### Specification Files
+
+### Infrastructure Markers
+
+| Glob | What it is |
 |------|------------|
-| **Unit** | `*_test.go` without build tags, imports: `testing`, `testify`, `gomock` |
-| **Integration** | `//go:build integration`, imports: `sqlmock`, `testcontainers`, `dockertest` |
-| **Benchmark** | `Benchmark*` functions in `*_test.go` |
-| **Fuzz** | `Fuzz*` functions in `*_test.go` (Go 1.18+) |
-
-### Test Frameworks in go.mod
-
-| Library | Purpose |
-|---------|---------|
-| `github.com/stretchr/testify` | Assertions (assert/require) + mocking |
-| `go.uber.org/mock` / `github.com/golang/mock` | GoMock code generation |
-| `github.com/DATA-DOG/go-sqlmock` | SQL mocking |
-| `github.com/testcontainers/testcontainers-go` | Docker-based integration tests |
-| `github.com/ory/dockertest` | Docker test helpers |
-
-### Handler Patterns
-
-| Type | Signature / Pattern |
-|------|-------------------|
-| **gRPC** | `func (s *Server) MethodName(ctx context.Context, req *pb.XXXRequest) (*pb.XXXResponse, error)` |
-| **chi/gorilla** | `func handlerName(w http.ResponseWriter, r *http.Request)` |
-| **echo** | `func handlerName(c echo.Context) error` |
-| **gin** | `func handlerName(c *gin.Context)` |
-| **fiber** | `func handlerName(c *fiber.Ctx) error` |
-
-### Error Patterns
-
-| Pattern | Purpose |
-|---------|---------|
-| `status.Error(codes.` / `status.Errorf(codes.` | gRPC error with code |
-| `echo.NewHTTPError(` | Echo HTTP error |
-| `c.JSON(http.Status` / `c.AbortWithStatusJSON(` | Gin/Echo response with status |
-| `var Err*` / `errors.New(` | Custom error variables |
-| `fmt.Errorf(` | Wrapped errors |
-
-### Validation Patterns
-
-| Pattern | Purpose |
-|---------|---------|
-| struct tag `validate:"required,min=,max="` | Go validator struct tags |
-| `proto validate` tags in `.proto` | Protobuf field validation |
-| `validator.New()` / `.Struct(` / `.Var(` | go-playground/validator calls |
-
-### Auth / Middleware Patterns
-
-| Pattern | Purpose |
-|---------|---------|
-| `interceptor` / `UnaryInterceptor` / `StreamInterceptor` | gRPC middleware |
-| `r.Use(` / `e.Use(` / `app.Use(` | HTTP middleware registration |
-| `extractToken` / `parseToken` / `jwt.Parse` | Token extraction |
-| `checkAccess` / `authorize` / `rbac` | Access control checks |
-
-### State Machine Patterns
-
-| Pattern | Purpose |
-|---------|---------|
-| `iota` in `const ( ... )` block | Enum definition (Go idiom) |
-| `type *Status int` / `type *State string` | Status/state type alias |
-| `.Status =` / `.State =` | State assignment in handler/service |
-| `switch *.Status` / `switch *.State` | State-conditional branching |
-| `StatusPending`, `StatusActive`, `StatusDeleted` | Named state constants |
-| `if prev.Status != X { return ErrInvalidTransition }` | Transition guard |
-
-#### Grep String for State Machine Search
-
-```text
-iota|\.Status\s*=|\.State\s*=|switch\s+\w+\.Status|switch\s+\w+\.State|StatusPending|StatusActive|StatusDeleted|ErrInvalidTransition|InvalidTransition
-```
-
-### Entity Relationship Patterns
-
-| Pattern | Purpose |
-|---------|---------|
-| `*_id` fields in structs / DB schemas | Foreign key reference |
-| `REFERENCES` / `FOREIGN KEY` in migrations | DB-level FK constraint |
-| `ON DELETE CASCADE` / `ON DELETE SET NULL` | Cascade behavior |
-| `belongs_to` / `has_many` / ORM tags (`gorm:"foreignKey:"`) | ORM relationship |
-| `JOIN` / `LEFT JOIN` in raw SQL | Cross-entity query |
-| `tx.Create(&parent)` then `tx.Create(&child{ParentID: parent.ID})` | Create-order dependency |
-
-#### Grep String for Entity Relationship Search
-
-```text
-_id\b|REFERENCES|FOREIGN KEY|CASCADE|SET NULL|belongs_to|has_many|foreignKey:|JOIN\s|LEFT JOIN|\.ParentID|\.parent_id
-```
-
-### Async / Consistency Patterns
-
-| Pattern | Purpose |
-|---------|---------|
-| `go func()` | Fire-and-forget goroutine |
-| `kafka.Produce` / `publisher.Publish` / `nats.Publish` | Async event emission |
-| `tx.Commit()` / `tx.Rollback()` | Transaction boundary |
-| `errgroup.Group` / `sync.WaitGroup` | Concurrent operation coordination |
-| `eventual consistency` / `sync` / `async` in comments | Consistency model hint |
-| `SELECT ... FOR UPDATE` | Pessimistic lock |
-
-#### Grep String for Async/Consistency Search
-
-```text
-go func\(|kafka\.Produce|publisher\.Publish|nats\.Publish|tx\.Commit|tx\.Rollback|errgroup\.Group|sync\.WaitGroup|FOR UPDATE|eventual.consistency
-```
-
-### Batch / Collection Patterns
-
-| Pattern | Purpose |
-|---------|---------|
-| `BatchCreate` / `BatchUpdate` / `BatchDelete` | Bulk mutation operations |
-| `for _, item := range items` near DB/API call | Iterative batch processing |
-| `cursor` / `offset` / `limit` / `page_token` | Pagination parameters |
-| `stream.Send(` / `stream.Recv(` | gRPC streaming batch |
-| `BulkInsert` / `InsertMany` / `CopyFrom` | DB bulk insert |
-
-#### Grep String for Batch/Collection Search
-
-```text
-Batch(Create|Update|Delete)|BulkInsert|InsertMany|CopyFrom|for.*range.*items|cursor|offset|limit|page_token|stream\.Send\(|stream\.Recv\(
-```
-
-### Type Handling Patterns
-
-| Pattern | Purpose |
-|---------|---------|
-| `strings.ToLower` / `strings.ToUpper` | Case normalization |
-| `strconv.Atoi` / `strconv.ParseFloat` | String-to-number conversion |
-| `json.Number` | Numeric JSON ambiguity handling |
-| `UnmarshalJSON` / `MarshalJSON` | Custom JSON serialization |
-| `time.Parse` / `time.Format` | Date/time format conversion |
-| `uuid.Parse` / `uuid.New()` | UUID handling |
-
-#### Grep String for Type Handling Search
-
-```text
-strings\.ToLower|strings\.ToUpper|strconv\.Atoi|strconv\.Parse|json\.Number|UnmarshalJSON|MarshalJSON|time\.Parse|time\.Format|uuid\.Parse|uuid\.New
-```
+| `.github/workflows/*.yml` | GitHub Actions CI/CD |
+| `.gitlab-ci.yml` | GitLab CI |
+| `Jenkinsfile` | Jenkins pipeline |
+| `Dockerfile`, `docker-compose.yaml` | Containerization |
+| `migrations/`, `**/changesets/` | DB migrations (Liquibase) |
+| `**/goose/`, `**/atlas.hcl` | DB migrations (goose/Atlas) |
+| `.dev-platform/` | Internal Dev-Platform |
+| `config/*.yaml` | Environment configuration |
+| `deployments/` | Helm charts, K8s manifests |
 
 ### Host System / Plugin Detection Patterns
 
@@ -210,34 +210,6 @@ strings\.ToLower|strings\.ToUpper|strconv\.Atoi|strconv\.Parse|json\.Number|Unma
 ```text
 envoy|ext_proc|external_processing|istio|VirtualService|DestinationRule|nginx|ingress|kong|KongPlugin|proxy.wasm|grpc_web|envoy\.filters
 ```
-
----
-
-## Common Patterns (All Languages)
-
-### Specification Files
-
-| Glob | Format |
-|------|--------|
-| `**/swagger.json`, `**/swagger.yaml`, `**/swagger.yml` | Swagger 2.0 |
-| `**/openapi.json`, `**/openapi.yaml`, `**/openapi.yml` | OpenAPI 3.x |
-| `**/*.swagger.json` | gRPC-gateway generated |
-| `**/*.proto` | Protocol Buffers |
-| `**/*.http`, `**/api.http` | JetBrains HTTP Client |
-
-### Infrastructure Markers
-
-| Glob | What it is |
-|------|------------|
-| `.github/workflows/*.yml` | GitHub Actions CI/CD |
-| `.gitlab-ci.yml` | GitLab CI |
-| `Jenkinsfile` | Jenkins pipeline |
-| `Dockerfile`, `docker-compose.yaml` | Containerization |
-| `migrations/`, `**/changesets/` | DB migrations (Liquibase) |
-| `**/goose/`, `**/atlas.hcl` | DB migrations (goose/Atlas) |
-| `.dev-platform/` | Internal Dev-Platform |
-| `config/*.yaml` | Environment configuration |
-| `deployments/` | Helm charts, K8s manifests |
 
 ### Business Logic Detection (All Languages)
 
@@ -269,241 +241,102 @@ envoy|ext_proc|external_processing|istio|VirtualService|DestinationRule|nginx|in
 
 ---
 
-## Python Backend Patterns
+## gRPC Streaming Patterns (L5, All Languages)
 
-### Build Files
+> Used by Phase 2.2 for detecting streaming RPC types beyond Go.
 
-| File | Purpose |
-|------|---------|
-| `requirements.txt` / `pyproject.toml` | Dependencies |
-| `setup.py` / `setup.cfg` | Package metadata |
-| `Makefile` / `tox.ini` | Build/test runners |
+### Go
 
-### Route Registration Patterns
+| Pattern | Streaming Type |
+|---------|---------------|
+| `stream.Send(` / `stream.Recv(` | Server/Client streaming |
+| `stream.SendAndClose(` | Client streaming (server response) |
+| `stream.CloseAndRecv(` | Client streaming (client side) |
 
-| Framework | Route Patterns |
-|-----------|----------------|
-| **FastAPI** | `@app.get(`, `@app.post(`, `@router.get(`, `@router.post(` |
-| **Flask** | `@app.route(`, `@bp.route(` |
-| **Django** | `path(`, `re_path(`, `url(` in `urls.py` |
-| **Starlette** | `Route(`, `routes=[` |
+### Python
 
-### Grep String for Route Search
+| Pattern | Streaming Type |
+|---------|---------------|
+| `yield` in service method | Server streaming |
+| `async for request in request_iterator` | Client streaming |
+| `grpc.stream_stream_rpc_method_handler` | Bidirectional |
+| `stub.MethodName.future(` | Async unary |
+
+### Node.js
+
+| Pattern | Streaming Type |
+|---------|---------------|
+| `call.write(` / `call.end()` | Server streaming |
+| `call.on('data'` / `call.on('end'` | Client streaming receive |
+| `grpc.ServerWritableStream` | Server streaming type |
+| `grpc.ServerDuplexStream` | Bidirectional type |
+
+### Java / Kotlin
+
+| Pattern | Streaming Type |
+|---------|---------------|
+| `StreamObserver<Response> responseObserver` | Server streaming |
+| `StreamObserver<Request>` as return type | Client streaming |
+| `@GrpcService` / `io.grpc.stub.StreamObserver` | gRPC service implementation |
+| `stub.withDeadline(` / `stub.withCompression(` | Client configuration |
+
+#### Grep String for Streaming Search (All Languages)
 
 ```text
-@app\.get\(|@app\.post\(|@router\.get\(|@router\.post\(|@app\.route\(|@bp\.route\(|path\(|re_path\(
+stream\.Send\(|stream\.Recv\(|StreamObserver|ServerWritableStream|ServerDuplexStream|grpc\.stream|call\.write\(|call\.on\('data|request_iterator|yield.*response
 ```
-
-### Test Patterns
-
-| Type | Indicators |
-|------|------------|
-| **Unit** | `test_*.py` / `*_test.py`, imports: `pytest`, `unittest` |
-| **Integration** | `@pytest.mark.integration`, `TestCase` with DB/Docker |
-| **E2E/API** | Separate test repo, or `tests/e2e/` |
-
-### Test Frameworks (requirements.txt)
-
-| Library | Purpose |
-|---------|---------|
-| `pytest` | Test runner + assertions |
-| `pytest-asyncio` | Async test support |
-| `pytest-mock` / `unittest.mock` | Mocking |
-| `httpx` / `requests` | HTTP client for API tests |
-| `testcontainers` | Docker-based integration |
-
-### Handler Patterns
-
-| Type | Signature / Pattern |
-|------|-------------------|
-| **FastAPI** | `@app.get("/path")` / `@router.post("/path")` decorated `async def func_name(...)` |
-| **Flask** | `@app.route("/path", methods=["GET"])` decorated `def func_name()` |
-| **Django** | `def view_name(request)` in `views.py`, class-based `class ViewName(APIView)` |
-
-### Error Patterns
-
-| Pattern | Purpose |
-|---------|---------|
-| `HTTPException(status_code=` | FastAPI/Starlette HTTP error |
-| `raise` + custom exception class | Custom error raising |
-| `abort(` | Flask error response |
-| `Response(status=` | DRF/Django response with status |
-
-### Validation Patterns
-
-| Pattern | Purpose |
-|---------|---------|
-| `Field(` / `field_validator` / `model_validator` | Pydantic v2 validation |
-| `@validator` / `@root_validator` | Pydantic v1 validation |
-| `serializers.CharField(` / `validators=[` | DRF serializer validation |
-| `wtforms` / `Form` | Flask-WTF form validation |
-
-### Auth / Middleware Patterns
-
-| Pattern | Purpose |
-|---------|---------|
-| `Depends(` / `Security(` | FastAPI dependency injection (auth) |
-| `@login_required` / `@permission_required` | Django/Flask auth decorators |
-| `get_current_user` / `get_current_active_user` | FastAPI auth dependencies |
-| `@app.before_request` / `@app.middleware` | Request-level middleware |
 
 ---
 
-## Node.js / TypeScript Backend Patterns
+## WebSocket & SSE Patterns (L6, All Languages)
 
-### Build Files
+> Used by Phase 2.6 to detect WebSocket and Server-Sent Events endpoints.
+> These are NOT REST endpoints — exclude from REST count, mark as [WS] in §2.
 
-| File | Purpose |
-|------|---------|
-| `package.json` | Dependencies, scripts |
-| `tsconfig.json` | TypeScript config |
-| `nest-cli.json` | NestJS config |
+### Go
 
-### Route Registration Patterns
+| Pattern | Protocol | What It Finds |
+|---------|----------|---------------|
+| `websocket.Upgrade` / `ws.NewConn` | WS/WSS | gorilla/websocket or nhooyr.io/websocket upgrade |
+| `gorilla/websocket` | WS/WSS | Import declaration |
+| `websocket.Accept` | WS/WSS | nhooyr.io/websocket handler |
+| `http.Flusher` | SSE | Chunked streaming for SSE |
+| `text/event-stream` | SSE | Content-Type header for SSE response |
 
-| Framework | Route Patterns |
-|-----------|----------------|
-| **Express** | `router.get(`, `router.post(`, `app.get(`, `app.post(` |
-| **NestJS** | `@Controller(`, `@Get(`, `@Post(`, `@Put(`, `@Delete(` |
-| **Fastify** | `fastify.get(`, `fastify.post(`, `app.route(` |
-| **Koa** | `router.get(`, `router.post(` |
+### Python
 
-### Grep String for Route Search
+| Pattern | Protocol | What It Finds |
+|---------|----------|---------------|
+| `WebSocket` / `websockets.connect` | WS/WSS | websockets library |
+| `@app.websocket` | WS/WSS | FastAPI WebSocket route decorator |
+| `WebSocketResponse` | WS/WSS | aiohttp WebSocket handler |
+| `EventSource` / `text/event-stream` | SSE | SSE endpoint detection |
+| `sse_response` / `EventSourceResponse` | SSE | sse-starlette / aiohttp-sse |
 
-```text
-router\.get\(|router\.post\(|app\.get\(|app\.post\(|@Controller\(|@Get\(|@Post\(|fastify\.get\(
-```
+### Node.js / TypeScript
 
-### Test Patterns
+| Pattern | Protocol | What It Finds |
+|---------|----------|---------------|
+| `socket.io` / `Socket` | WS/WSS | Socket.IO server |
+| `ws.Server` / `new WebSocket.Server` | WS/WSS | ws library server |
+| `wss.on('connection'` | WS/WSS | WebSocket connection handler |
+| `EventSource` | SSE | SSE client-side (browser/node) |
+| `res.write('data:` / `text/event-stream` | SSE | Manual SSE stream |
+| `SseEmitter` | SSE | Spring-style SSE (NestJS) |
 
-| Type | Indicators |
-|------|------------|
-| **Unit** | `*.test.ts` / `*.spec.ts`, imports: `jest`, `vitest`, `mocha` |
-| **Integration** | `*.integration.spec.ts`, `supertest`, `testcontainers-node` |
-| **E2E** | `*.e2e-spec.ts` (NestJS convention), Playwright/Cypress for API |
+### Java / Kotlin
 
-### Test Frameworks (package.json)
+| Pattern | Protocol | What It Finds |
+|---------|----------|---------------|
+| `@ServerEndpoint` / `javax.websocket` | WS/WSS | JAX-RS WebSocket |
+| `WebSocketHandler` / `TextWebSocketHandler` | WS/WSS | Spring WebSocket |
+| `SseEmitter` | SSE | Spring SSE emitter |
+| `ServerSentEvent` | SSE | Spring WebFlux SSE |
+| `MediaType.TEXT_EVENT_STREAM` | SSE | WebFlux SSE content type |
+| `@MessageMapping` | WS | Spring WebSocket message handler |
 
-| Library | Purpose |
-|---------|---------|
-| `jest` / `vitest` | Test runner |
-| `@nestjs/testing` | NestJS test module |
-| `supertest` | HTTP integration testing |
-| `testcontainers` | Docker-based integration |
-
-### Handler Patterns
-
-| Type | Signature / Pattern |
-|------|-------------------|
-| **Express** | `(req, res)` or `(req, res, next)` callback |
-| **NestJS** | `@Controller` class with `@Get()` / `@Post()` methods |
-| **Fastify** | `(request, reply)` handler or schema-based route |
-
-### Error Patterns
-
-| Pattern | Purpose |
-|---------|---------|
-| `throw new HttpException(` | NestJS HTTP exception |
-| `next(err)` / `next(new Error(` | Express error forwarding |
-| `res.status(N).json(` | Express response with status |
-| `reply.code(N).send(` | Fastify response with status |
-| `class * extends Error` | Custom error classes |
-
-### Validation Patterns
-
-| Pattern | Purpose |
-|---------|---------|
-| `Joi.object(` / `.required()` / `.min(` | Joi schema validation |
-| `z.object(` / `z.string()` / `.parse(` | Zod schema validation |
-| `@IsNotEmpty()` / `@IsEmail()` / `@MinLength(` | class-validator decorators (NestJS) |
-| `@UsePipes(ValidationPipe)` | NestJS validation pipe |
-
-### Auth / Middleware Patterns
-
-| Pattern | Purpose |
-|---------|---------|
-| `passport.authenticate(` | Passport.js strategy |
-| `@UseGuards(AuthGuard)` | NestJS guard |
-| `jwt.verify(` / `jwt.sign(` | JWT operations |
-| `app.use(` / `router.use(` (with auth function) | Express middleware |
-
----
-
-## Java / Kotlin Backend Patterns
-
-### Build Files
-
-| File | Purpose |
-|------|---------|
-| `pom.xml` | Maven dependencies |
-| `build.gradle` / `build.gradle.kts` | Gradle dependencies |
-| `settings.gradle.kts` | Multi-module config |
-
-### Route Registration Patterns
-
-| Framework | Route Patterns |
-|-----------|----------------|
-| **Spring MVC** | `@GetMapping(`, `@PostMapping(`, `@PutMapping(`, `@DeleteMapping(`, `@RequestMapping(` |
-| **Spring WebFlux** | `RouterFunction`, `route().GET(`, `route().POST(` |
-| **Ktor** | `routing {`, `get(`, `post(`, `put(`, `delete(` |
-| **Quarkus** | `@Path(`, `@GET`, `@POST`, `@PUT`, `@DELETE` |
-
-### Grep String for Route Search
+#### Grep String for WebSocket & SSE Search (All Languages)
 
 ```text
-@GetMapping|@PostMapping|@PutMapping|@DeleteMapping|@RequestMapping|@Path\(|routing \{|route\(\)\.GET
+WebSocket|ws\.NewConn|websocket\.Upgrade|websocket\.Accept|gorilla/websocket|EventSource|text/event-stream|SseEmitter|http\.Flusher|socket\.io|ws\.Server|@ServerEndpoint|TextWebSocketHandler|ServerSentEvent|MediaType\.TEXT_EVENT_STREAM
 ```
-
-### Test Patterns
-
-| Type | Indicators |
-|------|------------|
-| **Unit** | `*Test.java` / `*Test.kt` / `*Tests.kt`, `@Test` (JUnit 5) |
-| **Integration** | `@SpringBootTest`, `@DataJpaTest`, `@Testcontainers` |
-| **E2E/API** | `@AutoConfigureMockMvc`, separate test module |
-
-### Test Frameworks (pom.xml / build.gradle)
-
-| Library | Purpose |
-|---------|---------|
-| `junit-jupiter` | JUnit 5 test runner |
-| `mockito-kotlin` / `mockk` | Mocking |
-| `testcontainers` | Docker-based integration |
-| `spring-boot-test` | Spring context testing |
-| `kotest` | Kotlin assertion/test framework |
-
-### Handler Patterns
-
-| Type | Signature / Pattern |
-|------|-------------------|
-| **Spring MVC** | `@RestController` class with `@GetMapping` / `@PostMapping` methods |
-| **Spring WebFlux** | `RouterFunction<ServerResponse>` or annotated controller with `Mono`/`Flux` |
-| **Ktor** | `routing { get("/path") { ... } }` blocks |
-| **Quarkus** | `@Path` class with `@GET` / `@POST` methods |
-
-### Error Patterns
-
-| Pattern | Purpose |
-|---------|---------|
-| `@ExceptionHandler` / `@ControllerAdvice` | Spring global error handling |
-| `ResponseStatusException(` | Spring HTTP error |
-| `throw` + custom exception | Custom exception throwing |
-| `StatusPages` / `respondText(status =` | Ktor error handling |
-
-### Validation Patterns
-
-| Pattern | Purpose |
-|---------|---------|
-| `@Valid` / `@Validated` | Spring Bean Validation trigger |
-| `@NotNull` / `@NotBlank` / `@Size(` / `@Pattern(` | Bean Validation (JSR 380) annotations |
-| `@field:NotNull` / `@get:Size(` | Kotlin annotation use-site targets |
-| `ConstraintValidator<` | Custom validator implementation |
-
-### Auth / Middleware Patterns
-
-| Pattern | Purpose |
-|---------|---------|
-| `@PreAuthorize(` / `@Secured(` / `@RolesAllowed(` | Spring method-level security |
-| `SecurityFilterChain` / `HttpSecurity` | Spring Security config |
-| `authenticate {` / `principal` | Ktor authentication |
-| `@io.quarkus.security.Authenticated` | Quarkus security |

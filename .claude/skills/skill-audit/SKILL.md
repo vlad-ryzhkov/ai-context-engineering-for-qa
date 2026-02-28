@@ -36,7 +36,7 @@ Read:
 
 ---
 
-## Algorithm (9 Checks)
+## Algorithm (11 Checks)
 
 ## Verbosity Protocol
 
@@ -160,7 +160,7 @@ Find BANNED/Anti-Patterns sections. Count lines and paired Bad/Good blocks (❌/
 - Severity: **ERROR**
 - Recommendation: update qa_agent.md
 
-### Check 9: Rarely-Used Sections Inline
+### Check 9: Rarely-Used Sections + Progressive Disclosure
 
 Find sections with:
 - "prompts for customization/generation/adaptation"
@@ -169,6 +169,11 @@ Find sections with:
 
 - Severity: **INFO**
 - Recommendation: extract to `references/`
+
+**Progressive Disclosure sub-check:** If SKILL.md > 400 lines, verify presence of `scripts/` or `references/` subdirectory in the skill folder.
+
+- Severity: **WARNING** (large file with no off-load structure)
+- Recommendation: "SKILL.md exceeds 400 lines but uses no Progressive Disclosure. Move deterministic logic to `scripts/`, bulky instructions to `references/`."
 
 ### Check 9a: Artifact Timestamping
 
@@ -182,6 +187,29 @@ For skills that generate file artifacts (e.g., `/spec-audit`, `/api-isolated-tes
 - Severity: **CRITICAL** (if artifact-generating skill lacks timestamping)
 - Skills to check: `/spec-audit`, `/api-isolated-tests`, `/api-tests`, `/repo-scout`
 - Recommendation: Add timestamp format `YYYYMMDD_HHMMSS` to Output Template and Completion Contract
+
+### Check 10: Rigid Prompting
+
+Grep each SKILL.md for uppercase directives: `\bALWAYS\b`, `\bNEVER\b`, `\bMUST\b` (case-sensitive, uppercase only).
+
+Count total occurrences per file.
+
+| Count | Severity |
+|-------|----------|
+| ≤ 5 | OK |
+| 6–10 | WARNING |
+| > 10 | WARNING (elevated) |
+
+- Why: LLMs perform better when they understand the *reason* behind a rule. Excessive uppercase imperatives add noise without improving compliance.
+- Recommendation: "Excessive rigid constraints detected ({N} occurrences of ALWAYS/NEVER/MUST). Replace with rationale-driven phrasing — explain *why* the rule exists."
+
+### Check 11: references/ File Size + TOC
+
+For each skill folder containing a `references/` directory, run `wc -l` on every `*.md` file inside.
+
+- Condition: file > 300 lines → check for TOC (Grep for `Table of Contents`, `## Contents`, or anchor links `[...](#...)`).
+- Severity: **WARNING** (large reference file without TOC)
+- Recommendation: "Reference file `{path}` exceeds 300 lines without a table of contents. Add TOC to improve model navigation."
 
 ---
 
@@ -200,9 +228,9 @@ Output to chat only:
 
 | Severity | What it catches |
 |----------|-----------------|
-| **CRITICAL** | "DO NOT FIX", SKILL.md >500 lines, Artifact-generating skills without timestamping (spec-audit, api-isolated-tests, api-tests, repo-scout) |
+| **CRITICAL** | "DO NOT FIX", SKILL.md >500 lines, artifact-generating skills without timestamping |
 | **ERROR** | Stale cross-references in qa_agent.md |
-| **WARNING** | Self-Review Protocol (bloated >50 lines), Tech Stack duplication, code >50 lines inline, Anti-Patterns >30 lines, 300–500 lines |
+| **WARNING** | Bloated Self-Review (>50 lines), Tech Stack duplication, code >50 lines inline, Anti-Patterns >30 lines, 300–500 lines, SKILL.md >400 lines without Progressive Disclosure, excessive rigid constraints (ALWAYS/NEVER/MUST > 5), `references/*.md` >300 lines without TOC |
 | **INFO** | Decorative ``` blocks, rarely-used sections inline |
 
 ---
@@ -213,6 +241,7 @@ Output to chat only:
 - [ ] Line counts verified via `wc -l`?
 - [ ] No false positives (context of each finding verified)?
 - [ ] Recommendations are specific (what → where)? ← each recommendation names a specific file and action, not "improve" or "reconsider"
+- [ ] If CRITICAL findings were fixed: remind the user to re-test the modified skill — run it manually or use `/output-review` to confirm the skill still triggers and produces correct output after structural changes.
 
 **If you found an error in the audit → fix it.**
 DO NOT create *_self_review.md.
