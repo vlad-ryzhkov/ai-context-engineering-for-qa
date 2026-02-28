@@ -203,23 +203,39 @@ Count total occurrences per file.
 - Why: LLMs perform better when they understand the *reason* behind a rule. Excessive uppercase imperatives add noise without improving compliance.
 - Recommendation: "Excessive rigid constraints detected ({N} occurrences of ALWAYS/NEVER/MUST). Replace with rationale-driven phrasing — explain *why* the rule exists."
 
-### Check 11: references/ File Size + TOC
+### Check 11: Paired Skill Drift + Intra-doc Redundancy
 
-For each skill folder containing a `references/` directory, run `wc -l` on every `*.md` file inside.
+#### 11a: Paired Skill Drift
 
-- Condition: file > 300 lines → check for TOC (Grep for `Table of Contents`, `## Contents`, or anchor links `[...](#...)`).
-- Severity: **WARNING** (large reference file without TOC)
-- Recommendation: "Reference file `{path}` exceeds 300 lines without a table of contents. Add TOC to improve model navigation."
+`api-tests/SKILL.md` and `api-tests-java/SKILL.md` are paired skills — intentionally similar. Divergence is allowed only where the language differs (Kotlin vs Java syntax, types, tooling). All behavioral rules (numbered labels `2a`–`2l`, Quality Gates, Workflow, Completion Contract) must be synchronized.
+
+Algorithm:
+1. Grep both files for numbered rule labels (`2a.`, `2b.`, ..., `2l.`, `3.`, `4.`, etc.) — build a label list from each file
+2. Labels present in one file but absent in the other → **WARNING** "Rule `{label}` exists in `{fileA}` but not in `{fileB}`"
+3. LLM step: for labels present in both — read both rule texts, compare intent. If meaning has diverged (not a language adaptation, but a different rule) → **WARNING** "Rule `{label}` has diverged meaning between paired skills"
+
+- Severity: **WARNING**
+- Scope: always run when auditing `api-tests` or `api-tests-java`; skip for all other skills
+
+#### 11b: Intra-doc Redundancy
+
+For SKILL.md files > 200 lines — LLM step:
+- Read sections: Protocol, Quality Gates, Post-Check, Completion Contract
+- Find any rule or requirement stated in 2+ sections of the same file
+- Severity: **INFO** (repetition across sections can be intentional — flag for manual review)
+- Recommendation: "Rule about `{topic}` appears in sections `{A}` and `{B}`. Consider keeping only in `{primary section}` and removing from `{secondary}`."
 
 ---
 
 ## Report Format
 
-Write the full report to `audit/skill-audit-report.md` (findings table + Summary).
+Obtain timestamp via `date +%Y%m%d_%H%M%S`. Target file: `audit/skill-audit-report_{skill-name}_{timestamp}.md`
+where `{skill-name}` = sanitized argument (replace `/` and spaces with `-`), e.g. `api-tests` or `api-tests_api-tests-java`.
+Write the full report to that path.
 
 Output to chat only:
 ```text
-📊 Skill Audit: {N} CRITICAL, {N} WARNING, {N} INFO → audit/skill-audit-report.md
+📊 Skill Audit: {N} CRITICAL, {N} WARNING, {N} INFO → audit/skill-audit-report_{skill-name}_{timestamp}.md
 ```
 
 ---
@@ -230,8 +246,8 @@ Output to chat only:
 |----------|-----------------|
 | **CRITICAL** | "DO NOT FIX", SKILL.md >500 lines, artifact-generating skills without timestamping |
 | **ERROR** | Stale cross-references in qa_agent.md |
-| **WARNING** | Bloated Self-Review (>50 lines), Tech Stack duplication, code >50 lines inline, Anti-Patterns >30 lines, 300–500 lines, SKILL.md >400 lines without Progressive Disclosure, excessive rigid constraints (ALWAYS/NEVER/MUST > 5), `references/*.md` >300 lines without TOC |
-| **INFO** | Decorative ``` blocks, rarely-used sections inline |
+| **WARNING** | Bloated Self-Review (>50 lines), Tech Stack duplication, code >50 lines inline, Anti-Patterns >30 lines, 300–500 lines, SKILL.md >400 lines without Progressive Disclosure, excessive rigid constraints (ALWAYS/NEVER/MUST > 5), paired skill drift (missing/diverged rules between api-tests and api-tests-java) |
+| **INFO** | Decorative ``` blocks, rarely-used sections inline, intra-doc redundancy (same rule in multiple sections) |
 
 ---
 

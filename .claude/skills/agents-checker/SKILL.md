@@ -89,7 +89,21 @@ For **each** `.md` file in `.claude/agents/`:
    - Broken reference → 🟠 MAJOR
 
 
-### Phase 5: Self-Healing (auto_fix=true)
+### Phase 5: Agent File Duplication
+
+Check for content in `.claude/agents/*.md` that duplicates `qa_agent.md` verbatim or near-verbatim.
+
+Algorithm:
+1. Read all files in `.claude/agents/` and `.claude/qa_agent.md`
+2. LLM step: for each agent file, compare each section against the corresponding section in `qa_agent.md`. Flag content that is duplicated word-for-word or with only minor rephrasing
+3. Severity: **WARNING** — "Content in `agents/{file}.md § {section}` duplicates `qa_agent.md § {section}`. Canonical location: `qa_agent.md`. Consider removing from agent file and adding `→ see qa_agent.md`."
+4. Exception: `## Anti-Patterns (BANNED)` may intentionally contain agent-specific rules — flag only exact/verbatim copies, not agent-specific content
+
+**Not fixable via auto_fix** — removing content requires understanding of intent; always flag for manual review.
+
+---
+
+### Phase 6: Self-Healing (auto_fix=true)
 
 **Skipped if `auto_fix=false`.** Runs after Phase 4 only if audit found fixable issues.
 
@@ -117,9 +131,15 @@ For **each** `.md` file in `.claude/agents/`:
 
 ## Output Format
 
-Write the full report to `audit/agents-checker-report.md` using the Write tool. Do NOT output the full report body to chat — only the summary block and completion block go to chat.
+Derive the `{agent}` slug from the skill argument:
+- Specific agent file (e.g., `agents/sdet.md`) → basename without extension: `sdet`
+- Directory or multiple targets (e.g., `.claude/agents`, `all`) → `all`
+- Sanitize: replace `/`, spaces, and dots with `-`, lowercase
 
-**File structure** (`audit/agents-checker-report.md`):
+Obtain timestamp via `date +%Y%m%d_%H%M%S`. Use it as the suffix.
+Write the full report to `audit/agents-checker-report_{agent}_{YYYYMMDD_HHMMSS}.md` using the Write tool. Do NOT output the full report body to chat — only the summary block and completion block go to chat.
+
+**File structure** (`audit/agents-checker-report_{agent}_{YYYYMMDD_HHMMSS}.md`):
 
 ```markdown
 # Agent Setup Audit Report
@@ -169,14 +189,14 @@ Date: {YYYY-MM-DD}
 └─ Cross-refs:    [✅ PASS / ⚠️ N broken refs]
 
 📝 Decision: [APPROVE / PASS WITH WARNINGS / ACTION RECOMMENDED]
-→ Full report: audit/agents-checker-report.md
+→ Full report: audit/agents-checker-report_{agent}_{YYYYMMDD_HHMMSS}.md
 ```
 
 Finish with the standard completion block:
 
 ```text
 ✅ SKILL COMPLETE: /agents-checker
-├─ Artifacts: audit/agents-checker-report.md
+├─ Artifacts: audit/agents-checker-report_{agent}_{YYYYMMDD_HHMMSS}.md
 ├─ Compilation: N/A
 ├─ Upstream: .claude/skills/init-agent/references/qa-agent-template.md
 └─ Coverage: [X/Y checks passed]
@@ -189,4 +209,5 @@ Finish with the standard completion block:
 - Each agent file contains Role + Mindset + Anti-Patterns + Quality Gates + Skills
 - Zero broken cross-references to non-existent skills
 - No `[placeholder]` text in any agent file
+- Agent file duplication check completed: verbatim duplicates of `qa_agent.md` content flagged
 - `auto_fix=true`: all safe issues repaired with logged rationale; re-validation passes; non-fixable issues remain in report with `manual fix required` label
