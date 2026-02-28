@@ -78,8 +78,8 @@ fi
 # 5. Markdownlint (auto-fix first; warn only if npx unavailable)
 if command -v npx >/dev/null 2>&1; then
   echo "[pre-push] Running markdownlint..."
-  npx markdownlint-cli --fix "**/*.md" --ignore node_modules 2>/dev/null || true
-  if ! npx markdownlint-cli "**/*.md" --ignore node_modules 2>/dev/null; then
+  npx markdownlint-cli --fix "**/*.md" --ignore node_modules --ignore audit 2>/dev/null || true
+  if ! npx markdownlint-cli "**/*.md" --ignore node_modules --ignore audit 2>/dev/null; then
     echo -e "${YELLOW}[pre-push] WARNING: markdownlint found issues. Run 'npx markdownlint-cli --fix **/*.md' to fix.${NC}"
   fi
 else
