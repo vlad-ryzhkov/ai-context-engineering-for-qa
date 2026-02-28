@@ -43,7 +43,7 @@ Read `.claude/qa_agent.md` and `.claude/agents/auditor.md`.
 
 **Example of the only acceptable chat output:**
 > 📝 Audit Complete.
-> 📊 Report: `audit/doc-lint-report.md`
+> 📊 Report: `audit/doc-lint-report_{YYYYMMDD_HHMMSS}.md`
 > 📉 Health Score: 78/100
 > 💡 Action: Run `bash audit/safe-fix.sh` to apply safe fixes.
 
@@ -92,7 +92,9 @@ Score = 100 - (2 × 15) - (5 × 5) - (8 × 0.5) = 100 - 30 - 25 - 4 = 41/100
 
 ## Output Format
 
-### Artifact: `audit/doc-lint-report.md`
+Obtain timestamp via `date +%Y%m%d_%H%M%S` before writing.
+
+### Artifact: `audit/doc-lint-report_{YYYYMMDD_HHMMSS}.md`
 
 ```markdown
 # Doc-Lint Report
@@ -241,7 +243,7 @@ After creating the report and script — output the `SKILL COMPLETE` block (form
 
 ```text
 ✅ SKILL COMPLETE: /doc-lint
-├─ Artifacts: audit/doc-lint-report.md, audit/safe-fix.sh
+├─ Artifacts: audit/doc-lint-report_{YYYYMMDD_HHMMSS}.md, audit/safe-fix.sh
 ├─ Compilation: N/A
 ├─ Upstream: none
 └─ Score: {Health Score}/100

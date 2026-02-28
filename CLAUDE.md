@@ -21,38 +21,48 @@
 
 ## Tech Stack (LOCKED)
 
-| Component | Technology | BANNED |
-|-----------|------------|--------|
-| HTTP Client | ktor-client (CIO) + ktor-serialization-jackson | Custom HTTP wrappers, retrofit |
-| Serialization | Jackson (SNAKE_CASE) + jackson-module-kotlin | Gson, Moshi |
-| Assertions | Kotest assertions-core | Assertions without message |
-| Async/Coroutines | kotlinx-coroutines-test | `Thread.sleep()`, `delay()` in tests |
-| Test Framework | JUnit 5 | TestNG |
-| Reporting | Allure | — |
+| Component        | Technology                                     | BANNED                               |
+|------------------|------------------------------------------------|--------------------------------------|
+| HTTP Client      | ktor-client (CIO) + ktor-serialization-jackson | Custom HTTP wrappers, retrofit       |
+| Serialization    | Jackson (SNAKE_CASE) + jackson-module-kotlin   | Gson, Moshi                          |
+| Assertions       | Kotest assertions-core                         | Assertions without message           |
+| Async/Coroutines | kotlinx-coroutines-test                        | `Thread.sleep()`, `delay()` in tests |
+| Test Framework   | JUnit 5                                        | TestNG                               |
+| Reporting        | Allure                                         | —                                    |
+| Environment / Mocks | Testcontainers (PostgreSQL/Redis) + WireMock | H2 in-memory DB (unless specified)  |
+| HTTP Client (Java, opt-in) | `java.net.http.HttpClient` (JDK 17 built-in) | RestAssured, OkHttp, Retrofit        |
+| Assertions (Java, opt-in) | AssertJ (`assertThat(...).as("msg")`)         | Assertions without `.as()` message   |
 
 ## Project Structure
 
 ```text
 src/
 └── test/
-    ├── kotlin/
-    │   └── registration/
-    │       ├── tests/        # Test classes (*Tests.kt)
-    │       ├── requests/     # HTTP clients + Request/Response models
-    │       └── helpers/      # Helpers + test data
-    └── resources/
-        ├── schemas/          # JSON schemas for response validation
-        └── screenshots/      # Screenshots for L10N tests
+├── kotlin/
+│   └── {domain_name}/
+│       ├── tests/        # Test classes (*Tests.kt)
+│       ├── requests/     # HTTP clients + Request/Response models
+│       └── helpers/      # Helpers + test data
+├── java/
+│   └── {domain_name}/
+│       ├── tests/        # Test classes (*Tests.java)  [/api-tests-java]
+│       ├── requests/     # HTTP clients + DTO models
+│       └── helpers/      # Helpers + test data
+└── resources/
+    └── schemas/          # JSON schemas for response validation
 ```
+
+> **Mode A: DDD Isolated** — default for new single-service projects.
+> For Gradle Multi-Module projects (shared `core` module), see Architecture Routing in `.claude/agents/sdet.md`.
 
 ## Commands
 
-| Action | Command |
-|--------|---------|
-| Build | `./gradlew build` |
-| Test | `./gradlew test` |
+| Action      | Command                                  |
+|-------------|------------------------------------------|
+| Build       | `./gradlew build`                        |
+| Test        | `./gradlew test`                         |
 | Single test | `./gradlew test --tests "FullClassName"` |
-| Clean | `./gradlew clean` |
+| Clean       | `./gradlew clean`                        |
 
 ## Core Principles
 
@@ -106,23 +116,23 @@ When asked to shorten, simplify, or trim output/content — remove only what is 
 
 **Agent context:** `.claude/qa_agent.md` — for core testing and orchestration skills (`/spec-audit`, `/api-isolated-tests`, `/api-test-cases`, `/api-tests`) you MUST read this file before proceeding.
 
-| Skill | Purpose |
-|-------|---------|
-| `/repo-scout` | Repository scanning |
-| `/spec-audit` | QA audit of requirements |
-| `/api-isolated-tests` | Test cases from specification |
-| `/api-test-cases` | Bulk test cases for entire API |
-| `/api-tests` | API automated tests (Kotlin) |
-| `/screenshot-analyze` | Screenshot analysis for L10N defects |
-| `/doc-lint` | Documentation audit |
-| `/skill-audit` | SKILL.md files audit |
-| `/output-review` | Skill output audit |
-| `/agents-checker` | Agent setup validation |
-| `/init-skill` | New skill creation |
-| `/init-agent` | qa_agent.md creation |
-| `/init-project` | Project CLAUDE.md initialization |
-| `/update-ai-setup` | AI setup registry update |
-| `/qa-translate` | Technical translation RU→EN |
+| Skill                 | Owner   | Purpose                          |
+|-----------------------|---------|----------------------------------|
+| `/repo-scout`         | QA Lead | Repository scanning              |
+| `/spec-audit`         | QA Lead | QA audit of requirements         |
+| `/api-isolated-tests` | SDET    | Test cases from specification    |
+| `/api-test-cases`     | SDET    | Bulk test cases for entire API   |
+| `/api-tests`          | SDET    | API automated tests (Kotlin)     |
+| `/api-tests-java`     | SDET    | API automated tests (Java 17+)   |
+| `/doc-lint`           | Auditor | Documentation audit              |
+| `/skill-audit`        | Auditor | SKILL.md files audit             |
+| `/output-review`      | Auditor | Skill output audit               |
+| `/agents-checker`     | Auditor | Agent setup validation           |
+| `/init-skill`         | QA Lead | New skill creation               |
+| `/init-agent`         | QA Lead | qa_agent.md creation             |
+| `/init-project`       | QA Lead | Project CLAUDE.md initialization |
+| `/update-ai-setup`    | QA Lead | AI setup registry update         |
+| `/qa-translate`       | Auditor | Technical translation RU→EN      |
 
 **Workflow:** `/repo-scout` → `/spec-audit` → `/api-test-cases` | `/api-isolated-tests` → `/api-tests`
 

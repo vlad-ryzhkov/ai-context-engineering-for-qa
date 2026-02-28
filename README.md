@@ -2,7 +2,9 @@
 
 Stop writing ad-hoc prompts. Start using engineered AI skills for QA.
 
-This repository is a ready-to-use library of **18 AI skills**, **28 anti-pattern quality gates**, and **2 specialized agents** designed specifically for QA workflows. Copy the `.claude/` folder into your project, and your AI assistant immediately knows how to audit specs, generate test cases, write API tests, and check its own output.
+This repository is a ready-to-use library of **19 AI skills**, **31 anti-pattern quality gates**, 
+and **2 specialized agents** designed specifically for QA workflows. Copy the `.claude/` folder into your project, 
+and your AI assistant immediately knows how to audit specs, generate test cases, write API tests (Kotlin/Java), and check its own output.
 
 Works with Claude Code, OpenCode, Cursor, VS Code Copilot, and Codex.
 
@@ -46,6 +48,7 @@ The main pipeline — choose your starting point based on scope:
 | `/repo-scout`     | Backend repository    | API surface map, coverage gaps     | Catalog of endpoints, infrastructure, entry points   |
 | `/api-test-cases` | Specification + audit | Test scenario matrix (Markdown)    | Exhaustive test cases for all endpoints, by priority |
 | `/api-tests`      | Test scenarios + spec | Kotlin test code (JUnit 5, Allure) | Production-ready tests, run with `./gradlew test`    |
+| `/api-tests-java` | Test scenarios + spec | Java 17+ test code (JUnit 5, Allure, AssertJ) | Same as above, Java teams opt-in |
 
 > While `/api-tests` provides good coverage out of the box, it is designed to be adapted to your team's architectural guidelines.
 >
@@ -103,8 +106,8 @@ This library is a starting point. To make it yours:
 
 ## Architecture
 
-- **18 skills** in `.claude/skills/` — from repo scanning to test generation to translation
-- **28 anti-pattern quality gates** in `.claude/qa-antipatterns/` — the AI checks generated code against these before finishing
+- **19 skills** in `.claude/skills/` — from repo scanning to test generation to translation
+- **31 anti-pattern quality gates** in `.claude/qa-antipatterns/` — the AI checks generated code against these before finishing
 - **2 specialized agents** (Auditor + SDET) in `.claude/agents/` — delegate planning vs. code generation
 - **Progressive Disclosure** — `CLAUDE.md` → `qa_agent.md` → `SKILL.md` load only on demand, saving tokens
 - **Gardener Protocol** — AI suggests improvements to the knowledge base at the end of each run
@@ -116,6 +119,8 @@ This library is a starting point. To make it yours:
 
 ## Tech Stack (for generated API tests)
 
+**Kotlin (default — `/api-tests`):**
+
 | Component      | Technology             |
 |----------------|------------------------|
 | Language       | Kotlin                 |
@@ -124,6 +129,18 @@ This library is a starting point. To make it yours:
 | Serialization  | Jackson                |
 | Assertions     | Kotest assertions-core |
 | Reporting      | Allure                 |
+
+**Java 17+ (opt-in — `/api-tests-java`):**
+
+| Component      | Technology                          |
+|----------------|-------------------------------------|
+| Language       | Java 17+                            |
+| Test Framework | JUnit 5                             |
+| HTTP Client    | `java.net.http.HttpClient` (JDK 17) |
+| Serialization  | Jackson (PropertyNamingStrategies)  |
+| Assertions     | AssertJ (`.as()` message required)  |
+| Async wait     | Awaitility                          |
+| Reporting      | Allure                              |
 
 ---
 

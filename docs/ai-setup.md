@@ -70,18 +70,21 @@ Three layers, loaded on demand (not all at once):
 │   │   └── auditor.md               #   Planning + quality audit
 │   ├── hooks/                       # PostToolUse hooks
 │   │   └── skill-lint.sh            #   SKILL.md validation on every edit
-│   ├── qa-antipatterns/             # Code quality checks (27 files + 1 index)
+│   ├── qa-antipatterns/             # Code quality checks (31 files + 1 index)
 │   │   ├── _index.md
 │   │   ├── api/                     # 12 patterns
+│   │   │   └── java/                # 2 Java-specific patterns
 │   │   ├── common/                  # 6 patterns
 │   │   ├── platform/               # 6 patterns
+│   │   │   └── java/                # 2 Java-specific patterns
 │   │   └── security/               # 3 patterns
-│   └── skills/                      # Skills (18 total)
+│   └── skills/                      # Skills (19 total)
 │       ├── agents-checker/          # /agents-checker — agent compliance check
 │       ├── api-isolated-tests/      # /api-isolated-tests — test case generation
 │       ├── api-mocks/               # /api-mocks — HTTP mock server generation
 │       ├── api-test-cases/          # /api-test-cases — bulk test cases for API
-│       ├── api-tests/               # /api-tests — API automated tests
+│       ├── api-tests/               # /api-tests — API automated tests (Kotlin)
+│       ├── api-tests-java/          # /api-tests-java — API automated tests (Java 17+)
 │       ├── doc-lint/                # /doc-lint — documentation audit
 │       ├── fix-markdown/            # /fix-markdown — markdown lint fix
 │       ├── init-agent/              # /init-agent — qa_agent.md generation
@@ -136,6 +139,7 @@ Three layers, loaded on demand (not all at once):
 | `/api-mocks`          | `.claude/skills/api-mocks/SKILL.md`          |    70 | Generation | HTTP mock server generation                |
 | `/api-test-cases`     | `.claude/skills/api-test-cases/SKILL.md`     |   335 | Generation | Bulk test cases for entire API             |
 | `/api-tests`          | `.claude/skills/api-tests/SKILL.md`          |   288 | Generation | API automated tests (Kotlin + JUnit 5)     |
+| `/api-tests-java`     | `.claude/skills/api-tests-java/SKILL.md`     |   220 | Generation | API automated tests (Java 17+ + JUnit 5)   |
 | `/doc-lint`           | `.claude/skills/doc-lint/SKILL.md`           |   248 | Analysis   | Documentation quality audit                |
 | `/fix-markdown`       | `.claude/skills/fix-markdown/SKILL.md`       |    33 | Meta       | Fix markdownlint errors across repo        |
 | `/init-agent`         | `.claude/skills/init-agent/SKILL.md`         |   203 | Meta       | qa_agent.md generation                     |
@@ -152,7 +156,7 @@ Three layers, loaded on demand (not all at once):
 
 ### Anti-Patterns
 
-27 files the AI checks generated code against. Organized by category:
+31 files the AI checks generated code against. Organized by category:
 
 | File                             | Path                                                                | Lines | Category |
 |----------------------------------|---------------------------------------------------------------------|------:|----------|
@@ -162,6 +166,8 @@ Three layers, loaded on demand (not all at once):
 | dry-api-client                   | `.claude/qa-antipatterns/api/dry-api-client.md`                     |    77 | api      |
 | eventual-consistency-writes      | `.claude/qa-antipatterns/api/eventual-consistency-writes.md`        |    70 | api      |
 | inline-http-calls                | `.claude/qa-antipatterns/api/inline-http-calls.md`                  |    52 | api      |
+| inline-http-calls (java)         | `.claude/qa-antipatterns/api/java/inline-http-calls.md`             |    52 | api/java |
+| map-instead-of-dto (java)        | `.claude/qa-antipatterns/api/java/map-instead-of-dto.md`            |    55 | api/java |
 | ktor-body-extraction             | `.claude/qa-antipatterns/api/ktor-body-extraction.md`               |    54 | api      |
 | map-instead-of-dto               | `.claude/qa-antipatterns/api/map-instead-of-dto.md`                 |    66 | api      |
 | missing-business-error-assertion | `.claude/qa-antipatterns/api/missing-business-error-assertion.md`   |    50 | api      |
@@ -176,6 +182,8 @@ Three layers, loaded on demand (not all at once):
 | no-order-dependent-tests         | `.claude/qa-antipatterns/common/no-order-dependent-tests.md`        |    70 | common   |
 | static-object-mother             | `.claude/qa-antipatterns/common/static-object-mother.md`            |    90 | common   |
 | controlled-retries               | `.claude/qa-antipatterns/platform/controlled-retries.md`            |    57 | platform |
+| completablefuture-no-timeout     | `.claude/qa-antipatterns/platform/java/completablefuture-no-timeout.md` | 50 | platform/java |
+| flaky-sleep-tests (java)         | `.claude/qa-antipatterns/platform/java/flaky-sleep-tests.md`        |    58 | platform/java |
 | coroutine-test-return-type       | `.claude/qa-antipatterns/platform/coroutine-test-return-type.md`    |    79 | platform |
 | flaky-sleep-tests                | `.claude/qa-antipatterns/platform/flaky-sleep-tests.md`             |    62 | platform |
 | junit-test-initialization        | `.claude/qa-antipatterns/platform/junit-test-initialization.md`     |    57 | platform |
@@ -194,7 +202,8 @@ Supporting data for skills — templates, examples, glossaries:
 | coverage-matrix     | `.claude/skills/api-test-cases/references/coverage-matrix.md`       |   221 | Coverage matrix for /api-test-cases           |
 | output-template     | `.claude/skills/api-test-cases/references/output-template.md`       |   195 | Output template for /api-test-cases           |
 | quality-gates       | `.claude/skills/api-test-cases/references/quality-gates.md`         |   142 | Quality gates for /api-test-cases             |
-| api-patterns        | `.claude/skills/api-tests/references/api-patterns.md`               |    77 | Patterns for API tests                        |
+| api-patterns        | `.claude/skills/api-tests/references/api-patterns.md`               |    77 | Patterns for API tests (Kotlin)               |
+| api-patterns-java   | `.claude/skills/api-tests-java/references/java/api-patterns.md`     |    95 | Patterns for API tests (Java 17+)             |
 | examples            | `.claude/skills/api-tests/references/examples.md`                   |   172 | Code examples for /api-tests                  |
 | best-practices      | `.claude/skills/doc-lint/references/best-practices.md`              |    82 | Corporate documentation practices             |
 | check-rules         | `.claude/skills/doc-lint/references/check-rules.md`                 |   110 | Thresholds, duplicate signatures, SSOT matrix |
@@ -270,7 +279,7 @@ Approaches used in this project. Each pattern solves a specific problem.
 ### 5. Anti-Pattern Library
 
 **Problem:** AI repeats the same mistakes — hardcoded data, missing assertions, Thread.sleep().
-**Solution:** 27 pattern files across 4 categories. The AI checks its output against them before finishing.
+**Solution:** 31 pattern files across 4 categories. The AI checks its output against them before finishing.
 
 ### 6. Locked Tech Stack + BANNED list
 
@@ -395,7 +404,7 @@ How the system improves over time:
 | 4  | AI Registry Sync              | Delta update of this file — registry of all project AI files                  |
 | 5  | Real-Time Hook                | `skill-lint.sh` validates SKILL.md on every edit                              |
 | 6  | Gardener Protocol             | AI notices "smells" during work → suggests fixes without blocking             |
-| 7  | Anti-Pattern Library          | 27 pattern files in 4 categories — reference-driven checks                    |
+| 7  | Anti-Pattern Library          | 31 pattern files across 4 categories — reference-driven checks                 |
 | 8  | kotlin-lsp Plugin             | Kotlin code navigation and analysis                                           |
 | 9  | Segregation of Duties         | SDET codes, Auditor reviews — no one reviews their own work                   |
 
@@ -413,6 +422,8 @@ How the system improves over time:
 | Async          | kotlinx-coroutines-test                        | `Thread.sleep()`, `delay()` in tests |
 | Test Framework | JUnit 5                                        | TestNG                               |
 | Reporting      | Allure                                         | —                                    |
+| HTTP Client (Java, opt-in) | `java.net.http.HttpClient` (JDK 17) | RestAssured, OkHttp, Retrofit      |
+| Assertions (Java, opt-in) | AssertJ (`assertThat(...).as("msg")`) | Assertions without `.as()` message |
 
 ### Build
 
@@ -471,5 +482,6 @@ Official alternative: [skill-creator](https://github.com/anthropics/skills/tree/
 
 | Date       | Description                                                                                                                                                                                       |
 |------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 2026-02-28 | Added `/api-tests-java` skill (Java 17+ test generation), 4 Java-specific anti-patterns (api/java/inline-http-calls, api/java/map-instead-of-dto, platform/java/completablefuture-no-timeout, platform/java/flaky-sleep-tests), 1 reference (api-patterns-java). Updated sdet.md with Java Compilation Rules. Total: 19 skills, 31 anti-patterns, 26 references |
 | 2026-02-28 | Added 4 skills (api-mocks, api-test-cases, fix-markdown, pr), 2 anti-patterns (batch-partial-failure, eventual-consistency-writes), 3 reference files (api-test-cases refs). Updated all line counts. Total: 18 skills, 27 anti-patterns, 25 references |
 | 2026-02-21 | Rewrote intro and pattern catalog for clarity. Added 3 skills (agents-checker, qa-translate, output-review), expanded anti-patterns to 22 files, updated line counts, synced tech stack with CLAUDE.md |

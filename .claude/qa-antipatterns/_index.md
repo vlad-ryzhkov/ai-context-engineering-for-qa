@@ -22,6 +22,15 @@
 
 ### api/ — HTTP and Protocol Specifics
 
+#### api/java/ — Java-Specific HTTP Patterns
+
+| File | Problem |
+|------|---------|
+| `api/java/inline-http-calls.md` | `HttpClient` created per test method (Java) |
+| `api/java/map-instead-of-dto.md` | `Map<String, Object>` instead of DTO (Java) |
+
+#### api/ — Kotlin/Common HTTP Patterns
+
 | File | Problem |
 |------|---------|
 | `api/map-instead-of-dto.md` | `Map<String, Any>` instead of DTO |
@@ -38,7 +47,16 @@
 | `api/eventual-consistency-writes.md` | Asserting read immediately after write in eventually-consistent system |
 | `api/batch-partial-failure.md` | Not testing batch error propagation strategy |
 
-### platform/ — Kotlin + JUnit5
+### platform/ — JUnit5 + Language-Specific
+
+#### platform/java/ — Java-Specific Patterns
+
+| File | Problem |
+|------|---------|
+| `platform/java/completablefuture-no-timeout.md` | `.get()` without timeout on `CompletableFuture` |
+| `platform/java/flaky-sleep-tests.md` | `Thread.sleep()` instead of Awaitility (Java) |
+
+#### platform/ — Kotlin-Specific Patterns
 
 | File | Problem |
 |------|---------|

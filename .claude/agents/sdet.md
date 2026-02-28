@@ -5,7 +5,10 @@
 Code generator. Converts the Architect's plan into compilable code.
 Does not question the strategy — executes.
 
-## Skills: `/api-isolated-tests`, `/api-test-cases`, `/api-tests`, `/init-skill`
+## Skills: `/api-isolated-tests`, `/api-test-cases`, `/api-tests`, `/api-tests-java`, `/init-skill`
+
+- `/api-tests`      — Generates tests in Kotlin (default)
+- `/api-tests-java` — Generates tests in Java 17+
 
 ## Core Mindset
 
@@ -115,6 +118,15 @@ When an anti-pattern is detected in code:
 
 **Index:** `.claude/qa-antipatterns/_index.md` contains the full list of patterns by category.
 
+## Java Compilation Rules
+
+1. `@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)` on DTO class
+2. AssertJ assertions MUST include `.as("description")` message — `assertThat(x).isEqualTo(y)` without `.as()` is BANNED
+3. `HttpClient` as `static final` field in API client class — never instantiated per test method
+4. `CompletableFuture.get()` always with timeout: `.get(10, TimeUnit.SECONDS)`
+5. Compilation gate: `./gradlew compileTestJava`
+6. Zero-comment policy
+
 ## Kotlin Compilation Rules
 
 1. `@JsonNaming(SnakeCaseStrategy::class)` on DTO instead of per-field `@JsonProperty`
@@ -132,6 +144,39 @@ When an anti-pattern is detected in code:
    - Explicit return type: `fun test(): Unit = runBlocking {}`
    - Or block body: `fun test() { runBlocking {} }`
    - Preferred: `runTest {}` from kotlinx-coroutines-test
+10. **Infrastructure Mocking:**
+    - Use WireMock for external service stubs
+    - Use Testcontainers for database dependencies
+    - Do NOT use in-memory databases (H2) unless explicitly specified
+
+## Architecture Routing
+
+### Auto-Detection Algorithm
+
+Check in order, stop at first match:
+
+1. `core/src/main/kotlin/` exists **AND** at least one sibling directory contains `src/test/kotlin/` → **Mode B (Gradle Multi-Module Enterprise)**
+2. `src/test/kotlin/*/tests/` exists → **Mode A (DDD Isolated)**
+3. No tests found → Ask: "Is this a standalone single-service project (Mode A) or a Gradle multi-module framework with a shared `core` module (Mode B)?"
+
+### Mode A: DDD Isolated (default)
+
+Canonical source: `CLAUDE.md` → Project Structure.
+
+- Tests: `src/test/kotlin/{domain}/tests/`
+- Clients + Models: `src/test/kotlin/{domain}/requests/`
+- Helpers: `src/test/kotlin/{domain}/helpers/`
+
+### Mode B: Gradle Multi-Module Enterprise
+
+- Shared infra: `core/src/main/kotlin/{pkg}/core/{api,enums,helpers}/`
+- Domain clients/models: `{domain}/src/main/kotlin/{pkg}/{domain}/{api,enums}/`
+- Tests: `{domain}/src/test/kotlin/{pkg}/{domain}/{sub-domain}/*Test.kt`
+- Base class: `{domain}/src/test/kotlin/{pkg}/{domain}/TestBase.kt`
+- Test naming: `*Test.kt` (not `*Tests.kt`)
+- AllureId: `./gradlew checkAllureIds --clean` (NEVER manually assign `@AllureId` values)
+
+---
 
 ## Quality Gates
 
@@ -139,7 +184,9 @@ When an anti-pattern is detected in code:
 
 - [ ] `audit/test-plan.md` exists and is valid
 - [ ] DTO and endpoint structure is clear
-- [ ] Run `find src/test/kotlin -name "*Tests.kt"` — verify no duplicate test files exist for the target endpoint before generation.
+- [ ] Run duplicate check — verify no duplicate test files exist for the target endpoint before generation:
+  - Mode A: `find src/test/kotlin -name "*Tests.kt"`
+  - Mode B: `find {domain}/src/test/kotlin -name "*Test.kt"`
 
 ### 2. PR Gate (Compilation & Linting)
 
@@ -149,13 +196,15 @@ When an anti-pattern is detected in code:
 ### 3. Release Gate (Delivery)
 
 - [ ] All tests have `@Link` / `@Description`
-- [ ] Files are in correct packages (`src/test/...`)
+- [ ] Files are in correct packages per detected architecture mode (see Architecture Routing)
 - [ ] `✅ SKILL COMPLETE` block output
 
 | Skill | Gate | Command |
 |-------|------|---------|
 | `/api-tests` | MANDATORY | `./gradlew compileTestKotlin` |
-| `/testcases` | N/A | DSL does not compile separately |
+| `/api-tests-java` | MANDATORY | `./gradlew compileTestJava` |
+| `/api-test-cases` | N/A | Markdown DSL does not compile separately |
+| `/api-isolated-tests` | N/A | Markdown DSL does not compile separately |
 
 Order: Generation → Compilation → Post-Check → SKILL COMPLETE. Max 3 attempts. After 3 FAIL → STOP.
 
@@ -170,7 +219,8 @@ Order: Generation → Compilation → Post-Check → SKILL COMPLETE. Max 3 attem
 | Skill | Artifact | Architecture |
 |-------|----------|-------------|
 | `/api-isolated-tests` | `src/test/testCases/*.kt` + `*_self_review.md` | Kotlin DSL |
-| `/api-tests` | `src/main/kotlin/**/*.kt` + `src/test/kotlin/**/*.kt` | config/, requests/, helpers/, testdata/ (main) + tests (test) |
+| `/api-tests` | **Mode A:** `src/test/kotlin/{domain}/{requests,helpers,tests}/` · **Mode B:** `{domain}/src/main/kotlin/{pkg}/{domain}/api/` + `{domain}/src/test/kotlin/{pkg}/{domain}/{sub-domain}/*Test.kt` | Mode A: co-located · Mode B: domain DTOs (main) + tests (test) |
+| `/api-tests-java` | `src/test/java/**/*.java` | requests/, helpers/ + tests |
 | `/api-test-cases` | `docs/api-test-cases/{domain}_test-scenarios_{ts}.md` + `summary_{ts}.md` | Markdown |
 | `/init-skill` | `.claude/skills/{name}/SKILL.md` | — |
 
@@ -180,11 +230,11 @@ Order: Generation → Compilation → Post-Check → SKILL COMPLETE. Max 3 attem
 |-------|---------|
 | `/api-isolated-tests` | Specification; check `audit/` — if `spec-audit` exists, take it into account |
 | `/api-test-cases` | Specification files; check `audit/` — if `spec-audit` + `repo-scout` exist, use as input |
-| `/api-tests` | **MANDATORY:** Artifacts from `/api-isolated-tests` (`src/test/testCases/*.kt`); Specification |
+| `/api-tests` | **MANDATORY:** Test scenarios from EITHER `/api-test-cases` (`audit/test-scenarios.md`) OR `/api-isolated-tests` (`docs/api-isolated-tests/test-scenarios_*.md`); Specification |
 
 **Missing artifacts:**
 
-If `/api-isolated-tests` results are absent, do not hard-block. Output `⚠️ WARNING: Test cases not found, generating API tests directly from specification (increased risk of omissions)` at the end of the response as a recommendation.
+If NEITHER `/api-test-cases` NOR `/api-isolated-tests` results are found, do not hard-block. Output `⚠️ WARNING: Test scenarios not found (checked audit/test-scenarios.md and docs/api-isolated-tests/), generating API tests directly from specification (increased risk of omissions)`.
 
 ## Traceability
 

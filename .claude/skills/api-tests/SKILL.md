@@ -40,7 +40,7 @@ Scenario source — `audit/test-scenarios.md` (result of /api-isolated-tests) or
 
 ## Protocol
 
-1. **Stack:** HTTP client = Ktor `HttpClient(CIO)` initialized in the `requests/` layer (not in tests) via `by lazy(LazyThreadSafetyMode.SYNCHRONIZED)`. JUnit5 + `@ParameterizedTest` (`junit-jupiter-params`), Awaitility, Ktor Logging (`LogLevel.ALL`), JSON Schema Validator, Faker (data generation in TestData).
+1. **Stack:** Locked in CLAUDE.md → Tech Stack. Kotlin-specific additions: Ktor HttpClient(CIO) via `by lazy(LazyThreadSafetyMode.SYNCHRONIZED)`, Awaitility (seconds only), Faker (TestData generators), JSON Schema Validator.
 2. **BANNED:** `Thread.sleep`, `delay`, `runBlocking` (use `runTest`), `HttpClient(` in `*Tests.kt` (inline HTTP in tests), manual `@AllureId`, `shouldBe` (use `assertEquals`), `assert(` (Kotlin builtin — use `assertEquals`/`assertTrue` from `org.junit.jupiter.api.Assertions`), `LocalDateTime.now()` in strict assertions. **Zero-comment policy:** `//` and `/* */` in generated code are FORBIDDEN.
 2a. **Coroutine Tests:** Preferred: `fun test(): Unit = runTest { }` from `kotlinx-coroutines-test`. If `runBlocking` is unavoidable — explicit return type required: `fun test(): Unit = runBlocking { }`. FORBIDDEN: `delay()` as timing substitute — use Awaitility.
 2b. **Test Lifecycle:** `@BeforeEach`/`@AfterEach` for setup/teardown. `lateinit var` for resources requiring cleanup. **FORBIDDEN:** `@TestInstance(PER_CLASS)` with field initialization — JUnit skips class init on constructor failure.
@@ -52,18 +52,14 @@ Scenario source — `audit/test-scenarios.md` (result of /api-isolated-tests) or
 2h. **Timestamp Response Validation:** If the specification defines a time-based response field (e.g., `expires_at = request_time + N minutes`, JWT `exp` claim), the test MUST validate it with a relative drift check: `assertTrue(abs(actual - expected) < driftToleranceSeconds, "timestamp drift")`. Using `Instant.now()` + offset is acceptable; using `isNotBlank()` or `> 0` alone is INSUFFICIENT. FORBIDDEN: `LocalDateTime.now()` in assertions.
 2i. **WireMock Integration for External Services:** When a test configures WireMock stubs for external services (SMS gateway, payment provider, etc.), the test MUST connect the mock to the application under test. At minimum: set a system property or environment variable (e.g., `System.setProperty("SMS_GATEWAY_URL", "http://localhost:${wireMockServer.port()}")`) in `@BeforeEach` and clear it in `@AfterEach`. A disconnected WireMock server (started but not referenced by the app) is a SILENT TEST BUG — the test passes/fails based on real service state, not mock behavior.
 2k. **Eventual Consistency Writes:** If `repo-scout-report` §12 marks a write→read pair as "Eventual", FORBIDDEN to assert the read immediately after write. Use Awaitility polling with bounded timeout. (ref: `api/eventual-consistency-writes.md`)
-2l. **Batch Partial Failure:** If `repo-scout-report` §12 lists batch operations, tests MUST include a mixed valid+invalid input case to verify error propagation strategy (atomic rollback vs partial 207 Multi-Status). Testing only all-valid and all-invalid is INSUFFICIENT. (ref: `api/batch-partial-failure.md`)
-2j. **Mock-First Architecture:** Generated tests MUST NOT rely on a live API server.
-If `ConnectException` appears in Smoke Run → run `/api-mocks` to generate mock infrastructure,
-then re-run tests. API client `BASE_URL` MUST be a computed property:
-`val BASE_URL: String get() = System.getProperty("BASE_URL", "http://localhost:8080")`.
-TLS-enforcement tests cannot pass with HTTP mock — acceptable as documented infra limitation.
+2l. **Batch Partial Failure:** If `repo-scout-report` §12 lists batch operations, include a mixed valid+invalid input case to verify error propagation strategy (atomic rollback vs partial 207 Multi-Status). Testing only all-valid and all-invalid is INSUFFICIENT. (ref: `api/batch-partial-failure.md`)
+2j. **Configurable BASE_URL:** Use a computed property so any CI/CD environment can override the target server without recompilation: `val BASE_URL: String get() = System.getProperty("BASE_URL", "http://localhost:8080")`. If `ConnectException` appears in Smoke Run and no live server is available → run `/api-mocks` to generate an in-process mock, then re-run. TLS-enforcement tests cannot pass with an HTTP mock — acceptable as documented infra limitation.
 3. **Security Headers Rule:** Every positive test (POST/PUT/DELETE with 2xx) MUST verify `Content-Type`, `X-Content-Type-Options`, `Strict-Transport-Security` via `assertEquals` on `response.headers`. (ref: `api/missing-security-headers.md`)
 4. **Structure:**
-   - `requests/`: DTOs + Request/Response objects. **ALL** data classes mapped to snake_case JSON (request AND response) MUST have `@JsonNaming(SnakeCaseStrategy::class)` + `@JsonIgnoreProperties(ignoreUnknown = true)`. Omitting `@JsonNaming` on response DTOs causes silent null fields.
+   - `requests/`: DTOs + Request/Response objects. **ALL** data classes mapped to snake_case JSON (request AND response) — apply `@JsonNaming(SnakeCaseStrategy::class)` on all DTOs — omitting it on response DTOs causes silent null fields. Also add `@JsonIgnoreProperties(ignoreUnknown = true)`.
    - `helpers/`: `@Step` annotated flows.
    - `tests/`: `@Epic` (from feature/package name), `@Feature` (from endpoint name), `@Severity`, `@DisplayName`. `@AllureId` — **NOT generated**: assigned manually or via utility after TMS binding. **MANDATORY TAGS:** Analyze business logic — add `@Tag("CRITICAL")` + `@Severity(SeverityLevel.CRITICAL)` for Money flows, Security/Auth, or Data integrity endpoints; add `@Tag("REGRESSION")` for all others.
-   - **External Integrations:** If the endpoint under test calls 3rd-party services (payments, SMS, email providers), the test MUST configure a WireMock stub in `@BeforeEach`. Do not make real HTTP calls to external domains.
+   - **External Integrations:** If the endpoint under test calls 3rd-party services (payments, SMS, email providers), configure a WireMock stub in `@BeforeEach` so the test does not make real HTTP calls to external domains.
 4. **Gates:** `compileTestKotlin`, `ktlintCheck`.
 
 ## Input Source Strategy
@@ -111,6 +107,41 @@ grep -q "^|" audit/test-scenarios.md || echo "WARNING"
 ```text
 ⚠️ WARNING: No scenarios for {endpoint} in audit/test-scenarios.md. Continuing without scenarios for this endpoint.
 ```
+
+## Architecture Modes
+
+**Step 0 (Workflow Pre-flight):** Before any generation, run auto-detection (sdet.md → Architecture Routing). Determine `ARCH_MODE = A | B`. All output paths depend on this.
+
+### Mode A: DDD Isolated (default)
+
+```
+src/test/kotlin/{domain}/
+├── tests/      # generated here  (*Tests.kt)
+├── requests/   # generated here
+└── helpers/    # generated here
+```
+
+AllureId: `./gradlew assignAllureIds`.
+
+### Mode B: Gradle Multi-Module Enterprise
+
+```
+# Where to generate for an existing domain module:
+{domain}/src/test/kotlin/{pkg}/{domain}/
+├── {sub-domain}/         # new test class here
+│   └── {Feature}Test.kt  # *Test.kt (not *Tests.kt)
+└── TestBase.kt           # if not present, create
+
+# Where to add domain-specific DTOs:
+{domain}/src/main/kotlin/{pkg}/{domain}/api/
+└── {Feature}Response.kt / {Feature}Request.kt
+
+# If adding shared DTOs used across domains:
+core/src/main/kotlin/{pkg}/core/api/response/
+└── {Shared}Response.kt
+```
+
+AllureId: `./gradlew checkAllureIds --clean` (NEVER manually assign `@AllureId` values). No `by inject()` — use constructor params on `TestBase` or direct instantiation.
 
 ## Verbosity Protocol
 
@@ -165,6 +196,7 @@ If `test-scenarios.md` contains `Cleanup:` for POS/L10N scenarios, every test fi
 ## Workflow
 
 0. **Input Check (MANDATORY):**
+   - **Architecture Detection:** Run auto-detection (sdet.md → Architecture Routing). Determine `ARCH_MODE = A | B`. Use detected mode for all output paths (see Architecture Modes section).
    - Perform 2-phase test-scenarios validation (see Input Validation above)
    - If any phase FAILs → output ⚠️ WARNING and continue with available data
    - If all checks PASS → Read `audit/test-scenarios.md`

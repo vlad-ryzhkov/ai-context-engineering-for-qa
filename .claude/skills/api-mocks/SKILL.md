@@ -1,7 +1,7 @@
 ---
 name: api-mocks
 description: Generates in-process HTTP mock server for the API under test + WireMock singletons for external services. Use when tests fail with ConnectException or no live server is available.
-agent: sdet
+agent: agents/sdet.md
 input: specification file (same path used for /api-tests)
 output: helpers/MockServer.kt, helpers/MockServerExtension.kt, META-INF/services/, junit-platform.properties
 ---
@@ -12,7 +12,7 @@ output: helpers/MockServer.kt, helpers/MockServerExtension.kt, META-INF/services
 - Starting a new endpoint — generate mock before writing tests
 
 **Not for:** mocking only external services (put WireMock stubs directly in `@BeforeEach`).
-**Workflow:** `/api-mocks` → `/api-tests` (mock-first, then tests).
+**Workflow:** `/api-mocks` → retry `/api-tests` (fallback when no live server is available).
 
 ## Protocol
 

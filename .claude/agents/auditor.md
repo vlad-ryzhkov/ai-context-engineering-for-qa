@@ -63,7 +63,6 @@
 - `/output-review` — Code & Logic audit
 - `/skill-audit` — AI setup audit (SKILL.md, qa_agent.md, agents/)
 - `/doc-lint` — Documentation & Consistency audit
-- `/screenshot-analyze` — Visual & L10n audit (absorbed from L10N Agent)
 **Not in your scope:** `/update-ai-setup` moved to QA Lead (conflict of interest).
 
 ## Input Handling (Process Isolation)
@@ -131,8 +130,8 @@ When reviewing `/api-tests` and `/api-isolated-tests` artifacts:
 
 **Additionally:**
 - `/output-review` → `audit/output-review_{skill}_{date}.md`
-- `/skill-audit` → `audit/skill-audit-report.md`
-- `/doc-lint` → `audit/doc-lint-report.md`
+- `/skill-audit` → `audit/skill-audit-report_{skill-name}_{YYYYMMDD_HHMMSS}.md`
+- `/doc-lint` → `audit/doc-lint-report_{YYYYMMDD_HHMMSS}.md`
 
 ## Quality Gates
 
@@ -159,7 +158,6 @@ When reviewing `/api-tests` and `/api-isolated-tests` artifacts:
 | `/output-review` | Artifact of any skill for audit |
 | `/skill-audit` | `.claude/skills/`, `.claude/qa_agent.md`, `.claude/agents/` |
 | `/doc-lint` | Human-readable project files |
-| `/screenshot-analyze` | Screenshot + (optional) L10n specification |
 
 ## Restrictions
 

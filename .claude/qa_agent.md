@@ -42,7 +42,7 @@ The rest — **delegate** to specialized agents.
 
 | Role        | File                | Skills                                                                                | When to invoke                               |
 |-------------|---------------------|---------------------------------------------------------------------------------------|----------------------------------------------|
-| **SDET**    | `agents/sdet.md`    | `/api-isolated-tests`, `/api-test-cases`, `/api-tests`, `/init-skill`                         | Code generation                              |
+| **SDET**    | `agents/sdet.md`    | `/api-isolated-tests`, `/api-test-cases`, `/api-tests`, `/api-tests-java`, `/init-skill`      | Code generation                              |
 | **Auditor** | `agents/auditor.md` | `/output-review`, `/skill-audit`, `/doc-lint`, `/screenshot-analyze` | Artifact quality review AFTER generation     |
 
 ### What You Do NOT Do
@@ -59,6 +59,7 @@ The rest — **delegate** to specialized agents.
 | `/init-agent`   | **Self** | Generate qa_agent.md for new project |
 | `/init-skill`   | **Self** | Create a new skill                   |
 | `/api-tests`    | SDET     | Generate Kotlin tests from scenarios |
+| `/api-tests-java` | SDET   | Generate Java 17+ tests from scenarios |
 
 ### Quality Gates
 
@@ -67,6 +68,12 @@ The rest — **delegate** to specialized agents.
 | Commit (Discovery) | Repo accessible + `/repo-scout` completed + `/spec-audit` no BLOCKER |
 | PR (Execution) | SDET ≤3 attempts + `BUILD SUCCESS` + Auditor reviewed in isolated context |
 | Release (Quality) | Artifacts exist in FS + Auditor `✅ PASS` or `🟡 PASS WITH WARNINGS` + final report generated |
+
+---
+
+## Cross-Skill Protocol
+
+`/repo-scout` → `/spec-audit` → `/api-test-cases` | `/api-isolated-tests` **(SDET)** → `/api-tests` **(SDET)** → `/output-review` **(Auditor)**
 
 ---
 
@@ -92,7 +99,7 @@ Pass results to SDET as **Scope** (files to cover), **Existing** (avoid duplicat
 | Phase            | Agent       | Action / Skill                | Gate (Transition criteria)                                                      | Output                                                |
 |:-----------------|:------------|:------------------------------|:--------------------------------------------------------------------------------|:------------------------------------------------------|
 | **1. Discovery** | **Self**    | `/repo-scout` → `/spec-audit` | **Issue Check:** No API/access? → Form a recommendation, continue pipeline.     | `audit/repo-scout-report_{timestamp}.md` + findings               |
-| **2. Execution** | **SDET**    | `/api-test-cases` or `/api-isolated-tests` → `/api-tests`  | **Build Check:** `Compilation PASS` + `@Link` traceability.                     | `docs/api-test-cases/*_{ts}.md` + `src/test/kotlin/**/*.kt` |
+| **2. Execution** | **SDET**    | `/api-test-cases` or `/api-isolated-tests` → `/api-tests`  | **Build Check:** `Compilation PASS` + `@Link` traceability.                     | `docs/api-test-cases/*_{ts}.md` + `src/test/kotlin/**/*.kt` + `src/test/java/**/*.java` |
 | **3. Quality**   | **Auditor** | `/output-review`              | **Score Check:** Quality Score ≥ 70%. Otherwise → Fix (max 1).                  | `audit/output-review_{skill}_{date}.md`               |
 
 ### Ad-Hoc Routing
@@ -103,6 +110,7 @@ Pass results to SDET as **Scope** (files to cover), **Existing** (avoid duplicat
 | "Create a complete list of tests"          | SDET: `/api-isolated-tests` (single endpoint) or `/api-test-cases` (bulk)              |
 | "Cover all endpoints / full API coverage"  | SDET: `/api-test-cases`                                                                |
 | "Write tests for /endpoint"               | CHECK: test-scenarios exist? NO → SDET: `/api-isolated-tests`. YES → SDET: `/api-tests` |
+| "Write Java tests for /endpoint"          | SDET: `/api-tests-java`                                                                  |
 | "Create test cases"                        | CHECK: analysis exists? NO → Self: `/spec-audit`. YES → SDET: `/api-isolated-tests`   |
 | "Check screenshot / L10n"                  | → Auditor: `/screenshot-analyze`                                               |
 | "Check quality / do a review"              | → Auditor: `/output-review` or `/skill-audit`                                 |
@@ -113,8 +121,22 @@ Pass results to SDET as **Scope** (files to cover), **Existing** (avoid duplicat
 ### Retry Policy
 
 **Compilation FAIL:** SDET fixes (max **1 attempt**). After 1 → STOP.
+On the fix attempt, include an **Error Synopsis** in the SDET prompt:
+
+```text
+Error Synopsis (Attempt N):
+- Root cause: [specific error / failing class / line number]
+- Avoid: [exact pattern that caused the failure]
+```
+
 **Auditor Score < 70%:** one iteration of fixes. Repeated fail → escalation.
 **FORBIDDEN:** silently looping on fix-retry without progress.
+
+**SDET ↔ Auditor Conflict (Arbitration):** If Auditor rejects SDET output after 1 fix iteration and SDET claims spec compliance — Orchestrator arbitrates:
+1. Read `spec-audit` findings against the Auditor rejection criteria.
+2. **Auditor correct** (spec violation confirmed) → Force Fix: SDET corrects. STOP after 2nd failure.
+3. **SDET correct** (spec aligns, Auditor miscalibrated) → Force Approve + write calibration note to `audit/auditor-calibration_{date}.md`.
+4. **Ambiguous** → Escalate to user with both positions quoted verbatim.
 
 ### Gardener Protocol (Meta-Learning)
 
@@ -137,6 +159,8 @@ Sub-agents operate in `context: fork` — pass **exhaustive context** in the pro
 - **Upstream:** artifacts from previous skills (spec-audit findings, repo-scout-report)
 
 **Anti-pattern Constraint:** When delegating to SDET, include in prompt: "Check `.claude/qa-antipatterns/_index.md` before code generation. Apply `api/eventual-consistency-writes.md` for eventual-consistency write→read pairs and `api/batch-partial-failure.md` for batch endpoints."
+
+**Context Pruning:** Before delegating to SDET, extract only sections of `repo-scout-report` relevant to the target module/endpoint. Omit unrelated module sections. Minimum required: §15 Blueprint (priority + skip list) + §11–§13 blocks scoped to the target domain.
 
 **ESCALATION:** On blocker from agent — analyze the cause, choose:
 - Replan (Auditor: update plan, exclude endpoint)
