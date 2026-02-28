@@ -209,7 +209,11 @@ Supporting data for skills — templates, examples, glossaries:
 | glossary            | `.claude/skills/qa-translate/references/glossary.md`                |   182 | Translation glossary RU to EN                 |
 | examples            | `.claude/skills/qa-translate/references/examples.md`                |   148 | Translation examples                          |
 | formatting-rules    | `.claude/skills/qa-translate/references/formatting-rules.md`        |   268 | Formatting rules for translation              |
-| lang-patterns       | `.claude/skills/repo-scout/references/lang-patterns.md`             |   509 | Language patterns for /repo-scout             |
+| lang-patterns       | `.claude/skills/repo-scout/references/lang-patterns.md`             |   275 | Language patterns index (detection + cross-language) |
+| lang-go             | `.claude/skills/repo-scout/references/lang-go.md`                   |   200 | Go-specific patterns for /repo-scout          |
+| lang-python         | `.claude/skills/repo-scout/references/lang-python.md`               |    93 | Python-specific patterns for /repo-scout      |
+| lang-nodejs         | `.claude/skills/repo-scout/references/lang-nodejs.md`               |    93 | Node.js/TS-specific patterns for /repo-scout  |
+| lang-jvm            | `.claude/skills/repo-scout/references/lang-jvm.md`                  |    86 | Java/Kotlin-specific patterns for /repo-scout |
 | report-template     | `.claude/skills/repo-scout/references/report-template.md`           |   299 | Report template for /repo-scout               |
 | checklists          | `.claude/skills/screenshot-analyze/references/checklists.md`        |   113 | L10N check checklists                         |
 | cldr-tables         | `.claude/skills/screenshot-analyze/references/cldr-tables.md`       |   151 | CLDR reference tables                         |

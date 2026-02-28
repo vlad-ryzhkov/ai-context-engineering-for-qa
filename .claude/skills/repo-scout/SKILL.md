@@ -1,7 +1,7 @@
 ---
 name: repo-scout
-description: Scans a backend repository (Go, Python, Node.js, Java/Kotlin), catalogs API surface, infrastructure, test coverage, and generates QA scenario priority matrix. Use when entering a new repo before writing tests. Do not use for QA projects — use /init-project for those.
-allowed-tools: "Read Glob Grep Bash(ls*) Bash(wc*)"
+description: Scans a backend repository (Go, Python, Node.js, Java/Kotlin), catalogs API surface, infrastructure, test coverage, and produces a Test Generation Blueprint for downstream skills. Use when entering a new repo before writing tests. Do not use for QA projects — use /init-project for those.
+allowed-tools: "Read Glob Grep Bash(ls*) Bash(wc*) Bash(jq*) Bash(yq*)"
 agent: agents/sdet.md
 context: fork
 ---
@@ -10,17 +10,22 @@ context: fork
 
 <purpose>
 Deep scanning of a backend repository → structured report on API surface, architecture,
-infrastructure, current test coverage, entity dependencies, behavioral nuances, and QA scenario
-priority matrix. Gives AI and humans a complete picture of the service before planning test coverage.
+infrastructure, current test coverage, entity dependencies, behavioral nuances, and Test Generation
+Blueprint with cross-cutting flows, high-risk areas, and blocker constraints. Gives AI and humans a complete picture of the service before planning test coverage.
 </purpose>
 
 ## Scope (SINGLE AUTHORITY)
 
 **repo-scout is the ONLY skill responsible for initial repository discovery.**
 - It reads, catalogs, and extracts business logic facts (validations, errors, auth flows).
-- It detects entity dependencies, state machines, behavioral nuances, and QA scenario priorities.
+- It detects entity dependencies, state machines, behavioral nuances, resilience patterns, and produces a Test Generation Blueprint for downstream skills.
 - It NEVER evaluates code quality, suggests improvements, or generates test code.
 - It NEVER generates test files or execution plans.
+
+**Out of Scope (NEVER do these):**
+- Architecture pattern detection or diagram generation (MVC, Hexagonal, etc.) — irrelevant for test planning
+- Code quality evaluation or improvement suggestions (existing constraint — restated for clarity)
+- Execution of external scripts or dependency installation (`pip install`, `npm install`, etc.)
 
 ## When to Use
 
@@ -35,13 +40,41 @@ priority matrix. Gives AI and humans a complete picture of the service before pl
 - Code review (use standard tools)
 - Frontend/mobile repositories
 
+## Analysis Anti-Patterns (NEVER DO)
+
+| Anti-Pattern | Why Skipped |
+|-------------|-------------|
+| Line count (cloc) | Useless metric for QA — number of routes and hierarchy depth matter |
+| Cyclomatic complexity | Parsing linter JSON in bash is fragile; delegate to SonarQube/CI |
+| Architecture pattern detection (MVC, DDD, Clean, Hexagonal) | Folder naming is irrelevant — routes and DB schema are what matter |
+
 ## Input Data
 
 - Path to repository (or current directory)
 - Does not require CLAUDE.md, qa_agent.md or other AI files
 - Can be the **first step** in a new repo
+- Scan mode (optional, default `full`):
+  - `full` — complete 9-phase scan (current behavior)
+  - `shallow` — skips Phase 3 (Business Logic) and Phase 5 (Test Generation Blueprint);
+    outputs §1–§2, §6–§10 only. Use for large monorepos to save tokens.
 
 ## Algorithm
+
+## Shallow Mode Guard
+
+**If `mode: shallow` already specified in prompt** → skip Phases 3 and 5, print once:
+```text
+⚡ SHALLOW MODE: Phases 3 and 5 skipped
+```
+Report includes §1–§2, §6–§10 only.
+
+**If `mode:` is NOT specified in prompt** → after printing TASK BRIEF, ask before Phase 1:
+```text
+❓ Is this a very large monorepo (hundreds of modules/services)?
+   Reply `mode: shallow` to skip Business Logic + Blueprint (saves tokens and time).
+   Otherwise the full 9-phase scan starts now.
+```
+Wait for user response. If user replies `mode: shallow` → activate shallow mode. Any other reply → proceed with `full`.
 
 ## Verbosity Protocol
 
@@ -49,7 +82,7 @@ priority matrix. Gives AI and humans a complete picture of the service before pl
 - **Checkpoints:** Phase transitions + warnings only. No per-file progress.
 - **Tools first:** Grep/Read → table → report. No "Now I will..." preambles.
 - **Post-Check:** Inline before SKILL COMPLETE (5-7 line checklist).
-- **Phases 1-8:** Silent. **Phase 9:** Summary table + report path (timestamp: `YYYYMMDD_HHMMSS`).
+- **Phases 1-9:** Silent. **Phase 10:** Summary table + report path (timestamp: `YYYYMMDD_HHMMSS`).
 
 ### Before Starting
 
@@ -73,17 +106,35 @@ Read `.claude/qa_agent.md` (if present in the working project). Output:
    ```
    - Record detected language(s). If multiple → monorepo, note all.
    - If none → ⚠️ WARNING: No known build file found. Generic scan only.
-   - All subsequent pattern lookups use `references/lang-patterns.md` section for detected language.
+   - Set **language reference file**: Go → `references/lang-go.md`, Python → `references/lang-python.md`, Node.js/TS → `references/lang-nodejs.md`, Java/Kotlin → `references/lang-jvm.md`. All subsequent "lang-patterns.md → {section} for detected language" mean: read from this file. Cross-language patterns (Testing Libraries, Concurrency Model, Common Patterns, Host System, gRPC Streaming) remain in `references/lang-patterns.md`.
 
 2. Read primary build file for metadata:
    Per `references/lang-patterns.md` → Build Files for detected language, extract: module/package name, runtime version, key dependencies.
 
 3. Determine structure:
    Use `references/lang-patterns.md` for detected language to identify entry-point directories and module layout.
+   **Exclude from all scans:** `node_modules/`, `vendor/`, `__pycache__/`, `.venv/`, `venv/`,
+   `dist/`, `build/`, `target/`, `.gradle/`, `.mvn/`, `bin/`, `obj/`, `.git/`,
+   `fixtures/`, `seeds/`, `mock_data/`, `testdata/`
+
+   **Data files:** Skip `*.sql` files inside `seeds/`, `fixtures/`, or `mock_data/` directories —
+   they contain raw INSERT data, not schema. For DB schema analysis use ORM model files or
+   DDL migration files only (e.g., `migrations/**/*.sql` is OK; `seeds/*.sql` is not).
 
 4. Count size:
    Use `references/lang-patterns.md` → Test Patterns for detected language to distinguish source vs test files.
    Record: number of source files, number of test files.
+
+5. **VCS Hotspot Analysis** (run only if `.git` directory exists):
+   ```bash
+   git log --pretty=format: --name-only --since="1 year ago" \
+     | grep -v vendor/ | grep -v node_modules/ \
+     | sort | uniq -c | sort -rg | head -10
+   ```
+   - Record: file path + change frequency.
+   - Map hotspot files → handlers → endpoints from Phase 2 (match by file path).
+   - Tag mapped endpoints as `[HOTSPOT: N changes]` in §2 API Surface Catalog Risk column.
+   - If `.git` absent → skip silently.
 
 ### Phase 2: API Surface Discovery
 
@@ -98,6 +149,7 @@ Glob: **/swagger.json, **/swagger.yaml, **/swagger.yml, **/openapi.json, **/open
 
 For each found file:
 - If file exceeds 500 lines → summarize by tags/domains instead of listing every endpoint. Record exact relative file path for downstream skills to read directly.
+  Use `cat {file} | jq '[.paths | keys[]]'` (JSON) or `yq '[.paths | keys[]]' {file}` (YAML) to extract the route list without reading the full document. Only read sections relevant to specific endpoints.
 - Otherwise read the file fully.
 - Extract endpoints: Method, Path, Description
 - Note presence/absence of response schemas, error codes
@@ -144,9 +196,30 @@ Grep: type Query|type Mutation|ApolloServer|graphqlHTTP|GraphQLSchema|@GraphQLAp
 
 If found: extract queries and mutations with types.
 
-#### 2.6 Risk Classification
+#### 2.6 WebSockets & SSE
+
+Grep: `WebSocket|ws\.NewConn|websocket\.Upgrade|websocket\.Accept|gorilla/websocket`
+      `EventSource|text/event-stream|SseEmitter|http\.Flusher|socket\.io`
+
+If found:
+- Record each endpoint: path, protocol (WS/WSS/SSE), handler function
+- Extract event types emitted (structs passed to WriteMessage / json.NewEncoder(w).Encode)
+- Note auth mechanism (WS handshake header vs query param)
+- Mark as [WS] in §2 API Surface Catalog — exclude from REST endpoint count
+
+Reference: `lang-patterns.md → §L6 WebSocket & SSE Patterns` for per-language grep strings.
+
+#### 2.7 Risk Classification
 
 Flag **Sensitive Endpoints** (auth, login, token, billing, pay, wallet, users, profile, export) in the report — SDET will apply `@Severity(CRITICAL)` patterns.
+
+#### 2.8 Business Domain Grouping
+
+After cataloging all endpoints, group them into 3–8 high-level business domains
+(e.g., "User Management", "Billing", "Order Processing", "Catalog", "Auth").
+- If < 5 endpoints total → skip this step (single domain by definition)
+- Domains become the organizing structure for §15 Test Generation Blueprint
+- Record as Business Domain Map table in §2 of the report
 
 ### Phase 3: Business Logic Analysis
 
@@ -154,141 +227,94 @@ Flag **Sensitive Endpoints** (auth, login, token, billing, pay, wallet, users, p
 
 **Token-saving strategy:** Skip DTO mapping / field copying blocks. Focus on conditional branches, error returns, validation calls, auth checks.
 
-Reference: `references/lang-patterns.md` → Handler Patterns, Error Patterns, Validation Patterns, Auth/Middleware Patterns for detected language.
+**Reference:** `references/lang-patterns.md` → Handler Patterns, Error Patterns, Validation Patterns, Auth/Middleware Patterns for detected language.
 
-#### 3.1 Handler Analysis
+**Read `references/phase3-analysis.md`** — execute sub-steps §3.0–§3.11 in order. All output targets, conditional guards, and grep patterns are defined there.
 
-For each endpoint/RPC discovered in Phase 2:
-1. Locate the handler function body using lang-patterns.md → Handler Patterns
-2. Read handler code — extract:
-   - Input validations (parameter checks, schema validation calls)
-   - Error branches (`if err`, `throw`, `raise`, status code returns)
-   - Auth checks (token extraction, permission verification)
-   - Key business rules (conditional logic that changes behavior)
-3. Record per-endpoint: `Endpoint | Validations | Error Branches | Auth Check | Business Rules`
+### Phase 4: Test Analysis (S-UNIT: Simplified + S-ENV: Enhanced Environment)
 
-#### 3.2 Validation Rules
+**Goal:** Superficial test assessment + thorough environment extraction.
 
-1. **Proto-level** (if gRPC): extract `validate` tags from Phase 2.2 results
-2. **Code-level:** search for framework-specific validators using lang-patterns.md → Validation Patterns
-3. Output: table per `references/report-template.md` § Validation Rules
+#### 4.1 Test File Census (S-UNIT — lightweight)
 
-#### 3.3 Error Mapping
+1. Count test files by pattern using `lang-patterns.md` → Test Patterns for detected language
+2. Note test framework from build file using `lang-patterns.md` → Test Frameworks
+3. Detect test libraries: grep build file using `lang-patterns.md` → Testing Libraries Detection. Record in §7 Libraries column.
+4. Note if E2E/API tests exist (in-repo or external — check README for `*-api-tests-*` links)
+5. Output: file counts + framework + libraries in §7. Skip detailed classification/coverage analysis.
 
-1. Find all error constants/enums using lang-patterns.md → Error Patterns
-2. Map each to HTTP status code and/or gRPC code
-3. Output: table per `references/report-template.md` § Error Mapping
+#### 4.2 Test Environment Extraction (S-ENV — thorough)
 
-#### 3.4 Auth & Access Control
+1. **Token config:** Search for token/auth setup in config files, env vars, CI scripts. Record:
+   - Token format (JWT, API key, gRPC metadata)
+   - Where to find test tokens (config file paths, env var names, secrets manager keys)
+   - Token generation commands if available
+2. **Local setup commands:** Extract from Makefile, docker-compose, README:
+   - `make` targets for build/test/seed
+   - `docker-compose up` variants and required profiles
+   - Any pre-test setup scripts
+3. **Data seed requirements:** Determine what must exist before tests run:
+   - Required entities and their creation order (cross-ref with §12 create-order chain)
+   - Seed scripts or fixture files
+   - DB migration prerequisite
+4. **gRPC-specific (if applicable):**
+   - Reflection: determine the **default value** — check local/test config files for the reflection flag. Report "enabled" or "disabled locally" (not just "configurable"). If disabled, testers cannot use grpcurl/grpcui for discovery and must use `-import-path` with proto files.
+   - Proto import paths needed for client generation
+   - Required proto plugins and their versions
+5. **Remote env setup:** Parse `.dev-platform/`, CI config for:
+   - Namespace configuration
+   - Service dependencies and ports
+   - Cross-repo prerequisites (shared proto, gateway config). Record as "Cross-Repo PR" blockers.
+6. **External Dependencies & Mock Servers:**
+   - Grep HTTP client init: `http.NewRequest`, `resty.New()`, `axios.create`, `WebClient.builder()`
+   - Grep gRPC client stubs: `grpc.Dial`, `NewXxxClient(`
+   - Grep mock libraries in build file: `WireMock`, `mockserver`, `nock`, `httpmock`, `gock`
+   - For each external call: record target service, base URL, protocol, mock status
+   - Flag calls with no mock setup as [NO_MOCK]
+   - Record in §14 Test Environment Setup → External Dependencies sub-table
+7. **Output Routing:**
+   - Test census → report §7
+   - All environment data → report §14 Test Environment Setup
 
-1. Find middleware/interceptors using lang-patterns.md → Auth/Middleware Patterns
-2. Extract auth flow: token extraction → validation → failure handling
-3. Classify endpoints: `PUBLIC` | `AUTH` | `ADMIN`
-4. Output: endpoint auth matrix + auth flow diagram per report template
+### Phase 5: Test Generation Blueprint (CONDITIONAL)
 
-#### 3.5 State Transition Matrix (CONDITIONAL)
+**Goal:** Synthesize findings from Phases 3.5–3.10 into directives for downstream
+skills (/api-test-cases, /api-isolated-tests, /api-tests). Produces guidance, NOT test cases.
 
-> Skip if no state machine patterns found. Use `references/lang-patterns.md` → State Machine Patterns.
+> Skip if Phases 3.5–3.10 yielded no significant findings.
 
-1. Search for state/status enums using lang-patterns grep strings
-2. For each enum found:
-   - List all named states (e.g., `Pending`, `Active`, `Deleted`)
-   - Trace transitions: grep for `.Status =` / `.State =` assignments in handlers/services
-   - Record: `From → To | Trigger (handler/method) | Guard (if-condition) | Error on rejection`
-3. Identify unreachable states: states defined in enum but never assigned in any transition
-4. Identify multi-step test sequences — chains of transitions that represent real business flows (e.g., `created → active → suspended → reactivated`, `pending → approved → completed → archived`). Document the full chain with business flow description. Without this, tests will verify single-step transitions but miss the end-to-end lifecycle.
-5. Output: table per `references/report-template.md` §11 (include Multi-Step Transition Sequences sub-table)
+1. **Cross-Cutting Business Flows** — for each multi-endpoint scenario:
+   `"[FLOW] {label}: step1 → step2 → step3 — verify {assertion}"`
+   Source: §11 Multi-Step Sequences + §12 Create-Order Chain
 
-#### 3.6 Entity & Data Model Analysis (CONDITIONAL)
+2. **High-Risk Areas** — for each risk finding, one directive:
+   `"[RISK] {area}: {what to test} — source: §{N}"`
+   Derive from: [UNDOCUMENTED], [WEAK_TYPE], [NO_SPECIFIC_CODE], [AUTH_ANOMALY],
+   [NO_MOCK], resilience gaps from §18, [DEEP_HIERARCHY]
 
-> Skip if no entity relationship patterns found. Use `references/lang-patterns.md` → Entity Relationship Patterns.
+3. **Blocker Constraints** — one bullet per hard constraint:
+   `"[BLOCKER] {description}"`
+   Derive from: [NO_CREATE]/[NO_DELETE] (§12), eventual consistency (§12),
+   [NO_TIMEOUT] (§18), disabled gRPC reflection (§14), cross-repo blockers (§14)
 
-1. **CRUD Matrix:** For each entity, determine which operations exist (Create/Read/Update/Delete/Soft Delete)
-2. **Entity Relationships:** Extract FK references from migrations, ORM tags, or struct fields
-3. **Create-Order Chain:** Determine entity creation order based on FK dependencies (parent before child). Record reverse order for cleanup.
-4. **Pagination:** Find endpoints with `cursor`/`offset`/`limit` parameters. Record strategy, defaults, max values.
-5. **Data Consistency:** For each write→read pair, determine consistency model (strong/eventual). Check for `tx.Commit`, async events, cache layers.
-6. **Batch Operations:** Find `BatchCreate`/`BulkInsert` patterns. Note error propagation strategy (atomic vs partial).
-7. **Type Handling:** Find type conversion patterns (`strconv.Atoi`, `json.Number`, custom `UnmarshalJSON`). Note edge cases.
-8. Output: tables per `references/report-template.md` §12
+4. **Apply AI Rules:** Before finalizing priorities, check for testing conventions in the target repo's AI files:
+   - Glob: `CLAUDE.md`, `.claude/qa_agent.md`, `AGENTS.md`, `.cursor/rules/*.mdc`, `.github/copilot-instructions.md`
+   - Read each found file and extract testing constraints (e.g., "no destructive tests in dev", "always use UUIDv4", "skip latency tests in CI").
+   - Adjust P1/P2 scenario priorities and add/remove rows accordingly.
+   - In each affected row append `[RULE: {source file} — {constraint excerpt}]` to the Expected Result column so downstream skills inherit the constraint.
+   - If no AI files found or no testing constraints extracted → skip silently.
 
-#### 3.7 Behavioral Nuances (CONDITIONAL)
+5. Output: §15 Test Generation Blueprint
 
-> Skip if all endpoints follow uniform patterns. Scan for conditional logic that changes behavior.
-
-1. **Internal vs External:** Identify endpoints reachable only from internal network (middleware checks, IP whitelists, separate port)
-2. **Conditional Behavior:** Find endpoints whose response differs based on caller role, feature flag, or request header
-3. **Search/Filter Semantics:** For list/search endpoints — determine: empty query behavior, case sensitivity, partial match support
-4. **Non-Existent Resource:** For GET/PUT/DELETE by ID — determine: 404 vs 200-empty vs default-object
-5. **Enum/Value Range:** For fields with constrained values — extract valid set, out-of-range behavior, default
-6. Output: tables per `references/report-template.md` §13
-
-#### 3.8 Config & Host Context (CONDITIONAL)
-
-> Skip if no config/host patterns found. Use `references/lang-patterns.md` → Host System / Plugin Detection Patterns + Business Logic Detection.
-
-1. **Whitelist Extraction:** Grep for hardcoded config values (allowed countries, currency codes, status lists). Record source file + values. Determine access path variants: direct domain call vs API gateway routing vs sidecar proxy — different paths may apply different whitelists.
-2. **Host System Detection:** Check if the service is a plugin/filter for a host system (Envoy, Istio, Nginx, Kong). Record integration points and test implications.
-   - Build request lifecycle layers diagram: what executes before the service handler (e.g., Envoy ext_proc → Istio mTLS → service middleware → handler).
-   - Document host-layer errors: errors generated outside the service code (JWT validation at gateway, Istio 403 RBAC deny, rate-limit 429). These are NOT in the service's error mapping but ARE visible to callers.
-3. **Dead Config Detection:** Cross-reference config keys defined in config files vs actually referenced in code. Flag unreferenced keys.
-4. **Test Environment Setup:** From docker-compose, CI config, and Makefile — extract required services, env vars, and setup commands needed to run tests locally.
-5. Output: tables per `references/report-template.md` §14
-
-### Phase 4: Test Analysis
-
-**Goal:** Assess current test coverage.
-
-1. Find all test files:
-   Read `references/lang-patterns.md` → section for detected language → use that language's **Test Patterns** for file glob and classification rules.
-
-2. Classify by type:
-   Classify per `lang-patterns.md` → Test Patterns table for detected language.
-
-3. Determine test frameworks:
-   Determine test frameworks: read `lang-patterns.md` → Test Frameworks table for detected language → search in primary build file.
-
-4. Check for external test repositories:
-   - Search README for links to `*-api-tests-*` or `*-tests`
-   - Check for test runner configurations in CI/CD or platform directories
-
-5. **E2E Test Dependency Graph (if E2E tests exist):**
-   - Identify test setup/teardown chains (which entities are created before tests, in what order)
-   - Cross-reference with Create-Order Chain from §12 — flag mismatches
-   - Parse `.dev-platform/template.yaml` (or equivalent: `tilt.json`, `skaffold.yaml`, `docker-compose.override.yml`) for image placeholders and service overrides that affect test setup
-
-6. **Test Environment Setup:**
-   - Extract from docker-compose / CI config: required services, ports, env vars
-   - Note: test DB seeding scripts, fixture files, mock server configs
-   - Identify cross-repo prerequisites: changes in adjacent repositories required before tests can run (e.g., shared proto definitions, gateway config updates). Record as "Cross-Repo PR" blockers.
-
-7. **Output Routing:** Explicitly route Phase 4 findings:
-   - E2E dependency graph + cross-repo refs → report §7 (Existing Test Coverage)
-   - Test env setup details → report §14 (Config & Host Context → Test Environment Setup sub-table)
-
-### Phase 5: QA Scenario Matrix (CONDITIONAL)
-
-**Goal:** Synthesize findings from Phases 3.5–3.8 into a prioritized QA scenario list for downstream skills.
-
-> Skip entirely if Phases 3.5–3.8 yielded no results (simple CRUD service with no state machines, no entity deps, no nuances).
-
-1. **Classify scenarios by priority:**
-   - **P0 — Smoke:** Core happy paths, auth flow, create-order chain validation
-   - **P1 — Regression:** State transitions (all valid From→To), CRUD per entity, pagination, error code coverage
-   - **P2 — Edge:** Boundary values, type coercion edge cases, dead config, unreachable states
-   - **Skip:** Scenarios requiring infrastructure not available in test env (e.g., Kafka consumer lag, WASM plugin host)
-
-2. **Cross-Cutting Scenarios:** Scenarios that span multiple endpoints or domains (e.g., "create parent → create child → delete parent → verify cascade")
-
-3. **Per-Domain Scenarios:** Group by API domain/entity, reference source section (§11–§14)
-
-4. **Entity Lifecycle Scenarios:** Full CRUD lifecycle per entity respecting create-order chain and cleanup order
-
-5. **Format Requirement:** Per-Domain and Cross-Cutting scenario tables MUST use the structured format consumable by `/api-tests`:
-   `| # | RPC/Endpoint | Test Case | Key Input | Expected Result | Priority |`
-   This is the canonical row format. Do NOT output free-text scenario descriptions — each row must be actionable as a test case.
-
-6. Output: tables per `references/report-template.md` §15
+6. **Risk Consolidation (→ §17):** Collect ALL risk tags from Phases 3–6 into §17:
+   - [AUTH_ANOMALY] from §3.1 and §5
+   - [UNDOCUMENTED] validations from §3.1
+   - [DEAD_CONFIG] from §3.8
+   - [DEEP_HIERARCHY] from §3.6
+   - Mixed ID types from §3.6
+   - SQL injection grep hits from §6.6
+   Rate each: CRITICAL / HIGH / MEDIUM / LOW.
+   Include recommended action (verify / add test / fix / document).
 
 ### Phase 6: Infrastructure Scan
 
@@ -304,6 +330,16 @@ For each endpoint/RPC discovered in Phase 2:
 | Configuration | `config/*.yaml`, `config/*.yml` |
 | Dev-Platform | `.dev-platform/**` |
 
+#### 6.6 Deployment Topology (S6)
+
+Glob for Helm/K8s configs using `lang-patterns.md` → Deployment Topology Patterns:
+- `**/Chart.yaml`, `**/values*.yaml`, `**/templates/*.yaml` (Helm)
+- `**/kustomization.yaml`, `**/kustomization.yml` (Kustomize)
+- `**/terraform/*.tf`, `**/main.tf` (Terraform)
+- `**/skaffold.yaml`, `**/Tiltfile` (Dev tools)
+
+Record: environment variants (dev/staging/prod), key differences (replicas, resource limits, feature flags per env). Output in §8 Infrastructure → Deployment Topology sub-table.
+
 #### 6.6 Security & Secrets Baseline
 
 1. **Secrets:** `ls -la .env .env.*`, grep for RSA/OPENSSH keys, api_key/secret_key
@@ -313,21 +349,30 @@ For each endpoint/RPC discovered in Phase 2:
    - Python: f-string or `%` near `execute(` / `cursor.`
    - Node.js: template literal near `.query(`
    - Java/Kotlin: `String.format` or `+` near `createQuery` / `prepareStatement`
+4. **Dependency Staleness:** Parse lock files for staleness signals without running scanners.
+   - Glob: `go.sum`, `package-lock.json`, `yarn.lock`, `poetry.lock`, `Pipfile.lock`, `pom.xml`
+   - Check last modification date via `ls -la` on lock file.
+   - If lock file not modified in > 12 months AND project is > 1 year old → flag `[DEPENDENCY_RISK]`.
+   - Grep `go.mod` for critical deps with known major version jumps:
+     - `jwt-go` (use `golang-jwt/jwt` v5+), `gorilla/mux` EOL, `go-yaml v2` (use v3)
+   - Grep `package.json` / `package-lock.json` for: `express@^4` (v5 out), `jsonwebtoken@^8`, `axios@^0`
+   - Record in §8 Infrastructure → Dependency Staleness sub-table.
 
 ### Phase 7: AI Setup Status
 
-Check for AI files:
-```text
-- CLAUDE.md
-- .claude/qa_agent.md
-- .claude/skills/**/*.md
-- .agents/skills/**/*.md
-- AGENTS.md
-- .cursor/rules/*.mdc
-- .github/copilot-instructions.md
-```
+Glob for AI files: `CLAUDE.md`, `.claude/qa_agent.md`, `.claude/skills/**/*.md`, `.agents/skills/**/*.md`, `AGENTS.md`, `.cursor/rules/*.mdc`, `.github/copilot-instructions.md`.
 
-### Phase 8: Report Generation
+### Phase 8: Non-English Documentation (S8, CONDITIONAL)
+
+> Skip if all docs are in English.
+
+If docs are non-English:
+1. Record doc language in §1 Repository Profile (`Documentation Language` field)
+2. Extract key business terms (entity names, status values, error descriptions)
+3. Provide English translations with originals in parentheses: `zone (зона)`, `agglomeration (агломерация)`
+4. Record translated term glossary in §6 Specification Inventory
+
+### Phase 9: Report Generation
 
 Compile the report and save to `audit/repo-scout-report_{timestamp}.md` (timestamp format: `YYYYMMDD_HHMMSS`). Full report template with examples — in `references/report-template.md`.
 
@@ -348,7 +393,14 @@ Compile the report and save to `audit/repo-scout-report_{timestamp}.md` (timesta
 12. Entity & Data Model (from Phase 3.6)
 13. Behavioral Nuances (from Phase 3.7)
 14. Config & Host Context (from Phase 3.8)
-15. QA Scenario Matrix (from Phase 5)
+15. Test Generation Blueprint (from Phase 5)
+16. Event Catalog (from Phase 3.9)
+17. QA Risk Assessment & Testability Issues (from Phase 5 step 6)
+18. Resilience Mechanisms (from Phase 3.10)
+
+**QA Onboarding Guide (conditional):** If Phase 4.2 extracted token config + setup commands →
+also save `audit/qa-environment.md` using `references/qa-environment-template.md`.
+Print path in SKILL COMPLETE block.
 
 ## Quality Gates
 
@@ -364,13 +416,33 @@ Compile the report and save to `audit/repo-scout-report_{timestamp}.md` (timesta
 - [ ] §11: If state enums found → all transitions traced, unreachable states listed
 - [ ] §12: If entities found → CRUD matrix complete, create-order chain documented, consistency model per write→read pair
 - [ ] §13: If conditional behavior found → internal/external classified, search semantics documented
+- [ ] §3: Code-level validations without proto/swagger counterpart flagged as `[UNDOCUMENTED]`
+- [ ] §6: Existing QA/test documentation discovered and referenced (if present)
+- [ ] §12: If hierarchy depth > 2 → full chain documented with depth + visual tree
+- [ ] §12: If master/replica patterns found → Read/Write Topology populated
+- [ ] §12: ID types recorded per entity, mixed types in same hierarchy flagged
+- [ ] §12: Asymmetric CRUD marked with `[NO_{OP}]` tags
 - [ ] §14: If config patterns found → dead config flagged, host system noted
-- [ ] §15: If §11–§14 yielded data → QA scenarios classified by P0/P1/P2/Skip
-- [ ] §12→§15: Create-order chain referenced in entity lifecycle scenarios
-- [ ] E2E test dependency graph built (if E2E tests exist)
+- [ ] §7: Test libraries detected from build file and recorded in Libraries column
+- [ ] §13: If concurrency patterns found → model identified, risks documented
+- [ ] §14: Test environment setup includes token config and data seed requirements
+- [ ] §15: If §11–§14 yielded data → Blueprint has [FLOW]/[RISK]/[BLOCKER] bullets with source section citations
+- [ ] §15: If AI rule files found in target repo → affected scenario rows include `[RULE: ...]` annotation
+- [ ] §12→§15: Create-order chain referenced as [FLOW] or [BLOCKER] in §15
+- [ ] §16: If queue client detected → event publishing calls scanned
 - [ ] Cross-repo test prerequisites extracted (if cross-repo dependencies detected)
-- [ ] Test environment setup documented with required services and env vars
 - [ ] No service-specific content leaked (no hardcoded service names from real repos)
+- [ ] §2: WebSocket/SSE endpoints marked [WS], excluded from REST count
+- [ ] §11: Each rejection records exact HTTP/gRPC code; missing codes flagged [NO_SPECIFIC_CODE]
+- [ ] §14: External calls without mock flagged [NO_MOCK] in External Dependencies sub-table
+- [ ] §17: All [AUTH_ANOMALY], [UNDOCUMENTED], [DEAD_CONFIG] items consolidated (count matches §§3–14)
+- [ ] §18: If resilience patterns found → Resilience Mechanisms section present
+- [ ] §2: Business Domain Map present if total endpoints > 5
+- [ ] shallow mode: Phases 3 and 5 skipped when mode=shallow specified
+- [ ] qa-environment.md generated if Phase 4.2 has token config + setup commands
+- [ ] §1: VCS hotspot analysis run (if .git present); top-10 hotspot files mapped to endpoints
+- [ ] §15: If FIXME/HACK/BUG markers found in handlers → Debt Markers table present; P0 items in High-Risk Areas
+- [ ] §8: Dependency staleness checked; lock files older than 12 months flagged [DEPENDENCY_RISK]
 
 ## Self-Check
 
@@ -383,9 +455,12 @@ Before saving the report, verify:
 - [ ] **Readiness:** Assessment is backed by data from sections 2-8?
 - [ ] **State Machines:** Every From→To pair has a source file reference?
 - [ ] **Entity Chain:** Create-order chain matches FK constraints from migrations/ORM?
-- [ ] **QA Scenarios:** Every P0 scenario maps to a discovered endpoint?
-- [ ] **Consistency:** §12 consistency model aligns with §15 test implications?
+- [ ] **Test Blueprint:** Every [FLOW] references §11/§12? Every [RISK] and [BLOCKER] cites source section?
+- [ ] **AI Rules:** Scenarios adjusted for constraints found in CLAUDE.md / qa_agent.md?
+- [ ] **Consistency:** §12 eventual consistency entries appear as [BLOCKER] bullets in §15?
 - [ ] **Dead Config:** Each DEAD config key verified against handler code (not just config file grep) — confirm zero references in business logic
+- [ ] **Domain Map:** endpoint count per domain sums to §2 API totals?
+- [ ] **Risk §17:** every [UNDOCUMENTED] and [AUTH_ANOMALY] from body of report appears in §17?
 
 ## Completion
 
@@ -396,6 +471,7 @@ Self-Review for this skill **is not generated** (read-only scanning, not content
 ```text
 ✅ SKILL COMPLETE: /repo-scout
 ├─ Artifacts: audit/repo-scout-report_{timestamp}.md — **Each invocation creates a new timestamped file**
+├─ Onboarding: audit/qa-environment.md — {generated / skipped (insufficient env data)}
 ├─ Self-Review: N/A (scanning)
 ├─ Compilation: N/A
 ├─ Upstream: none
@@ -403,14 +479,21 @@ Self-Review for this skill **is not generated** (read-only scanning, not content
 ├─ Business Logic: {V validations} + {E errors} + {A auth rules}
 ├─ Entities: {N entities} + {M relationships} + create-order chain: {A → B → C}
 ├─ State Machines: {N state enums} + {M transitions} + {K unreachable states}
-├─ Nuances: {N internal endpoints} + {M conditional behaviors}
-└─ QA Scenarios: {P0: N} + {P1: M} + {P2: K} + {Skip: S} = {total}
+├─ Nuances: {N internal endpoints} + {M conditional behaviors} + {W WebSocket/SSE endpoints}
+├─ Events: {N handlers publish events} + {M topics}
+├─ Resilience: {N idempotency keys} + {M retry policies} + {K circuit breakers}
+├─ Debt: {N TODO} + {M FIXME} + {K HACK} markers → {P} endpoint-linked, {Q} P0-escalated
+├─ Hotspots: {N files} mapped to {M endpoints} — top: {filename} ({N changes}/year)
+└─ Blueprint: {F cross-cutting flows} + {R high-risk areas} + {B blocker constraints}
 ```
 
 ## Related Files
 
-- Language patterns: `references/lang-patterns.md` (§ State Machine, Entity Relationship, Async/Consistency, Batch/Collection, Type Handling, Host System)
-- Report template: `references/report-template.md` (§1–§10 required, §11–§15 conditional)
-- Downstream: `/spec-audit` (next pipeline step), `/api-test-cases` (reads §2+§15), `/api-tests` (reads §11–§15 for test generation)
+- Language patterns (index): `references/lang-patterns.md` (Language Detection, Testing Libraries, Concurrency, Common Patterns, Host System, gRPC Streaming)
+- Language patterns (per-lang): `references/lang-go.md`, `references/lang-python.md`, `references/lang-nodejs.md`, `references/lang-jvm.md`
+- Phase 3 sub-steps: `references/phase3-analysis.md` (§3.0–§3.11 full algorithm)
+- Report template: `references/report-template.md` (§1–§10 required, §11–§18 conditional)
+- Onboarding template: `references/qa-environment-template.md` (generates `audit/qa-environment.md`)
+- Downstream: `/spec-audit` (next pipeline step), `/api-test-cases` (reads §2+§15), `/api-tests` (reads §11–§15+§17 for test generation)
 - AI files: `/init-project` → CLAUDE.md, `/init-agent` → qa_agent.md
 - Anti-patterns: `.claude/qa-antipatterns/api/eventual-consistency-writes.md` (§12 consistency), `.claude/qa-antipatterns/api/batch-partial-failure.md` (§12 batch)

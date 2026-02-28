@@ -6,15 +6,15 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 FORBIDDEN_FILES=(
-  "gradle.properties"
-  "local.properties"
-  ".env"
+  "gradle\.properties"
+  "local\.properties"
+  "\.env($|[^a-z])"
   "credentials"
-  ".pem"
-  ".p12"
-  ".key"
-  ".keystore"
-  ".jks"
+  "\.pem$"
+  "\.p12$"
+  "\.key$"
+  "\.keystore$"
+  "\.jks$"
 )
 
 SECRET_PATTERNS=(

@@ -1,5 +1,13 @@
 # Report Template repo-scout-report.md
 
+## Table of Contents
+
+**Required (§1–§10):** [Repository Profile](#1-repository-profile) · [API Surface Catalog](#2-api-surface-catalog) · [Validation Rules](#3-validation-rules) · [Error Mapping](#4-error-mapping) · [Auth & Access Control](#5-auth--access-control) · [Specification Inventory](#6-specification-inventory) · [Existing Test Coverage](#7-existing-test-coverage) · [Infrastructure](#8-infrastructure) · [AI Setup Status](#9-ai-setup-status) · [Readiness Assessment](#10-readiness-assessment)
+
+**Conditional (§11–§18):** [State Transition Matrix](#11-state-transition-matrix) · [Entity & Data Model](#12-entity--data-model) · [Behavioral Nuances](#13-behavioral-nuances) · [Config & Host Context](#14-config--host-context) · [Test Generation Blueprint](#15-test-generation-blueprint) · [Event Catalog](#16-event-catalog) · [QA Risk Assessment](#17-qa-risk-assessment--testability-issues) · [Resilience Mechanisms](#18-resilience-mechanisms)
+
+---
+
 ```markdown
 # Repo Scout Report: {repo-name}
 
@@ -13,6 +21,8 @@
 | Runtime/Version | {go 1.21 / python 3.11 / node 20 / jdk 17} |
 | Module/Package | {module path / package name / artifact ID} |
 | Service Type | {REST API / gRPC / Mixed / CLI / Consumer} |
+| API Protocol | {REST / gRPC / REST+gRPC / GraphQL / Mixed} |
+| Documentation Language | {English / Russian / Mixed / N/A} |
 | Services | {list of entry points / service modules} |
 | Source Files | {N source files} |
 | Test Files | {N test files} |
@@ -31,6 +41,12 @@
 
 **Summary:** {N REST endpoints} + {M gRPC RPCs} + {K GraphQL queries/mutations} = {total}
 
+### Business Domain Map
+
+| # | Domain | Endpoints | Risk Level | Key Entities |
+|---|--------|-----------|------------|--------------|
+| 1 | {User Management} | {POST /users, GET /users/:id, ...} | {HIGH} | {User, Profile} |
+
 ### REST Endpoints
 | # | Method | Path | Description | Auth | Risk |
 |---|--------|------|-------------|------|------|
@@ -45,10 +61,16 @@
 
 ## 3. Validation Rules
 
-| # | Endpoint/RPC | Field | Rule | Error Code |
-|---|-------------|-------|------|------------|
+| # | Endpoint/RPC | Field | Rule | Error Code | Source | Documented |
+|---|-------------|-------|------|------------|--------|-----------|
+| {N} | {endpoint} | {field} | {rule} | {code} | {PROTO / SWAGGER / CODE / DOCS} | {Y / [UNDOCUMENTED]} |
+
+> **Source:** Where the validation is defined. **Documented:** `[UNDOCUMENTED]` = code-level check with no proto/swagger counterpart — invisible to spec-only test generation.
 
 ## 4. Error Mapping
+
+> **gRPC codes NOT returned by this service:** {list unused code IDs, e.g., 1, 2, 4, 6, 10, 11, 14, 15}
+> **Non-standard choices:** {e.g., PermissionDenied(7) used for auth failures — standard: Unauthenticated(16)} or "none"
 
 | Error Constant | gRPC Code | HTTP Code | Trigger Condition |
 |---------------|-----------|-----------|-------------------|
@@ -83,13 +105,29 @@
 
 Formula: covered endpoints / (REST + gRPC) × 100
 
+### Discovered Documentation (S-DOC)
+
+> If a doc covers a topic comprehensively → reference doc path in relevant report section, report gaps only.
+
+| Doc Path | Content Type | Topics Covered | Coverage | Quality |
+|----------|-------------|----------------|----------|---------|
+| {relative/path} | {QA Checklist / Env Setup / API Ref / Architecture} | {endpoints, errors, auth, setup, etc.} | {High / Medium / Low} | {Current / Stale / Partial} |
+
+**Note:** Comprehensive docs (>70% coverage) are referenced rather than duplicated. Gaps and stale info flagged below.
+
+### Documentation Gaps
+
+| Topic | Doc Says | Code Says | Impact |
+|-------|----------|-----------|--------|
+| {topic} | {doc assertion or "not covered"} | {code reality} | {test generation impact} |
+
 ## 7. Existing Test Coverage
 
-| Type | Files | Location | Framework |
-|------|-------|----------|-----------|
-| Unit | {N} | {test directory} | {test framework} |
-| Integration | {N} | {path} | {test framework + mock library} |
-| E2E/API | {N or "external repo"} | {path or link} | {framework} |
+| Type | Files | Location | Framework | Libraries |
+|------|-------|----------|-----------|-----------|
+| Unit | {N} | {test directory} | {test framework} | {testify, mockk, etc.} |
+| Integration | {N} | {path} | {test framework + mock library} | {testcontainers, sqlmock, etc.} |
+| E2E/API | {N or "external repo"} | {path or link} | {framework} | {supertest, rest-assured, etc.} |
 
 > Coverage benchmarks for /api-isolated-tests planning: controllers 95% · services 90% · helpers 85% · config/infra 70% · third-party 60%
 
@@ -104,6 +142,18 @@ Formula: covered endpoints / (REST + gRPC) × 100
 | Message Queue | {✅/❌} | {Kafka / RabbitMQ / NATS} |
 | Cache | {✅/❌} | {Redis / Memcached} |
 | Dev-Platform | {✅/❌} | {shared services} |
+
+### Deployment Topology (S6)
+
+| Environment | Source File | Replicas | Key Config Differences |
+|-------------|-----------|----------|----------------------|
+| {dev / staging / prod} | {values-dev.yaml} | {N} | {feature flags, resource limits, etc.} |
+
+### Dependency Staleness
+
+| Lock File | Last Modified | Age | Critical Deps Flagged | Status |
+|-----------|--------------|-----|----------------------|--------|
+| {go.sum / package-lock.json / poetry.lock} | {date} | {N months} | {jwt-go, express@4, etc. or "none"} | {🟢 Current / 🟡 Stale / 🔴 [DEPENDENCY_RISK]} |
 
 ## 9. AI Setup Status
 
@@ -138,8 +188,11 @@ Formula: covered endpoints / (REST + gRPC) × 100
 
 ### State Enum: {EntityName}
 
-| # | From | To | Trigger | Guard | Error on Rejection |
-|---|------|----|---------|-------|--------------------|
+| # | From | To | Trigger | Guard | Error Code on Rejection |
+|---|------|----|---------|-------|------------------------|
+
+> **Error Code on Rejection:** Record exact code — `HTTP 409`, `gRPC AlreadyExists(6)`.
+> Use `[NO_SPECIFIC_CODE]` if handler returns generic error without precise status for this transition.
 
 ### Unreachable States
 
@@ -158,8 +211,21 @@ Formula: covered endpoints / (REST + gRPC) × 100
 
 ### CRUD Matrix
 
-| # | Entity | Create | Read | Update | Delete | Soft Delete |
-|---|--------|--------|------|--------|--------|-------------|
+| # | Entity | ID Type | Create | Read | Update | Delete | Soft Delete |
+|---|--------|---------|--------|------|--------|--------|-------------|
+| {N} | {entity} | {int32 / int64 / UUID / string} | {✅ / [NO_CREATE]} | {✅} | {✅ / [NO_UPDATE]} | {✅ / [NO_DELETE]} | {✅ / ❌} |
+
+> **Tags:** `[NO_{OP}]` = operation does not exist for this entity — do NOT generate test cases for it.
+
+### Entity Hierarchy
+
+> Include only if hierarchy depth > 2. Visual tree with depth count.
+
+```text
+{ENTITY_A}(1) → {ENTITY_B}(2) → {ENTITY_C}(3) → {ENTITY_D}(4)
+```
+
+**Max depth:** {N} — {`[DEEP_HIERARCHY]` if > 3, implies multi-step @BeforeEach setup}
 
 ### Create-Order Chain
 
@@ -190,6 +256,31 @@ Formula: covered endpoints / (REST + gRPC) × 100
 | Field | Source Type | Target Type | Conversion | Edge Cases |
 |-------|------------|-------------|------------|------------|
 
+### Cross-Layer Type Consistency (S1)
+
+> Fields appearing in multiple layers with different declared types.
+
+| Field | Proto Type | Code Type | Doc Type | Verdict |
+|-------|-----------|-----------|----------|---------|
+| {field} | {int32} | {int64} | {int32} | {MISMATCH — API tests must handle both} |
+
+### Read/Write Topology (S5)
+
+> Include only if master/replica patterns detected.
+
+| Operation Type | Target | Consistency | Test Implication |
+|---------------|--------|-------------|------------------|
+| {Write RPCs} | {MASTER_ONLY} | {Strong} | {Direct assert after write} |
+| {Read RPCs} | {REPLICA_SAFE} | {Eventual} | {Polling/retry needed for write verification} |
+
+### DB Constraints (S4-LITE)
+
+> Include only if ORM tags found. Source: ORM annotations, not migrations.
+
+| Entity | Field | Constraint | Value | NEG Test Scenario |
+|--------|-------|-----------|-------|-------------------|
+| {entity} | {field} | {VARCHAR / UNIQUE / NOT NULL} | {50 / composite(a,b)} | {Send 51 chars → expect 400} |
+
 ## 13. Behavioral Nuances
 
 > CONDITIONAL: Include only if nuances detected in Phase 3.7.
@@ -208,6 +299,12 @@ Formula: covered endpoints / (REST + gRPC) × 100
 
 | Endpoint | Parameter | Empty Value Behavior | Case Sensitivity | Partial Match |
 |----------|-----------|---------------------|------------------|---------------|
+
+### Concurrency Model
+
+| Model | Grep Evidence | Detected Patterns | QA Risk |
+|-------|--------------|-------------------|---------|
+| {goroutines / asyncio / event loop / coroutines / threads} | {`go func`, `sync.Mutex`, etc.} | {N occurrences in M files} | {race conditions / deadlocks / unhandled rejections / etc.} |
 
 ### Non-Existent Resource Handling
 
@@ -235,9 +332,11 @@ Formula: covered endpoints / (REST + gRPC) × 100
 
 ### Request Lifecycle Layers
 
+> CONDITIONAL: include if middleware chain or host system detected (almost all REST services have middleware).
+
 | # | Layer | Component | Errors Generated | Config Location |
 |---|-------|-----------|-----------------|-----------------|
-| {order} | {Gateway / Mesh / Middleware / Handler} | {Envoy / Istio / custom} | {401 JWT / 403 RBAC / 429 Rate Limit} | {file path} |
+| {order} | {Entry Point / Middleware / Handler / Downstream} | {HTTP:8080 / JWT middleware / handler / PostgreSQL} | {401 JWT / 403 RBAC / 429 Rate Limit} | {file path} |
 
 ### Access Path Variants
 
@@ -258,42 +357,123 @@ Formula: covered endpoints / (REST + gRPC) × 100
 | Dependency | Local Setup | CI Setup | Config Override |
 |------------|-------------|----------|----------------|
 
+#### Token Configuration (S-ENV)
+
+| Token Type | Format | Source | Env Var / Config Path |
+|-----------|--------|--------|-----------------------|
+| {Auth token / API key / gRPC metadata} | {JWT / Bearer / custom} | {config file / env var / secrets manager} | {path or var name} |
+
+#### Data Seed Requirements (S-ENV)
+
+> What must exist before tests can run. Order matters (FK dependencies).
+
+| # | Entity | Seed Method | Required Before | Notes |
+|---|--------|------------|-----------------|-------|
+| {N} | {entity} | {API call / DB seed script / fixture file} | {parent entity or "first"} | {creation order constraint} |
+
+#### Local / Remote Setup Commands (S-ENV)
+
+| Action | Command | Notes |
+|--------|---------|-------|
+| Build | {make build / ./gradlew build} | |
+| Run locally | {make run / docker-compose up} | {required services} |
+| Seed data | {make seed / script path} | |
+| Run tests | {make test / ./gradlew test} | |
+| gRPC reflection | {enabled / disabled} | {proto import paths if needed} |
+
 ### Cross-Repo Prerequisites
 
 | # | Dependency Repo | What's Needed | Type | Status |
 |---|----------------|---------------|------|--------|
 | {N} | {repo-name} | {shared proto update / gateway config} | {PR / Config / Deploy} | {Merged / Pending / Blocked} |
 
-## 15. QA Scenario Matrix
+## 15. Test Generation Blueprint
 
-> CONDITIONAL: Include only if business logic analysis yielded testable scenarios in Phases 3.5–3.8.
+> CONDITIONAL: Include only if Phases 3.5–3.10 yielded flows, risks, or constraints.
+> Goal: Directives for /api-test-cases and /api-isolated-tests — NOT individual test cases.
 
-### Priority Summary
+### Cross-Cutting Business Flows
 
-| Priority | Count | Description |
-|----------|-------|-------------|
-| P0 — Smoke | {N} | Core happy paths, auth, create-order chain |
-| P1 — Regression | {N} | State transitions, CRUD, pagination, error codes |
-| P2 — Edge | {N} | Boundary values, type coercion, dead config |
-| Skip | {N} | Requires infrastructure not available in test env |
+- [FLOW] {label}: {step1} → {step2} → {step3} — verify {expected assertion}
 
-### Cross-Cutting Scenarios
+### High-Risk Areas
 
-| # | RPC/Endpoint | Test Case | Key Input | Expected Result | Priority | Affected Endpoints |
-|---|-------------|-----------|-----------|----------------|----------|--------------------|
+- [RISK] {area}: {what to test} — source: §{N}
 
-### Per-Domain Scenarios
+> Derive from: [UNDOCUMENTED], [WEAK_TYPE], [NO_SPECIFIC_CODE], [AUTH_ANOMALY],
+> [NO_MOCK], resilience gaps from §17, [DEEP_HIERARCHY], **[DEBT: P0] from §15 Debt Markers**,
+> **[HOTSPOT] from §1 VCS Analysis**
 
-| # | RPC/Endpoint | Test Case | Key Input | Expected Result | Priority | Source Section |
-|---|-------------|-----------|-----------|----------------|----------|---------------|
+### Debt Markers
 
-### Entity Lifecycle Scenarios
+> Source: Phase 3.11. P0 items are automatically promoted to High-Risk Areas above.
 
-| # | Entity | Lifecycle Step | Priority | Dependencies | Cleanup Order |
-|---|--------|---------------|----------|--------------|---------------|
+| # | Endpoint/Handler | File:Line | Marker | Comment | Priority |
+|---|-----------------|-----------|--------|---------|----------|
+| {N} | {POST /checkout} | {payment/handler.go:142} | FIXME | {no transaction rollback here} | P0 |
+| {N} | {GET /search} | {search/service.go:88} | TODO | {add pagination limit enforcement} | P1 |
 
-### Skip List
+> **Tag legend (extended):** [UNDOCUMENTED] · [WEAK_TYPE] · [NO_SPECIFIC_CODE] · [AUTH_ANOMALY] · [NO_MOCK] · [DEEP_HIERARCHY] · **[DEBT: FIXME]** · **[DEBT: HACK]** · **[DEBT: P0]** · **[HOTSPOT: N changes]**
 
-| # | Scenario | Reason | Unblock Condition |
-|---|----------|--------|-------------------|
+### Blocker Constraints
+
+- [BLOCKER] {constraint description}
+
+> Sources: CRUD gaps [NO_CREATE]/[NO_DELETE] (§12) · Eventual consistency (§12) ·
+> [NO_TIMEOUT] (§17) · gRPC reflection disabled (§14) · Cross-repo prerequisites (§14)
+
+## 16. Event Catalog
+
+> CONDITIONAL: Include only if queue client in §8 and publish calls found in handlers.
+
+| # | Handler/RPC | Topic/Channel | Framework | Trigger Condition | Payload Hint | Linked Transition |
+|---|-------------|--------------|-----------|-------------------|--------------|-------------------|
+| 1 | {CreateZone} | {geo.zone.created} | {Kafka} | {Always on success} | {ZoneCreatedEvent{zone_id, city_id}} | {§11: none} |
+
+> **Test implication for /api-isolated-tests:**
+> Each row = side-effect assertion: `State: "Event published: {topic}"`
+> For [CRITICAL] handlers: also add failure mock: `Mock: Kafka returns error → verify handler rollback`
+
+## 17. QA Risk Assessment & Testability Issues
+
+> CONDITIONAL: Include if any risk flags detected across Phases 3–6.
+
+| # | Risk Description | Category | Severity | Affected Endpoint/Entity | Source | Recommended Action |
+|---|-----------------|----------|----------|--------------------------|---------|--------------------|
+| 1 | {Missing auth on DELETE /admin/resource} | [AUTH_ANOMALY] | CRITICAL | DELETE /admin/resource | §5 | Verify intent — add auth test |
+| 2 | {Code validates len>50 but no proto constraint} | [UNDOCUMENTED] | HIGH | POST /users | §3 | Add NEG test for 51-char input |
+| 3 | {config.allow_countries never read in code} | [DEAD_CONFIG] | MEDIUM | N/A | §14 | Remove or connect to handler |
+
+> **Summary:** {CRITICAL: N} + {HIGH: N} + {MEDIUM: N} + {LOW: N} = {total issues}
+
+## 18. Resilience Mechanisms
+
+> CONDITIONAL: Include only if retry, circuit breaker, idempotency, or timeout patterns
+> detected in Phase 3.10.
+
+### Idempotency Keys
+
+| # | Endpoint/RPC | Header/Field | Duplicate Behavior | Source |
+|---|-------------|-------------|-------------------|--------|
+
+### Retry Policies
+
+| # | Call Site | Target | Max Attempts | Backoff | Non-Idempotent Risk |
+|---|-----------|--------|-------------|---------|---------------------|
+
+### Circuit Breakers
+
+| # | Protected Dependency | Library | Open Threshold | Fallback Behavior |
+|---|---------------------|---------|---------------|-------------------|
+
+### Timeout Configuration
+
+| # | Endpoint/Client | Timeout | Config Location | Risk |
+|---|----------------|---------|----------------|------|
+
+> **Test implications for /api-isolated-tests:**
+> - Idempotency: duplicate submission with same key → assert deduplicated response
+> - Retry + write: network failure on write endpoint → assert no duplicate records
+> - Circuit breaker: mock downstream errors at threshold → assert fallback triggers
+> - [NO_TIMEOUT]: flag for load testing — do NOT skip
 ```
