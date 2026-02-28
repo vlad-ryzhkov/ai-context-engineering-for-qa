@@ -1,6 +1,6 @@
 ---
 name: init-skill
-description: Generates new skills with interactive workflow, checkpoints, and iterative refinement. Use when you need to create a new skill, standardize a QA process, or automate routine checks. Do not use for editing existing skills.
+description: Generates new skills with interactive workflow, checkpoints, and iterative refinement. Use when you need to create a new skill, standardize a QA process, or automate routine checks. Use when creating a new skill or improving an existing one.
 allowed-tools: "Read Write Edit Glob Grep Bash"
 agent: agents/sdet.md
 context: fork
@@ -67,6 +67,27 @@ Use **imperative style** in skill instructions:
 
 ## INTERACTIVE WORKFLOW
 
+## Phase 0: Mode Selection
+
+Ask the user:
+
+```text
+What do we do?
+1. New skill — create from scratch
+2. Improve existing — refine a skill that already exists
+```
+
+**If "New skill"** → proceed to Phase 1.
+
+**If "Improve existing":**
+1. Ask for the skill name: `which skill? (e.g. /api-tests)`
+2. Read `.claude/skills/{name}/SKILL.md`
+3. Run through `references/validation-checklist.md` — list issues found
+4. ✅ CHECKPOINT: "Found N issues: [list]. Fix all? (yes / select)"
+5. Jump directly to Phase 5 (edit SKILL.md) → Phase 6 → Phase 7
+
+---
+
 ## Phase 1: Define Purpose
 
 ### Step 1.1: Ask for the purpose
@@ -95,12 +116,12 @@ Ask the user for **2-3 specific examples**:
 Before designing the skill, I need specific examples:
 
 1. **Trigger phrases** — what will the user say to invoke the skill?
-   Example: "check the screenshot for L10N bugs", "generate tests for /api/v1/users"
+Example: "check the screenshot for L10N bugs", "generate tests for /api/v1/users"
 
 2. **Use cases** — describe 2-3 real usage scenarios:
-   - What input data?
-   - What expected output?
-   - What context (project, stage, team)?
+- What input data?
+- What expected output?
+- What context (project, stage, team)?
 
 3. **Anti-examples** — when should the skill NOT be used?
 ```
@@ -146,7 +167,7 @@ Full list of questions for each category — in `references/interaction-guide.md
 ├── references/           # Loaded into context — references, checklists
 │   └── [name].md/.json
 └── assets/               # Used in output, NOT loaded — templates, icons
-    └── [name].md/.png
+└── [name].md/.png
 ```
 
 **Critical rules:**
@@ -269,7 +290,17 @@ bash .claude/skills/init-skill/scripts/init_skill.sh [skill-name]
 ### Step 7.2: Validation and completion
 
 - Go through `references/validation-checklist.md`
-- If SKILL.md > 500 lines — suggest splitting
+- Run bash self-check:
+
+```bash
+skill_file=".claude/skills/{skill-name}/SKILL.md"
+lines=$(wc -l < "$skill_file")
+[ "$lines" -gt 500 ] && echo "❌ Too long: $lines lines (max 500)" && exit 1
+grep -q "^name:" "$skill_file" || { echo "❌ Missing: name"; exit 1; }
+grep -q "^description:" "$skill_file" || { echo "❌ Missing: description"; exit 1; }
+echo "✅ Validation passed ($lines lines)"
+```
+
 - Show the result: path to skill, invocation command
 - Suggest a refinement cycle after first use (see `references/interaction-guide.md`)
 

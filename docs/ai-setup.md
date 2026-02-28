@@ -9,14 +9,14 @@ Modern AI coding assistants (Claude Code, Cursor, Copilot, Codex) read special m
 
 This project stores its AI context in several folders, each targeting a specific IDE:
 
-| Folder / File                        | IDE                      | What's inside                                                     |
-|--------------------------------------|--------------------------|-------------------------------------------------------------------|
-| `.claude/`                           | Claude Code, OpenCode    | Skills, agents, anti-patterns, protocols, hooks                   |
-| `.cursor/rules/*.mdc`               | Cursor                   | Wrapper rules referencing `.claude/` files                        |
-| `.agents/skills/`                    | OpenAI Codex             | Wrapper skills referencing `.claude/` files                       |
-| `CLAUDE.md`                          | Claude Code, OpenCode, Cursor | Project-level instructions (always loaded)                   |
-| `AGENTS.md`                          | OpenAI Codex             | Project-level instructions for Codex                              |
-| `.github/copilot-instructions.md`   | VS Code / IntelliJ Copilot | Project-level instructions for Copilot                         |
+| Folder / File                     | IDE                           | What's inside                                   |
+|-----------------------------------|-------------------------------|-------------------------------------------------|
+| `.claude/`                        | Claude Code, OpenCode         | Skills, agents, anti-patterns, protocols, hooks |
+| `.cursor/rules/*.mdc`             | Cursor                        | Wrapper rules referencing `.claude/` files      |
+| `.agents/skills/`                 | OpenAI Codex                  | Wrapper skills referencing `.claude/` files     |
+| `CLAUDE.md`                       | Claude Code, OpenCode, Cursor | Project-level instructions (always loaded)      |
+| `AGENTS.md`                       | OpenAI Codex                  | Project-level instructions for Codex            |
+| `.github/copilot-instructions.md` | VS Code / IntelliJ Copilot    | Project-level instructions for Copilot          |
 
 The source of truth is `.claude/` — other IDE folders contain lightweight wrappers that reference the same files. You only need to maintain one set of content.
 
@@ -28,10 +28,10 @@ Three layers, loaded on demand (not all at once):
 
 ```text
 ┌─────────────────────────────────────┐
-│  Layer 1: CLAUDE.md (127 lines)     │  ← Always in context
+│  Layer 1: CLAUDE.md (129 lines)     │  ← Always in context
 │  Tech Stack, Safety, Skills         │
 ├─────────────────────────────────────┤
-│  Layer 2: qa_agent.md (204 lines)   │  ← On any skill invocation
+│  Layer 2: qa_agent.md (188 lines)   │  ← On any skill invocation
 │  Mindset, Anti-Patterns, Protocols  │
 ├─────────────────────────────────────┤
 │  Layer 3: SKILL.md + references/    │  ← On specific skill activation
@@ -70,26 +70,30 @@ Three layers, loaded on demand (not all at once):
 │   │   └── auditor.md               #   Planning + quality audit
 │   ├── hooks/                       # PostToolUse hooks
 │   │   └── skill-lint.sh            #   SKILL.md validation on every edit
-│   ├── qa-antipatterns/             # Code quality checks (25 files + 1 index)
+│   ├── qa-antipatterns/             # Code quality checks (27 files + 1 index)
 │   │   ├── _index.md
-│   │   ├── api/                     # 10 patterns
+│   │   ├── api/                     # 12 patterns
 │   │   ├── common/                  # 6 patterns
 │   │   ├── platform/               # 6 patterns
 │   │   └── security/               # 3 patterns
-│   └── skills/                      # Skills (14 total)
+│   └── skills/                      # Skills (18 total)
 │       ├── agents-checker/          # /agents-checker — agent compliance check
+│       ├── api-isolated-tests/      # /api-isolated-tests — test case generation
+│       ├── api-mocks/               # /api-mocks — HTTP mock server generation
+│       ├── api-test-cases/          # /api-test-cases — bulk test cases for API
 │       ├── api-tests/               # /api-tests — API automated tests
 │       ├── doc-lint/                # /doc-lint — documentation audit
+│       ├── fix-markdown/            # /fix-markdown — markdown lint fix
 │       ├── init-agent/              # /init-agent — qa_agent.md generation
 │       ├── init-project/            # /init-project — CLAUDE.md generation
 │       ├── init-skill/              # /init-skill — new skill generation
 │       ├── output-review/           # /output-review — skill output audit
+│       ├── pr/                      # /pr — pull request creation
 │       ├── qa-translate/            # /qa-translate — technical translation RU→EN
 │       ├── repo-scout/              # /repo-scout — backend repo reconnaissance
 │       ├── screenshot-analyze/      # /screenshot-analyze — L10n UI audit
 │       ├── skill-audit/             # /skill-audit — SKILL.md audit
 │       ├── spec-audit/              # /spec-audit — QA audit of requirements
-│       ├── api-isolated-tests/              # /api-isolated-tests — test case generation
 │       └── update-ai-setup/         # /update-ai-setup — registry update
 │
 ├── .cursor/rules/                   # Cursor wrappers → reference .claude/ files
@@ -116,9 +120,9 @@ Three layers, loaded on demand (not all at once):
 
 | File              | Path                            | Lines | Purpose                                               |
 |-------------------|---------------------------------|------:|-------------------------------------------------------|
-| CLAUDE.md         | `CLAUDE.md`                     |   127 | Main onboarding: stack, safety, conventions           |
-| QA Agent          | `.claude/qa_agent.md`           |   204 | Mindset, anti-patterns, Cross-Skill Protocol          |
-| Gardener Protocol | `.claude/protocols/gardener.md` |    44 | "Suggest improvements" protocol injected at runtime   |
+| CLAUDE.md         | `CLAUDE.md`                     |   129 | Main onboarding: stack, safety, conventions           |
+| QA Agent          | `.claude/qa_agent.md`           |   188 | Mindset, anti-patterns, Cross-Skill Protocol          |
+| Gardener Protocol | `.claude/protocols/gardener.md` |    55 | "Suggest improvements" protocol injected at runtime   |
 | Settings          | `.claude/settings.json`         |    50 | Plugins, permissions, hooks                           |
 | MCP Servers       | `.mcp.json`                     |    12 | context7 + sequential-thinking                        |
 | Markdownlint      | `.markdownlint.yaml`            |    38 | Markdown linting rules                                |
@@ -128,94 +132,103 @@ Three layers, loaded on demand (not all at once):
 | Skill                 | Path                                         | Lines | Category   | What it does                               |
 |-----------------------|----------------------------------------------|------:|------------|--------------------------------------------|
 | `/agents-checker`     | `.claude/skills/agents-checker/SKILL.md`     |   192 | Analysis   | Agent compliance verification              |
-| `/api-tests`          | `.claude/skills/api-tests/SKILL.md`          |   232 | Generation | API automated tests (Kotlin + JUnit 5)     |
+| `/api-isolated-tests` | `.claude/skills/api-isolated-tests/SKILL.md` |   300 | Generation | Test case generation from specification    |
+| `/api-mocks`          | `.claude/skills/api-mocks/SKILL.md`          |    70 | Generation | HTTP mock server generation                |
+| `/api-test-cases`     | `.claude/skills/api-test-cases/SKILL.md`     |   335 | Generation | Bulk test cases for entire API             |
+| `/api-tests`          | `.claude/skills/api-tests/SKILL.md`          |   288 | Generation | API automated tests (Kotlin + JUnit 5)     |
 | `/doc-lint`           | `.claude/skills/doc-lint/SKILL.md`           |   248 | Analysis   | Documentation quality audit                |
-| `/init-agent`         | `.claude/skills/init-agent/SKILL.md`         |   200 | Meta       | qa_agent.md generation                     |
-| `/init-project`       | `.claude/skills/init-project/SKILL.md`       |   170 | Meta       | CLAUDE.md generation                       |
+| `/fix-markdown`       | `.claude/skills/fix-markdown/SKILL.md`       |    33 | Meta       | Fix markdownlint errors across repo        |
+| `/init-agent`         | `.claude/skills/init-agent/SKILL.md`         |   203 | Meta       | qa_agent.md generation                     |
+| `/init-project`       | `.claude/skills/init-project/SKILL.md`       |   178 | Meta       | CLAUDE.md generation                       |
 | `/init-skill`         | `.claude/skills/init-skill/SKILL.md`         |   283 | Meta       | New skill generation                       |
-| `/output-review`      | `.claude/skills/output-review/SKILL.md`      |   290 | Analysis   | Skill output audit                         |
+| `/output-review`      | `.claude/skills/output-review/SKILL.md`      |   291 | Analysis   | Skill output audit                         |
+| `/pr`                 | `.claude/skills/pr/SKILL.md`                 |    78 | Meta       | Pull request creation                      |
 | `/qa-translate`       | `.claude/skills/qa-translate/SKILL.md`       |   282 | Meta       | Technical translation RU to EN             |
-| `/repo-scout`         | `.claude/skills/repo-scout/SKILL.md`         |   272 | Analysis   | Backend repo reconnaissance                |
-| `/screenshot-analyze` | `.claude/skills/screenshot-analyze/SKILL.md` |   289 | Analysis   | L10N and UI defects                        |
-| `/skill-audit`        | `.claude/skills/skill-audit/SKILL.md`        |   211 | Analysis   | SKILL.md audit                             |
-| `/spec-audit`         | `.claude/skills/spec-audit/SKILL.md`         |   229 | Analysis   | QA audit of requirements                   |
-| `/api-isolated-tests`         | `.claude/skills/api-isolated-tests/SKILL.md`         |   246 | Generation | Manual test cases                          |
+| `/repo-scout`         | `.claude/skills/repo-scout/SKILL.md`         |   416 | Analysis   | Backend repo reconnaissance                |
+| `/screenshot-analyze` | `.claude/skills/screenshot-analyze/SKILL.md` |   300 | Analysis   | L10N and UI defects                        |
+| `/skill-audit`        | `.claude/skills/skill-audit/SKILL.md`        |   224 | Analysis   | SKILL.md audit                             |
+| `/spec-audit`         | `.claude/skills/spec-audit/SKILL.md`         |   284 | Analysis   | QA audit of requirements                   |
 | `/update-ai-setup`    | `.claude/skills/update-ai-setup/SKILL.md`    |   168 | Meta       | This registry update                       |
 
 ### Anti-Patterns
 
-25 files the AI checks generated code against. Organized by category:
+27 files the AI checks generated code against. Organized by category:
 
-| File                              | Path                                                              | Lines | Category |
-|-----------------------------------|-------------------------------------------------------------------|------:|----------|
-| _index                            | `.claude/qa-antipatterns/_index.md`                               |    72 | Index    |
-| configure-http-client             | `.claude/qa-antipatterns/api/configure-http-client.md`            |    53 | api      |
-| inline-http-calls                 | `.claude/qa-antipatterns/api/inline-http-calls.md`                |    50 | api      |
-| map-instead-of-dto                | `.claude/qa-antipatterns/api/map-instead-of-dto.md`               |    61 | api      |
-| missing-business-error-assertion  | `.claude/qa-antipatterns/api/missing-business-error-assertion.md` |    50 | api      |
-| missing-content-type-validation   | `.claude/qa-antipatterns/api/missing-content-type-validation.md`  |    61 | api      |
-| missing-security-headers          | `.claude/qa-antipatterns/api/missing-security-headers.md`         |    56 | api      |
-| dry-api-client                    | `.claude/qa-antipatterns/api/dry-api-client.md`                   |    77 | api      |
-| ktor-body-extraction              | `.claude/qa-antipatterns/api/ktor-body-extraction.md`             |    54 | api      |
-| silent-catch                      | `.claude/qa-antipatterns/api/silent-catch.md`                     |    57 | api      |
-| wrap-infrastructure-errors        | `.claude/qa-antipatterns/api/wrap-infrastructure-errors.md`       |    60 | api      |
-| assertion-without-message         | `.claude/qa-antipatterns/common/assertion-without-message.md`     |    76 | common   |
-| hardcoded-test-data               | `.claude/qa-antipatterns/common/hardcoded-test-data.md`           |    64 | common   |
-| no-abstraction-layer              | `.claude/qa-antipatterns/common/no-abstraction-layer.md`          |    64 | common   |
-| no-cleanup-pattern                | `.claude/qa-antipatterns/common/no-cleanup-pattern.md`            |    95 | common   |
-| no-order-dependent-tests          | `.claude/qa-antipatterns/common/no-order-dependent-tests.md`      |    70 | common   |
-| static-object-mother              | `.claude/qa-antipatterns/common/static-object-mother.md`          |    90 | common   |
-| controlled-retries                | `.claude/qa-antipatterns/platform/controlled-retries.md`          |    57 | platform |
-| coroutine-test-return-type        | `.claude/qa-antipatterns/platform/coroutine-test-return-type.md`  |    79 | platform |
-| flaky-sleep-tests                 | `.claude/qa-antipatterns/platform/flaky-sleep-tests.md`           |    57 | platform |
-| junit-test-initialization         | `.claude/qa-antipatterns/platform/junit-test-initialization.md`   |    57 | platform |
-| no-hardcoded-timeouts             | `.claude/qa-antipatterns/platform/no-hardcoded-timeouts.md`       |    48 | platform |
-| no-shared-mutable-state           | `.claude/qa-antipatterns/platform/no-shared-mutable-state.md`     |    76 | platform |
-| information-leakage-in-errors     | `.claude/qa-antipatterns/security/information-leakage-in-errors.md` |  91 | security |
-| no-sensitive-data-logging         | `.claude/qa-antipatterns/security/no-sensitive-data-logging.md`   |    53 | security |
-| pii-combined                      | `.claude/qa-antipatterns/security/pii-combined.md`                |    81 | security |
+| File                             | Path                                                                | Lines | Category |
+|----------------------------------|---------------------------------------------------------------------|------:|----------|
+| _index                           | `.claude/qa-antipatterns/_index.md`                                 |    78 | Index    |
+| batch-partial-failure            | `.claude/qa-antipatterns/api/batch-partial-failure.md`              |    96 | api      |
+| configure-http-client            | `.claude/qa-antipatterns/api/configure-http-client.md`              |    53 | api      |
+| dry-api-client                   | `.claude/qa-antipatterns/api/dry-api-client.md`                     |    77 | api      |
+| eventual-consistency-writes      | `.claude/qa-antipatterns/api/eventual-consistency-writes.md`        |    70 | api      |
+| inline-http-calls                | `.claude/qa-antipatterns/api/inline-http-calls.md`                  |    52 | api      |
+| ktor-body-extraction             | `.claude/qa-antipatterns/api/ktor-body-extraction.md`               |    54 | api      |
+| map-instead-of-dto               | `.claude/qa-antipatterns/api/map-instead-of-dto.md`                 |    66 | api      |
+| missing-business-error-assertion | `.claude/qa-antipatterns/api/missing-business-error-assertion.md`   |    50 | api      |
+| missing-content-type-validation  | `.claude/qa-antipatterns/api/missing-content-type-validation.md`    |    61 | api      |
+| missing-security-headers         | `.claude/qa-antipatterns/api/missing-security-headers.md`           |    56 | api      |
+| silent-catch                     | `.claude/qa-antipatterns/api/silent-catch.md`                       |    59 | api      |
+| wrap-infrastructure-errors       | `.claude/qa-antipatterns/api/wrap-infrastructure-errors.md`         |    60 | api      |
+| assertion-without-message        | `.claude/qa-antipatterns/common/assertion-without-message.md`       |    80 | common   |
+| hardcoded-test-data              | `.claude/qa-antipatterns/common/hardcoded-test-data.md`             |    64 | common   |
+| no-abstraction-layer             | `.claude/qa-antipatterns/common/no-abstraction-layer.md`            |    70 | common   |
+| no-cleanup-pattern               | `.claude/qa-antipatterns/common/no-cleanup-pattern.md`              |   123 | common   |
+| no-order-dependent-tests         | `.claude/qa-antipatterns/common/no-order-dependent-tests.md`        |    70 | common   |
+| static-object-mother             | `.claude/qa-antipatterns/common/static-object-mother.md`            |    90 | common   |
+| controlled-retries               | `.claude/qa-antipatterns/platform/controlled-retries.md`            |    57 | platform |
+| coroutine-test-return-type       | `.claude/qa-antipatterns/platform/coroutine-test-return-type.md`    |    79 | platform |
+| flaky-sleep-tests                | `.claude/qa-antipatterns/platform/flaky-sleep-tests.md`             |    62 | platform |
+| junit-test-initialization        | `.claude/qa-antipatterns/platform/junit-test-initialization.md`     |    57 | platform |
+| no-hardcoded-timeouts            | `.claude/qa-antipatterns/platform/no-hardcoded-timeouts.md`         |    48 | platform |
+| no-shared-mutable-state          | `.claude/qa-antipatterns/platform/no-shared-mutable-state.md`       |    76 | platform |
+| information-leakage-in-errors    | `.claude/qa-antipatterns/security/information-leakage-in-errors.md` |    91 | security |
+| no-sensitive-data-logging        | `.claude/qa-antipatterns/security/no-sensitive-data-logging.md`     |    53 | security |
+| pii-combined                     | `.claude/qa-antipatterns/security/pii-combined.md`                  |    81 | security |
 
 ### Reference Files
 
 Supporting data for skills — templates, examples, glossaries:
 
-| File                 | Path                                                                | Lines | Purpose                                         |
-|----------------------|---------------------------------------------------------------------|------:|-------------------------------------------------|
-| api-patterns         | `.claude/skills/api-tests/references/api-patterns.md`               |    68 | Patterns for API tests                          |
-| examples             | `.claude/skills/api-tests/references/examples.md`                   |    68 | Code examples for /api-tests                    |
-| best-practices       | `.claude/skills/doc-lint/references/best-practices.md`              |    82 | Corporate documentation practices               |
-| check-rules          | `.claude/skills/doc-lint/references/check-rules.md`                 |   110 | Thresholds, duplicate signatures, SSOT matrix   |
-| phases               | `.claude/skills/doc-lint/references/phases.md`                      |   215 | Phases and algorithm for /doc-lint              |
-| qa-agent-template    | `.claude/skills/init-agent/references/qa-agent-template.md`         |   103 | qa_agent.md template                            |
-| qa-profiles          | `.claude/skills/init-agent/references/qa-profiles.md`               |   128 | QA agent profiles                               |
-| claude-md-template   | `.claude/skills/init-project/references/claude-md-template.md`      |   147 | CLAUDE.md template                              |
-| interaction-guide    | `.claude/skills/init-skill/references/interaction-guide.md`         |    95 | Interactive workflow guide for /init-skill       |
-| skill-template       | `.claude/skills/init-skill/references/skill-template.md`            |   143 | SKILL.md template                               |
-| validation-checklist | `.claude/skills/init-skill/references/validation-checklist.md`      |    39 | Validation checklist for /init-skill            |
-| yaml-reference       | `.claude/skills/init-skill/references/yaml-reference.md`            |    91 | Skill YAML specification                        |
-| glossary             | `.claude/skills/qa-translate/references/glossary.md`                |   176 | Translation glossary RU to EN                   |
-| examples             | `.claude/skills/qa-translate/references/examples.md`                |   148 | Translation examples                            |
-| formatting-rules     | `.claude/skills/qa-translate/references/formatting-rules.md`        |   266 | Formatting rules for translation                |
-| lang-patterns        | `.claude/skills/repo-scout/references/lang-patterns.md`             |    93 | Language patterns for /repo-scout               |
-| report-template      | `.claude/skills/repo-scout/references/report-template.md`           |   101 | Report template for /repo-scout                 |
-| checklists           | `.claude/skills/screenshot-analyze/references/checklists.md`        |   113 | L10N check checklists                           |
-| cldr-tables          | `.claude/skills/screenshot-analyze/references/cldr-tables.md`       |   151 | CLDR reference tables                           |
-| html-template        | `.claude/skills/screenshot-analyze/references/html-template.md`     |   160 | HTML report template                            |
-| l10n-domain-rules    | `.claude/skills/screenshot-analyze/references/l10n-domain-rules.md` |    41 | Localization domain rules                       |
-| lqa-rules            | `.claude/skills/screenshot-analyze/references/lqa-rules.md`         |    42 | LQA check rules for /screenshot-analyze         |
+| File                | Path                                                                | Lines | Purpose                                       |
+|---------------------|---------------------------------------------------------------------|------:|-----------------------------------------------|
+| coverage-matrix     | `.claude/skills/api-test-cases/references/coverage-matrix.md`       |   221 | Coverage matrix for /api-test-cases           |
+| output-template     | `.claude/skills/api-test-cases/references/output-template.md`       |   195 | Output template for /api-test-cases           |
+| quality-gates       | `.claude/skills/api-test-cases/references/quality-gates.md`         |   142 | Quality gates for /api-test-cases             |
+| api-patterns        | `.claude/skills/api-tests/references/api-patterns.md`               |    77 | Patterns for API tests                        |
+| examples            | `.claude/skills/api-tests/references/examples.md`                   |   172 | Code examples for /api-tests                  |
+| best-practices      | `.claude/skills/doc-lint/references/best-practices.md`              |    82 | Corporate documentation practices             |
+| check-rules         | `.claude/skills/doc-lint/references/check-rules.md`                 |   110 | Thresholds, duplicate signatures, SSOT matrix |
+| phases              | `.claude/skills/doc-lint/references/phases.md`                      |   215 | Phases and algorithm for /doc-lint            |
+| qa-agent-template   | `.claude/skills/init-agent/references/qa-agent-template.md`         |   107 | qa_agent.md template                          |
+| qa-profiles         | `.claude/skills/init-agent/references/qa-profiles.md`               |   128 | QA agent profiles                             |
+| claude-md-template  | `.claude/skills/init-project/references/claude-md-template.md`      |   152 | CLAUDE.md template                            |
+| interaction-guide   | `.claude/skills/init-skill/references/interaction-guide.md`         |    95 | Interactive workflow guide for /init-skill    |
+| skill-template      | `.claude/skills/init-skill/references/skill-template.md`            |   143 | SKILL.md template                             |
+| validation-checklist | `.claude/skills/init-skill/references/validation-checklist.md`      |    39 | Validation checklist for /init-skill          |
+| yaml-reference      | `.claude/skills/init-skill/references/yaml-reference.md`            |    99 | Skill YAML specification                      |
+| glossary            | `.claude/skills/qa-translate/references/glossary.md`                |   182 | Translation glossary RU to EN                 |
+| examples            | `.claude/skills/qa-translate/references/examples.md`                |   148 | Translation examples                          |
+| formatting-rules    | `.claude/skills/qa-translate/references/formatting-rules.md`        |   268 | Formatting rules for translation              |
+| lang-patterns       | `.claude/skills/repo-scout/references/lang-patterns.md`             |   509 | Language patterns for /repo-scout             |
+| report-template     | `.claude/skills/repo-scout/references/report-template.md`           |   299 | Report template for /repo-scout               |
+| checklists          | `.claude/skills/screenshot-analyze/references/checklists.md`        |   113 | L10N check checklists                         |
+| cldr-tables         | `.claude/skills/screenshot-analyze/references/cldr-tables.md`       |   151 | CLDR reference tables                         |
+| html-template       | `.claude/skills/screenshot-analyze/references/html-template.md`     |   160 | HTML report template                          |
+| l10n-domain-rules   | `.claude/skills/screenshot-analyze/references/l10n-domain-rules.md` |    41 | Localization domain rules                     |
+| lqa-rules           | `.claude/skills/screenshot-analyze/references/lqa-rules.md`         |    42 | LQA check rules for /screenshot-analyze       |
 
 ### Agents
 
 | File    | Path                        | Lines | Role                     |
 |---------|-----------------------------|------:|--------------------------|
-| auditor | `.claude/agents/auditor.md` |   165 | Planning + quality audit |
-| sdet    | `.claude/agents/sdet.md`    |   189 | Test code generation     |
+| auditor | `.claude/agents/auditor.md` |   169 | Planning + quality audit |
+| sdet    | `.claude/agents/sdet.md`    |   201 | Test code generation     |
 
 ### Hooks
 
 | File          | Path                          | Lines | Trigger                  | Purpose                     |
 |---------------|-------------------------------|------:|--------------------------|-----------------------------|
-| skill-lint.sh | `.claude/hooks/skill-lint.sh` |    48 | PostToolUse (Write/Edit) | SKILL.md validation on edit |
+| skill-lint.sh | `.claude/hooks/skill-lint.sh` |    46 | PostToolUse (Write/Edit) | SKILL.md validation on edit |
 
 ### Documentation
 
@@ -253,7 +266,7 @@ Approaches used in this project. Each pattern solves a specific problem.
 ### 5. Anti-Pattern Library
 
 **Problem:** AI repeats the same mistakes — hardcoded data, missing assertions, Thread.sleep().
-**Solution:** 25 pattern files across 4 categories. The AI checks its output against them before finishing.
+**Solution:** 27 pattern files across 4 categories. The AI checks its output against them before finishing.
 
 ### 6. Locked Tech Stack + BANNED list
 
@@ -378,7 +391,7 @@ How the system improves over time:
 | 4  | AI Registry Sync              | Delta update of this file — registry of all project AI files                  |
 | 5  | Real-Time Hook                | `skill-lint.sh` validates SKILL.md on every edit                              |
 | 6  | Gardener Protocol             | AI notices "smells" during work → suggests fixes without blocking             |
-| 7  | Anti-Pattern Library          | 25 pattern files in 4 categories — reference-driven checks                    |
+| 7  | Anti-Pattern Library          | 27 pattern files in 4 categories — reference-driven checks                    |
 | 8  | kotlin-lsp Plugin             | Kotlin code navigation and analysis                                           |
 | 9  | Segregation of Duties         | SDET codes, Auditor reviews — no one reviews their own work                   |
 
@@ -434,8 +447,25 @@ How the system improves over time:
 
 ---
 
+## init-skill vs Official skill-creator
+
+Official alternative: [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator)
+
+|                          | /init-skill (this repo)                     | skill-creator (official)                      |
+|--------------------------|---------------------------------------------|-----------------------------------------------|
+| Infrastructure           | Zero — bash + filesystem                    | Python 3 + `claude -p` CLI                    |
+| Verbosity                | Strict protocol, 6 checkpoints              | Conversational, flexible                      |
+| Validation               | Static checklist + bash                     | Live A/B evals + grading.json                 |
+| Improve existing skill   | ✅ Phase 0 mode                              | ✅ Core feature                                |
+| Description optimization | ❌                                           | ✅ run_loop.py                                 |
+| HTML review viewer       | ❌                                           | ✅ generate_review.py                          |
+| Best for                 | QA skills, any routine task, fast iteration | High-reuse skills, eval-driven quality, scale |
+
+---
+
 ## Changelog
 
 | Date       | Description                                                                                                                                                                                       |
 |------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 2026-02-28 | Added 4 skills (api-mocks, api-test-cases, fix-markdown, pr), 2 anti-patterns (batch-partial-failure, eventual-consistency-writes), 3 reference files (api-test-cases refs). Updated all line counts. Total: 18 skills, 27 anti-patterns, 25 references |
 | 2026-02-21 | Rewrote intro and pattern catalog for clarity. Added 3 skills (agents-checker, qa-translate, output-review), expanded anti-patterns to 22 files, updated line counts, synced tech stack with CLAUDE.md |

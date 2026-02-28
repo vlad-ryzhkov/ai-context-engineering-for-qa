@@ -1,6 +1,6 @@
 # Command Reference (Cheatsheet)
 
-Prompts for demo. IDE setup — in the Adaptation section of README.md
+Step-by-step IDE commands for running the QA skills pipeline.
 
 ## 🔄 Quality Pipeline Logic
 
@@ -20,7 +20,7 @@ graph TD
 
 ---
 
-> IDE support matrix — see [README.md — Adapting to Your Environment](../README.md#-adapting-to-your-environment)
+> IDE support matrix — see [README.md — Adapting to Your Environment](../README.md#ide-compatibility)
 
 ---
 
