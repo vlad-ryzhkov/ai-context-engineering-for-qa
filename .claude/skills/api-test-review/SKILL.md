@@ -105,14 +105,21 @@ grep -rn "@Step\|step(" --include="*.kt" --include="*.java" src/test | wc -l  # 
 
 When reviewing tests, follow this strict protocol to prevent hallucinations and ensure evidence-based recommendations:
 
-1. **Initial Scan** — Use the grep patterns above to quickly identify problem areas.
-2. **File Inspection** — Use `Glob` to list test files, then `Read` to inspect contents with focus on flagged lines.
-3. **IF** you detect a BANNED pattern:
-   - → **IMMEDIATELY READ** the corresponding reference file from `.claude/qa-antipatterns/` using the `Read` tool
-   - → **EXTRACT** the exact Kotlin/Java fix pattern from that reference
+1. **Phase 0 Prerequisite** — Complete Phase 0 (Context Discovery), Phase 0.1 (Language Lock), and Phase 0.2 (Dynamic Antipattern Loading) BEFORE beginning code analysis.
+2. **Initial Scan** — Use the grep patterns above to quickly identify problem areas.
+3. **File Inspection** — Use `Glob` to list test files, then `Read` to inspect contents with focus on flagged lines.
+4. **Language Enforcement** — Respect the LANGUAGE_MODE determined in Phase 0.1:
+   - **Kotlin mode:** Do NOT suggest CompletableFuture, Awaitility, AssertJ (unless in build file), or Java async patterns
+   - **Java mode:** Do NOT suggest coroutines, suspend functions, Kotlin scope functions (`.let`, `.apply`), or `kotlinx-coroutines-test`
+5. **Antipattern Reference Selection** — Use ONLY the antipattern directory determined in Phase 0.2:
+   - **Kotlin files:** Reference only `.claude/qa-antipatterns/platform/` (general platform patterns)
+   - **Java files:** Reference only `.claude/qa-antipatterns/platform/java/` (Java-specific patterns, with fallback to platform if not found in java/)
+6. **IF** you detect a BANNED pattern:
+   - → **IMMEDIATELY READ** the corresponding reference file from the language-specific antipattern directory using the `Read` tool
+   - → **EXTRACT** the exact fix pattern from that reference
    - → **APPLY** the fix pattern to the user's specific test code in your recommendation
-4. **Never** suggest framework syntax (Kotest, Allure, RestAssured) from memory alone. Always cite the reference file used.
-5. **GROUP SIMILAR ISSUES:** If finding >5 similar issues, list the top 5 with file:line, then group the rest as "5+ more instances of [pattern]" to keep the report actionable.
+7. **Never** suggest framework syntax (Kotest, Allure, RestAssured) from memory alone. Always cite the reference file used.
+8. **GROUP SIMILAR ISSUES:** If finding >5 similar issues, list the top 5 with file:line, then group the rest as "5+ more instances of [pattern]" to keep the report actionable.
 
 ---
 
@@ -140,12 +147,13 @@ When reviewing tests, follow this strict protocol to prevent hallucinations and 
 | **DON'T** | Suggest framework syntax from memory — always read the reference file first. |
 | **DON'T** | Include full build output or verbose terminal logs in the report. |
 | **DON'T** | Review generated/build folders (`build/`, `out/`, `.gradle/`). Always exclude them. |
+| **DON'T** | Review unit test files (no HTTP client imports, `*UnitTest.kt`, or `/unit/` package). This skill is API integration test scoped. Log skipped files in Phase 1 output. |
 
 ---
 
 ## Phase 0: Context Discovery
 
-**Purpose:** Before auditing tests, discover the project's testing stack to avoid recommending unsupported libraries.
+**Purpose:** Before auditing tests, discover the project's testing stack to avoid recommending unsupported libraries. Also establish language mode (Kotlin or Java) to prevent cross-language anti-pattern suggestions.
 
 **Actions:**
 1. Use `Read` or `Glob` to inspect `build.gradle.kts` or `pom.xml`:
@@ -157,6 +165,58 @@ When reviewing tests, follow this strict protocol to prevent hallucinations and 
 2. **Golden Rule:** Do NOT recommend framework syntax for libraries not in the build file.
 3. **Kotlin/JUnit5 Generator Context:** When reviewing output from `/api-tests`, the primary assertion style is JUnit 5 (`assertEquals`, `assertTrue`, `assertNotNull`). Kotest is an alternative only when detected in build.gradle.kts. Do NOT suggest shouldBe migration for valid `assertEquals` calls from generator output.
 4. If the build file is not readable, acknowledge this in the report and proceed with generic best practices.
+
+### Phase 0.1: Language Lock (Mandatory)
+
+**Purpose:** Prevent cross-language pattern suggestions. Detect the primary test language and enforce strict language mode.
+
+**Actions:**
+1. **Scan input test files for language:**
+   - Use `Glob` to identify test file extensions in the input path:
+     - If **≥50% files are `.kt`** → activate `LANGUAGE_MODE = KOTLIN`
+     - If **≥50% files are `.java`** → activate `LANGUAGE_MODE = JAVA`
+     - If **mixed ratio** (close to 50/50) → log warning "Mixed language project detected; prioritize primary language"
+2. **Apply strict language rules:**
+   - **IF KOTLIN MODE:**
+     - ✅ ALLOWED: coroutines, `runTest`, `launch`, `async`, suspend functions, scope functions (`.let`, `.apply`, `.run`, `.also`)
+     - ✅ ALLOWED: Kotest assertions (if in build file), JUnit 5 assertions
+     - ❌ BANNED: `CompletableFuture`, `java.util.concurrent.*` (use coroutines instead)
+     - ❌ BANNED: `@BeforeClass` / `@AfterClass` (use `@BeforeAll` / `@AfterAll` with companion object)
+     - ❌ BANNED: AssertJ suggestions (unless explicitly in build.gradle.kts)
+     - ❌ BANNED: Awaitility (use `runTest` + `advanceUntilIdle` instead)
+   - **IF JAVA MODE:**
+     - ✅ ALLOWED: `CompletableFuture`, `java.util.concurrent.*`, Awaitility
+     - ✅ ALLOWED: AssertJ assertions, JUnit 5 assertions
+     - ❌ BANNED: coroutines, suspend functions, `runTest` (Java doesn't have these)
+     - ❌ BANNED: Kotlin scope functions (`.let`, `.apply`, `.run`, `.also`)
+     - ❌ BANNED: `kotlinx-coroutines-test` suggestions
+3. **Log language mode:**
+   ```text
+   Phase 0.1 — Language Lock:
+   ├─ Test files scanned: {count}
+   ├─ Language mode: {KOTLIN | JAVA}
+   └─ Enforcing: {language-specific rules}
+   ```
+
+### Phase 0.2: Dynamic Antipattern Loading
+
+**Purpose:** Load antipatterns from language-specific directories to avoid irrelevant suggestions.
+
+**Actions:**
+1. **Determine antipattern directory based on LANGUAGE_MODE:**
+   - **IF KOTLIN:** Read antipatterns from `.claude/qa-antipatterns/platform/` (general platform patterns apply to Kotlin)
+   - **IF JAVA:** Read antipatterns from `.claude/qa-antipatterns/platform/java/` (Java-specific patterns, with fallback to general patterns)
+2. **When reviewing code, reference ONLY the applicable antipattern set:**
+   - Example: "Reviewing .java file → read only from `qa-antipatterns/platform/java/`"
+   - Example: "Reviewing .kt file → read only from `qa-antipatterns/platform/` (unless platform/kotlin/ exists)"
+3. **Antipattern files to load:**
+   - **Common (both Kotlin & Java):** `security/`, `http/`, `common/`
+   - **Platform-specific:**
+     - Kotlin: `platform/coroutine-test-return-type.md`, `platform/flaky-sleep-tests.md`, `platform/controlled-retries.md`, `platform/no-hardcoded-timeouts.md`, `platform/no-shared-mutable-state.md`
+     - Java: `platform/java/completablefuture-no-timeout.md`, `platform/java/flaky-sleep-tests.md`
+4. **Implementation rule for detection:**
+   - If reviewing `.kt` file → only cite patterns from `.claude/qa-antipatterns/platform/` (general or Kotlin-specific if available)
+   - If reviewing `.java` file → ONLY cite patterns from `.claude/qa-antipatterns/platform/java/`; for common issues, cite from parent `platform/` as fallback if Java-specific file doesn't exist
 
 ---
 
@@ -197,14 +257,16 @@ When reviewing tests, follow this strict protocol to prevent hallucinations and 
 
 ## Execution Flow
 
-Full 10-phase review process:
+Full 12-phase review process:
 
 1. **Phase 0:** Context Discovery — Identify testing stack (HTTP client, assertions, async framework)
+   - **Phase 0.1:** Language Lock — Detect Kotlin vs Java and enforce language-specific rules
+   - **Phase 0.2:** Dynamic Antipattern Loading — Load language-specific antipattern set
 2. **Phase 0.5:** Upstream Context (Optional) — Load test scenarios and auth matrix from upstream pipeline artifacts
 3. **Phase 1:** Scope Definition — Accept input, list test files
 4. **Phase 2:** Security Audit — Scan for hardcoded secrets, PII
 5. **Phase 3:** Architecture Audit — DTO isolation, HTTP clients, contract compliance, package organization
-6. **Phase 4:** Kotlin Idioms & Quality — Async patterns, collections, scope functions
+6. **Phase 4:** Language Idioms & Quality — Async patterns (coroutines/CompletableFuture), collections, scope functions (Kotlin-only)
 7. **Phase 5:** Test Quality & DRY — Parameterization, helpers, fixtures
 8. **Phase 6:** HTTP Validation Rules — Status codes, response bodies, cleanup, timeouts, connection leaks, scenario completeness
 9. **Phase 7:** Allure Integration & Logging — @Step annotations, assertions, logging
@@ -367,10 +429,20 @@ See [references/examples.md](references/examples.md) for real-world review examp
 
 ## Antipatterns Reference
 
-See `.claude/qa-antipatterns/` for detailed patterns:
-- `security/` — hardcoded secrets, PII leakage
-- `platform/` — async bugs, coroutine issues
-- `common/` — assertion messages, cleanup, duplication
+See `.claude/qa-antipatterns/` for detailed patterns. **Language-specific loading applies:**
+
+**For Kotlin tests (LANGUAGE_MODE = KOTLIN):**
+- Read from: `.claude/qa-antipatterns/platform/` (general platform patterns apply to Kotlin)
+- Includes: `flaky-sleep-tests.md`, `coroutine-test-return-type.md`, `controlled-retries.md`, `no-hardcoded-timeouts.md`, `no-shared-mutable-state.md`
+- Also read: `security/`, `http/`, `common/` (shared across languages)
+
+**For Java tests (LANGUAGE_MODE = JAVA):**
+- Read from: `.claude/qa-antipatterns/platform/java/` (Java-specific patterns)
+- Includes: `completablefuture-no-timeout.md`, `flaky-sleep-tests.md` (Java variant)
+- Fallback: If Java-specific file not found, check `.claude/qa-antipatterns/platform/` for common pattern
+- Also read: `security/`, `http/`, `common/` (shared across languages)
+
+**Critical Rule:** Never cite antipatterns from the wrong language directory. If reviewing `.kt` file, do NOT reference `platform/java/`. If reviewing `.java` file, do NOT reference Kotlin-specific patterns like `coroutine-test-return-type.md`.
 
 ---
 
