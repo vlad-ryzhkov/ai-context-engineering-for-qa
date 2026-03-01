@@ -1,5 +1,5 @@
 ---
-name: api-test-reviewer
+name: api-test-review
 description: Deep code review of Kotlin/Java API tests for security, architecture, and quality. Use after /api-tests for artifact validation. Do not use for specification analysis or test case generation.
 agent: agents/auditor.md
 allowed-tools: "Read Glob Grep"
@@ -8,12 +8,14 @@ context: fork
 
 ## 🔒 SYSTEM REQUIREMENTS
 
-Before execution the agent MUST load: `.claude/protocols/gardener.md`
+Before execution the agent MUST load:
+- `.claude/protocols/gardener.md` — Gardener Protocol for analyzing findings and proposing rules
+- `.claude/agents/auditor.md` → **Verbosity Protocol** — Keep output concise (3–5 lines summary, no redundant preamble, evidence-based only)
 
-# Skill: /api-test-reviewer
+# Skill: /api-test-review
 
 **Owner:** Auditor
-**Trigger:** User invokes `/api-test-reviewer` to audit Kotlin/Java API tests
+**Trigger:** User invokes `/api-test-review` to audit Kotlin/Java API tests
 **Input:** Directory path or file path to test code (e.g., `src/test/kotlin/domain/`)
 **Output:** Structured review report with severity levels (🔴 CRITICAL, 🟠 MAJOR, 🟡 MINOR)
 
@@ -36,7 +38,7 @@ Verify that tests comply with:
 ## Core Mindset
 
 | Principle | Description |
-| --- | --- |
+|---|---|
 | **Zero Trust** | Never assume test code is correct. Verify every aspect. |
 | **Security First** | Secrets, PII, and data leakage are CRITICAL blockers. |
 | **Production Ready** | Tests must compile without edits and run reliably. |
@@ -46,6 +48,56 @@ Verify that tests comply with:
 | **Tool Discipline** | Never guess code. Use Glob to list files, then Read to inspect contents before evaluating. |
 | **Context Limits** | If finding >5 similar issues, list the top 5 and group the rest to keep the report actionable. |
 | **Aggressive Filtering** | Quality over quantity. Filter aggressively. Focus only on issues that truly matter for API test stability. Do not report nitpicks. |
+| **Mentorship Tone** | Focus on teaching and knowledge transfer. When suggesting a fix, always briefly explain the why (e.g., "This prevents connection leaks" or "This avoids rate-limiting our Auth server"). |
+
+---
+
+## Target Domain Priming (Kotlin/Java Test Stack)
+
+Activate knowledge for these domain-specific concepts to ensure comprehensive code review:
+
+**Kotlin Testing Ecosystem:** `runTest`, `TestCoroutineScheduler`, `advanceUntilIdle`, `@JvmStatic`, `Companion object` fixtures, `suspend` test functions, `launch`, `async`, coroutine builders, `coroutineScope`
+
+**HTTP Client & Assertion Patterns:** `ktor-client` (CIO engine), `jackson-module-kotlin` (SNAKE_CASE serialization), JUnit 5 Assertions (`assertEquals`, `assertTrue`, `assertNotNull` — primary for /api-tests output), `Kotest Assertions` (`.shouldBe()`, `.should()` — only if detected in build file), `RestAssured` (anti-pattern awareness: REST DSL, `.then()` chains — BANNED in Ktor projects), `java.net.http.HttpClient` (Java mode only), `WebTestClient`, `MockMvc`
+
+**Async/Concurrency Antipatterns:** `Thread.sleep()` (blocking), `delay()` (in non-suspend context), `Awaitility`, `CountDownLatch`, `Thread.join()`, race conditions
+
+**Architecture & Package Organization:** DTO isolation (`requests/` and `helpers/` packages), test data builders (`*Fixture`, `*Builder`, `*Factory`), test lifecycle (`@BeforeEach`, `@AfterEach`, `@BeforeAll`, `@AfterAll`), resource cleanup (`.use {}`, AutoCloseable)
+
+**Allure Integration:** `@Step` annotations, `@AllureId`, `@DisplayName`, `@Description`, `attachment()` API, test lifecycle reporting
+
+**Mock & Stub Patterns:** `WireMock` (stubs, matchers), `MockK` (mocking, `every`, `coEvery` for suspend), `@MockBean`, `@WebMvcTest` (Spring context)
+
+**Data Security in Tests:** Safe test data (`test@example.com`, faker libraries), environment variable injection, credential fixtures, no secrets in code
+
+---
+
+## Initial Reconnaissance (Concrete Search Patterns)
+
+Before analyzing code deeply, use these quick grep patterns to locate potential issues:
+
+```bash
+# Security scan
+grep -rn -E "(bearer\s+[a-zA-Z0-9]+|\"secret\"|\"password\"|api[_-]?key)" --include="*.kt" --include="*.java" src/test
+
+# Blurry HTTP assertions
+grep -rn -E "(statusCode|status).*(<|>|in.*\\.\\.|between)" --include="*.kt" --include="*.java" src/test
+grep -rn "\.then()\.statusCode" --include="*.kt" --include="*.java" src/test  # RestAssured anti-pattern
+
+# Blocking delays
+grep -rn "Thread\.sleep|delay(" --include="*.kt" --include="*.java" src/test
+
+# Missing cleanup
+grep -rn "@Test" --include="*.kt" --include="*.java" src/test | wc -l  # Count tests
+grep -rn "@AfterEach" --include="*.kt" --include="*.java" src/test | wc -l  # Count cleanup
+
+# Inline DTOs
+grep -rn "data class.*Request\|data class.*Response" --include="*.kt" src/test/**/tests/  # Inside test classes
+
+# Missing Allure steps
+grep -rn "@Test\|fun test" --include="*.kt" --include="*.java" src/test | wc -l  # Total tests
+grep -rn "@Step\|step(" --include="*.kt" --include="*.java" src/test | wc -l  # Instrumented tests
+```
 
 ---
 
@@ -53,51 +105,140 @@ Verify that tests comply with:
 
 When reviewing tests, follow this strict protocol to prevent hallucinations and ensure evidence-based recommendations:
 
-1. **Scan** the test code for BANNED patterns listed in the phases below.
-2. **IF** you detect a BANNED pattern:
+1. **Initial Scan** — Use the grep patterns above to quickly identify problem areas.
+2. **File Inspection** — Use `Glob` to list test files, then `Read` to inspect contents with focus on flagged lines.
+3. **IF** you detect a BANNED pattern:
    - → **IMMEDIATELY READ** the corresponding reference file from `.claude/qa-antipatterns/` using the `Read` tool
    - → **EXTRACT** the exact Kotlin/Java fix pattern from that reference
    - → **APPLY** the fix pattern to the user's specific test code in your recommendation
-3. **Never** suggest framework syntax (Kotest, Allure, RestAssured) from memory alone. Always cite the reference file used.
-4. **GROUP SIMILAR ISSUES:** If finding >5 similar issues, list the top 5 with file:line, then group the rest as "5+ more instances of [pattern]" to keep the report actionable.
+4. **Never** suggest framework syntax (Kotest, Allure, RestAssured) from memory alone. Always cite the reference file used.
+5. **GROUP SIMILAR ISSUES:** If finding >5 similar issues, list the top 5 with file:line, then group the rest as "5+ more instances of [pattern]" to keep the report actionable.
 
 ---
 
-## Out of Scope (False Positives Prevention)
+## Scope & Granularity
 
-The following issues MUST NOT be flagged. Assume CI/CD tools (ktlint, detekt, compiler) will catch them automatically:
+### Output Discipline: Reduce Overwhelm
 
-- **Missing or unused imports** — Compiler and `detekt` enforce clean imports
-- **Formatting issues** — `ktlint` fixes indentation, newlines, spaces automatically
-- **Type errors preventing compilation** — Kotlin compiler catches all type mismatches
-- **Pedantic stylistic nitpicks** — Non-semantic code style preferences (e.g., "use `val` over `var`" if both work)
-- **Dummy data that looks real** — Clearly mocked test data (e.g., `test@example.com`, `12345`, `user123`) is SAFE and should not be flagged as PII
+- **Focus on the Top 3–5 Most Critical Issues per phase.** Do not overwhelm the user with 20+ findings. If you identify many similar issues, consolidate:
+  - List the top 5 with exact `file:line` references
+  - Group the rest as `"5+ more instances of [BANNED pattern]"` with a count
+- **Prioritize by impact:** Security (CRITICAL) > Architecture (MAJOR) > Code quality (MINOR)
+- **Each finding must be actionable.** User should be able to copy-paste the suggested fix.
 
-**Focus:** Concentrate on **semantic issues**: logic errors, security leaks, architectural violations, missing assertions, improper HTTP handling, lack of test independence.
+### Scope Boundaries
+
+| Action | Rule |
+|---|---|
+| **DO** | Focus on **semantic issues:** logic errors, security leaks, architectural violations, missing assertions, improper HTTP handling, test independence. |
+| **DO** | Verify OpenAPI/Swagger contract compliance. |
+| **DO** | Explain *why* a fix is needed (mentorship tone). |
+| **DO** | Use exact `file:line` references for every finding. |
+| **DO** | Cite reference files (e.g., `qa-antipatterns/security/hardcoded-secrets.md`). |
+| **DON'T** | Flag missing imports or formatting issues — `ktlint`, `detekt`, and Kotlin compiler handle these automatically. |
+| **DON'T** | Complain about obvious mock data (`test@example.com`, `12345`, `user123`) — these are SAFE and should not be flagged as PII. |
+| **DON'T** | Suggest framework syntax from memory — always read the reference file first. |
+| **DON'T** | Include full build output or verbose terminal logs in the report. |
+| **DON'T** | Review generated/build folders (`build/`, `out/`, `.gradle/`). Always exclude them. |
+
+---
+
+## Phase 0: Context Discovery
+
+**Purpose:** Before auditing tests, discover the project's testing stack to avoid recommending unsupported libraries.
+
+**Actions:**
+1. Use `Read` or `Glob` to inspect `build.gradle.kts` or `pom.xml`:
+   - Identify HTTP client library (RestAssured, Ktor Client, WebTestClient, Spring WebClient, java.net.http.HttpClient)
+   - Identify assertion library (Kotest Assertions, AssertJ, Strikt, JUnit assertions)
+   - Identify async framework (kotlinx-coroutines-test, Reactor Test, Awaitility)
+   - Identify mocking/stubbing tools (WireMock, Mockito, MockK)
+   - Identify test framework (JUnit 5, JUnit 4, TestNG, KoTest)
+2. **Golden Rule:** Do NOT recommend framework syntax for libraries not in the build file.
+3. **Kotlin/JUnit5 Generator Context:** When reviewing output from `/api-tests`, the primary assertion style is JUnit 5 (`assertEquals`, `assertTrue`, `assertNotNull`). Kotest is an alternative only when detected in build.gradle.kts. Do NOT suggest shouldBe migration for valid `assertEquals` calls from generator output.
+4. If the build file is not readable, acknowledge this in the report and proceed with generic best practices.
+
+---
+
+## Phase 0.5: Upstream Context (Optional)
+
+**Purpose:** Load test scenarios and auth matrix from upstream pipeline artifacts to enable gap analysis and IDOR validation against specification.
+
+**Trigger Conditions:**
+- This phase is **optional** — only executed if upstream artifacts exist
+- If neither `audit/test-scenarios.md` nor `audit/repo-scout-report_*.md` found → skip this phase, proceed to Phase 1
+- This phase allows tests to be reviewed **standalone** (without upstream context) or **integrated** (with context from `/api-test-cases` and `/repo-scout`)
+
+**Actions:**
+
+1. **Check for upstream test scenarios:**
+   - Look for `audit/test-scenarios.md` (generated by `/api-test-cases` skill)
+   - If found → read and extract ONLY first 3 columns from scenario tables:
+     - **Scenario ID** (e.g., `SCN-USER-001`, `SCN-AUTH-003`)
+     - **Type** (SEC, NEG, BVA, IDOR, Happy Path)
+     - **Expected Status Code** (e.g., 201, 400, 401, 403, 404)
+   - **Context limit:** Read maximum first 100 lines (stop after scenario table if longer)
+   - Store extracted scenarios for Phase 6I (Scenario Completeness)
+
+2. **Check for upstream auth matrix:**
+   - Look for latest `audit/repo-scout-report_*.md` (generated by `/repo-scout` skill, sorted by date)
+   - If found → read and extract ONLY these sections (use grep to locate):
+     - **§5 Auth Matrix** — role-based access control mapping (roles → accessible resources)
+     - **§17 Risk Tags** — endpoints marked HIGH/CRITICAL for prioritization
+   - **Context limit:** Total combined extraction not to exceed 100 lines
+   - Store auth matrix for Phase 6G (IDOR Prevention)
+
+3. **Fallback behavior:**
+   - If `test-scenarios.md` not found → Phase 6I skips gap analysis
+   - If `repo-scout-report` not found → Phase 6G relies on heuristics (not auth matrix)
+   - Log status in report: "Phase 0.5 skipped: upstream artifacts not found" or "Phase 0.5 loaded: X scenarios, auth matrix for Y roles"
 
 ---
 
 ## Execution Flow
 
-Full 8-phase review process:
+Full 10-phase review process:
 
-1. **Phase 1:** Scope Definition — Accept input, list test files
-2. **Phase 2:** Security Audit — Scan for hardcoded secrets, PII
-3. **Phase 3:** Architecture Audit — DTO isolation, HTTP clients, contract compliance, package organization
-4. **Phase 4:** Kotlin Idioms & Quality — Async patterns, collections, scope functions
-5. **Phase 5:** Test Quality & DRY — Parameterization, helpers, fixtures
-6. **Phase 6:** HTTP Validation Rules — Status codes, response bodies, cleanup, timeouts, connection leaks, scenario completeness
-7. **Phase 7:** Allure Integration & Logging — @Step annotations, assertions, logging
-8. **Phase 8:** Self-Verification — Internal consistency check before output generation
+1. **Phase 0:** Context Discovery — Identify testing stack (HTTP client, assertions, async framework)
+2. **Phase 0.5:** Upstream Context (Optional) — Load test scenarios and auth matrix from upstream pipeline artifacts
+3. **Phase 1:** Scope Definition — Accept input, list test files
+4. **Phase 2:** Security Audit — Scan for hardcoded secrets, PII
+5. **Phase 3:** Architecture Audit — DTO isolation, HTTP clients, contract compliance, package organization
+6. **Phase 4:** Kotlin Idioms & Quality — Async patterns, collections, scope functions
+7. **Phase 5:** Test Quality & DRY — Parameterization, helpers, fixtures
+8. **Phase 6:** HTTP Validation Rules — Status codes, response bodies, cleanup, timeouts, connection leaks, scenario completeness
+9. **Phase 7:** Allure Integration & Logging — @Step annotations, assertions, logging
+10. **Phase 8:** Self-Verification — Internal consistency check before output generation
 
 See [references/phases-and-rules.md](references/phases-and-rules.md) for detailed rules, BANNED patterns, and output formats for each phase.
+
+### Status Reporting
+
+For large directories or long-running scans, emit a brief JSON progress report to the console after heavy phases:
+
+```json
+{
+  "agent": "auditor",
+  "skill": "api-test-review",
+  "status": "in_progress",
+  "progress": {
+    "phase": "Phase 3: Architecture Audit",
+    "files_scanned": 12,
+    "critical_issues_found": 1,
+    "major_issues_found": 3,
+    "files_remaining": 5
+  }
+}
+```
+
+This helps users understand progress and indicates the agent has not stalled.
 
 ---
 
 ## Severity Levels
 
 | Level | Criteria | Action |
-| --- | --- | --- |
+|---|---|---|
 | **🔴 CRITICAL** | Secrets exposed, compilation fail, data loss, security hole. | **BLOCK MERGE.** Detailed recommendation to fix. |
 | **🟠 MAJOR** | Code duplication, blurry assertions, missing Allure steps, async bugs. | **REQUEST CHANGES.** List line numbers, suggest fixes. |
 | **🟡 MINOR** | Typos in test names, style inconsistency, minor inefficiency. | **SUGGESTION.** Can merge with note. |
@@ -105,8 +246,6 @@ See [references/phases-and-rules.md](references/phases-and-rules.md) for detaile
 ---
 
 ## Confidence Score Matrix
-
-**Confidence Score Range** → **Mapping** → **Action**
 
 | Score | Severity | Meaning | Action |
 | --- | --- | --- | --- |
@@ -120,13 +259,65 @@ See [references/phases-and-rules.md](references/phases-and-rules.md) for detaile
 
 ---
 
+## Verification (Optional)
+
+If you have terminal execution capabilities, verify suggested fixes by running the test file:
+
+```bash
+# Run specific test class to verify fix
+./gradlew test --tests "src/test/kotlin/domain/UserTests.kt"
+
+# Or run the entire domain module
+./gradlew test --tests "UserTests"
+```
+
+**Do not suggest code that breaks compilation or causes test failures.** If a suggested fix cannot be verified, flag it as "Needs manual verification" in the recommendations.
+
+---
+
 ## Completion Protocol
 
 Output a structured review report following this template:
 
+**Output Artifact Naming:** Write report to `audit/api-test-review-report_{domain}_{timestamp}.md`
+- Replace `{domain}` with test domain name (e.g., `users`, `orders`, `auth`)
+- Replace `{timestamp}` with ISO timestamp (e.g., `20260301_134510` for 2026-03-01 13:45:10)
+- This pattern ensures each invocation creates a new timestamped artifact, preserving audit history
+
 See [references/output-template.md](references/output-template.md) for the complete output structure with all phases, verdicts, and recommendation section.
 
 After completing all 7 phases and before the `SKILL COMPLETE` block, run the Gardener protocol (see `.claude/protocols/gardener.md`) to analyze findings and propose new rules if needed.
+
+### Mentorship Tone Examples
+
+When suggesting fixes, always briefly explain the **why** — not just the **what**. Here are examples of mentorship tone:
+
+❌ **Harsh tone (avoid):**
+
+```text
+This hardcoded token is a security disaster. CHANGE IT IMMEDIATELY.
+```
+
+✅ **Mentorship tone (preferred):**
+
+```text
+Instead of hardcoding the JWT token here, let's use `AuthFixture.generateToken()` helper.
+This prevents the token from being accidentally committed to version control and keeps our tests isolated —
+if the auth implementation changes, we just update the fixture, not 50 test methods.
+```
+
+❌ **Harsh tone (avoid):**
+
+```text
+Missing cleanup. Tests are order-dependent. REFACTOR NOW.
+```
+
+✅ **Mentorship tone (preferred):**
+
+```text
+Each test should clean up after itself in an `@AfterEach` block. Right now, if `testCreateUser` runs before `testUpdateUser`,
+the second test uses data from the first, which can hide bugs. Adding cleanup also makes tests independent — they can run in any order.
+```
 
 ### Issue Format
 
@@ -142,7 +333,7 @@ For **EACH** issue listed in the "📝 Key Recommendations" section, use this fo
 \`\`\`kotlin
 // The corrected code applied to the user's context
 \`\`\`
-**Why:** [Brief explanation of why this matters for API tests]
+**Why:** [Brief explanation of why this matters for API tests — use mentorship tone, explain the impact]
 ```
 
 **CRITICAL RULE: Confidence Score Derivation**
@@ -189,3 +380,42 @@ See `.claude/qa-antipatterns/` for detailed patterns:
 - **`/api-tests-java`** — Generates Java test code (input for this skill)
 - **`/api-isolated-tests`** — Generates test scenarios from spec
 - **`/spec-audit`** — QA audit of specification
+
+---
+
+## Agent Collaboration Protocol
+
+This skill is part of the QA automation pipeline. Understand where it sits and what to do next:
+
+### Input Hand-off
+
+- **Source:** You receive test code generated by `/api-tests` (Kotlin) or `/api-tests-java` (Java)
+- **Prerequisites:** Test code should compile and pass in local environment before this review
+
+### Review & Output
+
+- **Output Format:** Structured review report with 8 phases, severity levels (🔴 CRITICAL, 🟠 MAJOR, 🟡 MINOR), and actionable fixes
+- **Confidence Threshold:** Only report issues with Confidence Score ≥ 51 (no nitpicks, no false positives)
+
+### Output Hand-off & Next Actions
+
+**If 🔴 CRITICAL issues found:**
+- → Provide detailed recommendations with code snippets
+- → Instruct user to pass your review report back to the developer or re-run `/api-tests` with corrected specifications
+- → Block merge until CRITICAL issues are resolved
+
+**If 🟠 MAJOR issues found:**
+- → List with exact file:line references and fix patterns
+- → User should address before merging; can be fixed in follow-up PR if time-constrained
+
+**If 🟡 MINOR issues found:**
+- → Suggestions only; can merge with note to address in future refactoring
+
+**If specification/API contract issues detected:**
+- → Suggest invoking `/spec-audit` to verify if the OpenAPI spec itself is outdated or incomplete
+- → Reference the specific contract violation (e.g., "Test asserts `field_name` but OpenAPI spec shows `fieldName`")
+
+### Quality Loop
+
+- **For generated tests:** If test code doesn't compile or your suggested fixes fail locally, flag as "Needs manual verification" in the recommendations
+- **For next iteration:** User can re-run `/api-tests` with improved specifications, then re-submit for review
