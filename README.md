@@ -55,6 +55,21 @@ The main pipeline — choose your starting point based on scope:
 >
 > **Optional:** `/api-isolated-tests` — generates detailed test scenarios for a single endpoint (steps, data, expected results). Use when you need a deep-dive into one area instead of full API coverage.
 
+### Pipeline for Existing Test Suites
+
+When a test suite already exists, skip generation and focus on auditing and remediating:
+
+```text
+/repo-scout  →  /api-test-cases  →  /api-test-review  →  /api-tests fix
+(fresh map)     (gap analysis)      (legacy audit +        (surgical fixes,
+                                     contract check)         no regeneration)
+```
+
+Key differences from the greenfield flow:
+- Skip `/api-tests` generate — tests already exist
+- `/api-test-review` now reads Swagger/OpenAPI/Protobuf/GraphQL contracts from the repo (Phase 0.3) and validates DTO fields against the actual spec, not just annotations
+- `/api-tests fix` applies surgical `Edit`-based remediations for BANNED patterns (Thread.sleep, runBlocking, missing timeouts) without touching test logic or assertions
+
 ### Utility Skills
 
 | Skill            | Purpose                                                                     |

@@ -147,10 +147,19 @@ class UserTests {
 
 **RULE:** Validate against OpenAPI specification. Use strict serialization.
 
-**CHECK:**
+**CHECK (Annotation-based — always performed):**
 - ✅ Jackson configured with `@JsonNaming(SnakeCaseStrategy::class)`
 - ✅ No `ignoreUnknownKeys = true` (unless explicitly required)
 - ✅ DTO fields match API specification exactly
+
+**CHECK (Specification-driven mode — when contractContext loaded from Phase 0.3):**
+- For each DTO in the reviewed tests:
+  - Verify field names match contract schema (e.g., `user_id` not `userId` if contract specifies snake_case)
+  - Verify nullable fields in DTO match `required:` / `optional` in contract
+  - Flag fields in DTO that do not exist in contract schema → MAJOR (phantom fields)
+  - Flag contract-required fields missing from DTO → MAJOR (missing fields cause deserialization failures)
+- For each HTTP assertion:
+  - Verify asserted status codes match those defined in contract responses section
 
 ### 3D. Package Organization (No Junk Drawers)
 

@@ -218,6 +218,32 @@ When reviewing tests, follow this strict protocol to prevent hallucinations and 
    - If reviewing `.kt` file → only cite patterns from `.claude/qa-antipatterns/platform/` (general or Kotlin-specific if available)
    - If reviewing `.java` file → ONLY cite patterns from `.claude/qa-antipatterns/platform/java/`; for common issues, cite from parent `platform/` as fallback if Java-specific file doesn't exist
 
+### Phase 0.3: Contract Discovery (Optional)
+
+**Purpose:** Locate API contracts in the repository to enable specification-driven validation in Phase 3C. Prevents false positives on DTO fields that are contractually correct.
+
+**Actions:**
+1. **Glob for contract files** in the repository root and common directories:
+   - OpenAPI/Swagger: `**/*.yaml`, `**/*.yml`, `**/*.json` (filter: must contain `openapi:` or `swagger:` keyword)
+   - Protobuf: `**/*.proto`
+   - GraphQL: `**/*.graphql`, `**/*.graphqls`
+   - Also read: `CLAUDE.md`, `README.md` (architecture/stack notes, max 50 lines each)
+2. **Filter by domain** — match contracts to the domain being reviewed (e.g., if reviewing `users/` tests, prefer `users.yaml` or endpoints containing `/users`)
+3. **Extract relevant definitions** (read limit: max 100 lines per contract file):
+   - OpenAPI: endpoint paths, request/response schema field names and types, required/nullable flags
+   - Protobuf: message field names, types, field numbers
+   - GraphQL: type definitions, query/mutation field names and types
+4. **Store as:** `contractContext = { spec_type, domain, endpoints: [...], schemas: [...] }`
+5. **Log status:**
+   ```text
+   Phase 0.3 — Contract Discovery:
+   ├─ OpenAPI spec: {found: path | not found}
+   ├─ Protobuf: {found: path | not found}
+   ├─ GraphQL: {found: path | not found}
+   └─ CLAUDE.md / README.md: {loaded | not found}
+   ```
+6. **If no contract files found:** skip silently, proceed with heuristic-only review. Phase 3C falls back to annotation-only checks.
+
 ---
 
 ## Phase 0.5: Upstream Context (Optional)
@@ -262,6 +288,7 @@ Full 12-phase review process:
 1. **Phase 0:** Context Discovery — Identify testing stack (HTTP client, assertions, async framework)
    - **Phase 0.1:** Language Lock — Detect Kotlin vs Java and enforce language-specific rules
    - **Phase 0.2:** Dynamic Antipattern Loading — Load language-specific antipattern set
+   - **Phase 0.3:** Contract Discovery (Optional) — Locate API contracts (OpenAPI/Swagger/Protobuf/GraphQL) for specification-driven validation
 2. **Phase 0.5:** Upstream Context (Optional) — Load test scenarios and auth matrix from upstream pipeline artifacts
 3. **Phase 1:** Scope Definition — Accept input, list test files
 4. **Phase 2:** Security Audit — Scan for hardcoded secrets, PII
