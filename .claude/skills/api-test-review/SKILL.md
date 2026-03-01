@@ -6,6 +6,10 @@ allowed-tools: "Read Glob Grep"
 context: fork
 ---
 
+## 🔒 SYSTEM REQUIREMENTS
+
+Before execution the agent MUST load: `.claude/protocols/gardener.md`
+
 # Skill: /api-test-reviewer
 
 **Owner:** Auditor
@@ -32,7 +36,7 @@ Verify that tests comply with:
 ## Core Mindset
 
 | Principle | Description |
-|:--------|:---------|
+| --- | --- |
 | **Zero Trust** | Never assume test code is correct. Verify every aspect. |
 | **Security First** | Secrets, PII, and data leakage are CRITICAL blockers. |
 | **Production Ready** | Tests must compile without edits and run reliably. |
@@ -41,20 +45,50 @@ Verify that tests comply with:
 | **Contract Driven** | Tests must align with OpenAPI/Swagger specifications. |
 | **Tool Discipline** | Never guess code. Use Glob to list files, then Read to inspect contents before evaluating. |
 | **Context Limits** | If finding >5 similar issues, list the top 5 and group the rest to keep the report actionable. |
+| **Aggressive Filtering** | Quality over quantity. Filter aggressively. Focus only on issues that truly matter for API test stability. Do not report nitpicks. |
+
+---
+
+## Detection and Response Workflow
+
+When reviewing tests, follow this strict protocol to prevent hallucinations and ensure evidence-based recommendations:
+
+1. **Scan** the test code for BANNED patterns listed in the phases below.
+2. **IF** you detect a BANNED pattern:
+   - → **IMMEDIATELY READ** the corresponding reference file from `.claude/qa-antipatterns/` using the `Read` tool
+   - → **EXTRACT** the exact Kotlin/Java fix pattern from that reference
+   - → **APPLY** the fix pattern to the user's specific test code in your recommendation
+3. **Never** suggest framework syntax (Kotest, Allure, RestAssured) from memory alone. Always cite the reference file used.
+4. **GROUP SIMILAR ISSUES:** If finding >5 similar issues, list the top 5 with file:line, then group the rest as "5+ more instances of [pattern]" to keep the report actionable.
+
+---
+
+## Out of Scope (False Positives Prevention)
+
+The following issues MUST NOT be flagged. Assume CI/CD tools (ktlint, detekt, compiler) will catch them automatically:
+
+- **Missing or unused imports** — Compiler and `detekt` enforce clean imports
+- **Formatting issues** — `ktlint` fixes indentation, newlines, spaces automatically
+- **Type errors preventing compilation** — Kotlin compiler catches all type mismatches
+- **Pedantic stylistic nitpicks** — Non-semantic code style preferences (e.g., "use `val` over `var`" if both work)
+- **Dummy data that looks real** — Clearly mocked test data (e.g., `test@example.com`, `12345`, `user123`) is SAFE and should not be flagged as PII
+
+**Focus:** Concentrate on **semantic issues**: logic errors, security leaks, architectural violations, missing assertions, improper HTTP handling, lack of test independence.
 
 ---
 
 ## Execution Flow
 
-Full 7-phase review process:
+Full 8-phase review process:
 
 1. **Phase 1:** Scope Definition — Accept input, list test files
 2. **Phase 2:** Security Audit — Scan for hardcoded secrets, PII
-3. **Phase 3:** Architecture Audit — DTO isolation, HTTP clients, contract compliance
+3. **Phase 3:** Architecture Audit — DTO isolation, HTTP clients, contract compliance, package organization
 4. **Phase 4:** Kotlin Idioms & Quality — Async patterns, collections, scope functions
 5. **Phase 5:** Test Quality & DRY — Parameterization, helpers, fixtures
-6. **Phase 6:** HTTP Validation Rules — Status codes, response bodies, cleanup
+6. **Phase 6:** HTTP Validation Rules — Status codes, response bodies, cleanup, timeouts, connection leaks, scenario completeness
 7. **Phase 7:** Allure Integration & Logging — @Step annotations, assertions, logging
+8. **Phase 8:** Self-Verification — Internal consistency check before output generation
 
 See [references/phases-and-rules.md](references/phases-and-rules.md) for detailed rules, BANNED patterns, and output formats for each phase.
 
@@ -63,10 +97,26 @@ See [references/phases-and-rules.md](references/phases-and-rules.md) for detaile
 ## Severity Levels
 
 | Level | Criteria | Action |
-|:------|:---------|:---------|
+| --- | --- | --- |
 | **🔴 CRITICAL** | Secrets exposed, compilation fail, data loss, security hole. | **BLOCK MERGE.** Detailed recommendation to fix. |
 | **🟠 MAJOR** | Code duplication, blurry assertions, missing Allure steps, async bugs. | **REQUEST CHANGES.** List line numbers, suggest fixes. |
 | **🟡 MINOR** | Typos in test names, style inconsistency, minor inefficiency. | **SUGGESTION.** Can merge with note. |
+
+---
+
+## Confidence Score Matrix
+
+**Confidence Score Range** → **Mapping** → **Action**
+
+| Score | Severity | Meaning | Action |
+| --- | --- | --- | --- |
+| **0–25** | Ignore | Likely false positive or pre-existing issue | **DO NOT REPORT** |
+| **26–50** | Ignore | Minor nitpick, not explicitly in rules | **DO NOT REPORT** |
+| **51–75** | 🟡 MINOR | Valid but low-impact issue | **REPORT as MINOR suggestion** |
+| **76–90** | 🟠 MAJOR | Important issue violating explicit guidelines | **REPORT as MAJOR, request changes** |
+| **91–100** | 🔴 CRITICAL | Secret leak, bug, or severe architectural flaw | **REPORT as CRITICAL, block merge** |
+
+**GOLDEN RULE:** Report **ONLY** issues with **Confidence Score ≥ 51**.
 
 ---
 
@@ -76,11 +126,42 @@ Output a structured review report following this template:
 
 See [references/output-template.md](references/output-template.md) for the complete output structure with all phases, verdicts, and recommendation section.
 
+After completing all 7 phases and before the `SKILL COMPLETE` block, run the Gardener protocol (see `.claude/protocols/gardener.md`) to analyze findings and propose new rules if needed.
+
+### Issue Format
+
+For **EACH** issue listed in the "📝 Key Recommendations" section, use this format:
+
+```markdown
+**Issue:** [Name of the rule broken, e.g., "Blurry HTTP Status Check"]
+**Severity:** [🔴 CRITICAL / 🟠 MAJOR / 🟡 MINOR]
+**Confidence Score:** [51–100] (reasoning grounded in Chain-of-Thought)
+**Location:** [`src/test/kotlin/domain/users/tests/UserTests.kt:45-48`]
+**Reference Used:** [e.g., `qa-antipatterns/http/status-codes.md`]
+**Fix:**
+\`\`\`kotlin
+// The corrected code applied to the user's context
+\`\`\`
+**Why:** [Brief explanation of why this matters for API tests]
+```
+
+**CRITICAL RULE: Confidence Score Derivation**
+- **Score must be grounded** in Chain-of-Thought reasoning (preceding tokens justify the number)
+- **Score determines severity** per Confidence Score Matrix (51–75 = MINOR, 76–90 = MAJOR, 91–100 = CRITICAL)
+- **Only report issues ≥51** — discard all findings with Confidence Score < 51 (false positives, nitpicks)
+- **Each score in output** = mathematical grounding, not guessing
+
+**CRITICAL RULE:** The **Location** field MUST include:
+- **Exact file path** (relative to repository root)
+- **Line number range** where the issue occurs (e.g., `:45-48` for multi-line issues)
+- Do NOT summarize findings without exact references
+- User must be able to open the file and navigate directly to the issue
+
 **Communication Protocol:**
 - **MINIMAL VERBOSITY:** Output only tool invocations and completion block
 - **No preamble:** No "Let me read the file", "I'll analyze", etc.
-- **Evidence-based:** Every finding includes file:line reference
-- **Actionable:** Each recommendation includes concrete suggestion
+- **Evidence-based (STRICT):** Every finding MUST include exact file:line reference — no exceptions
+- **Actionable:** Each recommendation includes concrete code snippet
 
 ---
 
