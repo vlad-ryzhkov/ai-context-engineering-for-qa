@@ -14,6 +14,10 @@ output: helpers/MockServer.kt, helpers/MockServerExtension.kt, META-INF/services
 **Not for:** mocking only external services (put WireMock stubs directly in `@BeforeEach`).
 **Workflow:** `/api-mocks` → retry `/api-tests` (fallback when no live server is available).
 
+> **SILENT MODE**: Execute all generation phases silently. Do not output intermediate
+> reasoning or conversational filler. Only the final SKILL COMPLETE block (or an explicit
+> ESCALATION if compilation fails) goes to chat.
+
 ## Protocol
 
 **What to generate (always in this order):**
@@ -55,11 +59,39 @@ A static `val` captures the port at class-load time and breaks when the second t
 TLS-enforcement tests (expect `plain HTTP → 301/400/426`) **cannot pass** with an HTTP mock.
 Leave them as-is — they will fail at infra level. Document in Smoke Run output: `INFRA (TLS-enforcement test)`.
 
+## Anti-Patterns
+
+| Anti-Pattern | Why It Breaks | Fix |
+|---|---|---|
+| `val BASE_URL = "http://localhost:8080"` (static) | Captures port at class-load; breaks on second test with different port | Use `val BASE_URL: String get() = System.getProperty("BASE_URL", "...")` |
+| Mock server created per test (no singleton) | Flaky, port conflicts, memory leaks | Use `object` singleton for external mocks, lifecycle-managed by `MockServerExtension` |
+| Validation errors missing `"field": "<name>"` | Test cannot assert field-specific errors | Always include field name in error JSON: `{message, field}` |
+| JWT token with hardcoded claims | Tests can't verify claim values | Extract claims from spec, generate with Base64 encoding: `header.payload.mock-sig` |
+| External service call without timeout/fallback | Hangs indefinitely on network failure | Use `System.getProperty()` + timeout + catch → 503 on failure |
+| No idempotency cache (same key twice) | Tests can't verify idempotent behavior | Implement `ConcurrentHashMap` idempotency key → (body hash → response) |
+
 ## Workflow
+
+> **Loop Guard**: If compilation fails with the same error twice in a row, do NOT attempt
+> a third blind fix. Output an ESCALATION block with the error details and wait for user instruction.
+
 1. Read spec → extract: endpoint path, HTTP method, required fields + types, validation rules, external service dependencies, response token format
 2. Generate files (order: external mock → API mock → extension → META-INF → properties)
 3. `./gradlew compileTestKotlin`
 4. `./gradlew test 2>&1 | tail -30` — zero `ConnectException` = PASS
+
+### Quality Gate (Self-Review)
+
+Before finalizing, verify internally:
+- [ ] All 5 files generated: external mock + API mock + extension + META-INF + properties
+- [ ] Compilation: `./gradlew compileTestKotlin` passes with zero errors
+- [ ] BASE_URL uses computed property (dynamic, not static)
+- [ ] Smoke run: `./gradlew test` shows zero `ConnectException`
+- [ ] All validation error responses include `"field": "<name>"`
+- [ ] Idempotency cache implemented if spec mentions idempotency key
+
+**Gardener Protocol**: Call `.claude/protocols/gardener.md`. If you identified missing rules
+or inefficiencies during this run, output a brief proposal table. Otherwise: `🌱 Gardener: No updates needed.`
 
 ## Completion Contract
 ```

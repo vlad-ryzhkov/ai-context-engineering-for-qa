@@ -246,6 +246,29 @@ When writing instructions, **reference the actual resources** prepared in Phase 
 - `Read references/checklist.md` — not an abstract "use the checklist"
 - `Run scripts/validate.sh` — not "validate"
 
+### Step 5.2: Apply Tier 1 Baseline Injections
+
+Before finalizing SKILL.md, ensure all **Tier 1 Baseline** features are present:
+
+| Feature | Requirement | Code location |
+|---------|-------------|---|
+| **SILENT MODE** | Explicit rule suppressing intermediate chat output | After main heading or in Phase 1 |
+| **Quality Gate + Gardener** | Self-review checklist + Gardener Protocol call | Before SKILL COMPLETE block |
+| **Self-review checklist** | `- [ ]` items (3–7 checks) specific to the skill | Inside Quality Gate |
+| **Input/Output format** | Clear specification of input and output | "Input" and "Output Format" sections |
+| **Output template** | SKILL COMPLETE block with status code | At completion |
+
+**Conditional injections (by skill type):**
+
+| Skill Type | Inject | Location |
+|-----------|--------|----------|
+| File-reading / analysis | **Context discovery phase** | Phase 0 or Phase 1 |
+| Code generation / audit | **Anti-patterns section** | After Algorithm or before Quality Gates |
+| Testing / compilation | **Loop Guard** | Inside execution phase |
+| Multi-file scan | **Status Reporting** | Inside heaviest processing phase |
+
+See `references/skill-template.md` → section "Tier 1 Baseline Injection" for exact injectable blocks.
+
 ### ✅ CHECKPOINT 5: SKILL.md Review
 
 Show the full SKILL.md and offer editing options (see `references/interaction-guide.md` → "Editing Options").

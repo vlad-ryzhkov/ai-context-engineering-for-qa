@@ -8,7 +8,11 @@ context: fork
 
 ## Recommended Flow
 
-For best results: `/spec-audit` → `/api-isolated-tests` → `/api-tests`. Running directly on a specification also works — the skill will generate tests without a scenario matrix, but traceability `@Link` annotations will reference the spec instead of scenario IDs.
+**Main pipeline:** `/repo-scout` → `/api-test-cases` → `/api-tests`.
+
+For single-endpoint deep-dive: `/spec-audit` → `/api-isolated-tests` → `/api-tests`.
+
+Running directly on a specification also works — the skill will generate tests without a scenario matrix, but traceability `@Link` annotations will reference the spec instead of scenario IDs.
 
 ---
 
@@ -22,7 +26,7 @@ Before execution the agent MUST load: `.claude/protocols/gardener.md`
 
 <purpose>
 Generates a complete set of Kotlin automated tests for REST API: models, HTTP client, helpers, tests.
-Scenario source — `audit/test-scenarios.md` (result of /api-isolated-tests) or specification directly.
+Scenario source — `audit/test-scenarios.md` (result of /api-test-cases) or specification directly.
 </purpose>
 
 ## When to Use
@@ -54,6 +58,8 @@ Scenario source — `audit/test-scenarios.md` (result of /api-isolated-tests) or
 2k. **Eventual Consistency Writes:** If `repo-scout-report` §12 marks a write→read pair as "Eventual", FORBIDDEN to assert the read immediately after write. Use Awaitility polling with bounded timeout. (ref: `api/eventual-consistency-writes.md`)
 2l. **Batch Partial Failure:** If `repo-scout-report` §12 lists batch operations, include a mixed valid+invalid input case to verify error propagation strategy (atomic rollback vs partial 207 Multi-Status). Testing only all-valid and all-invalid is INSUFFICIENT. (ref: `api/batch-partial-failure.md`)
 2j. **Configurable BASE_URL:** Use a computed property so any CI/CD environment can override the target server without recompilation: `val BASE_URL: String get() = System.getProperty("BASE_URL", "http://localhost:8080")`. If `ConnectException` appears in Smoke Run and no live server is available → run `/api-mocks` to generate an in-process mock, then re-run. TLS-enforcement tests cannot pass with an HTTP mock — acceptable as documented infra limitation.
+2m. **TLS/HTTPS Enforcement Tests:** FORBIDDEN: generating a test that replaces `https://` with `http://` and asserts a 4xx rejection — when both URLs hit the same HTTP-only mock, the test structurally passes regardless of TLS state (silent false-positive). If a scenario requires verifying TLS enforcement and no HTTPS infrastructure exists: generate the test skeleton, immediately annotate `@Disabled("TLS enforcement: requires HTTPS-capable server or WireMock HTTPS mode. HTTP mock cannot simulate certificate/protocol rejection.")`, and add a code comment explaining the correct infrastructure requirement. Do NOT generate a functionally broken test.
+2n. **HTTP Client Timeout (Mandatory):** Every `HttpClient` instantiation MUST include: `install(HttpTimeout) { requestTimeoutMillis = 30_000L; connectTimeoutMillis = 10_000L; socketTimeoutMillis = 30_000L }`. Tests without timeout configuration hang indefinitely on infrastructure failures and block CI pipelines.
 3. **Security Headers Rule:** Every positive test (POST/PUT/DELETE with 2xx) MUST verify `Content-Type`, `X-Content-Type-Options`, `Strict-Transport-Security` via `assertEquals` on `response.headers`. (ref: `api/missing-security-headers.md`)
 4. **Structure:**
    - `requests/`: DTOs + Request/Response objects. **ALL** data classes mapped to snake_case JSON (request AND response) — apply `@JsonNaming(SnakeCaseStrategy::class)` on all DTOs — omitting it on response DTOs causes silent null fields. Also add `@JsonIgnoreProperties(ignoreUnknown = true)`.
@@ -64,7 +70,7 @@ Scenario source — `audit/test-scenarios.md` (result of /api-isolated-tests) or
 
 ## Input Source Strategy
 
-**Primary Source:** `audit/test-scenarios.md` — result of /api-isolated-tests. Each table row → automated test.
+**Primary Source:** `audit/test-scenarios.md` — result of /api-test-cases. Each table row → automated test.
 **Secondary Source:** Specification directly — if test-scenarios.md is missing.
 
 ## Input Validation (Mandatory Check)
@@ -166,10 +172,12 @@ grep -rn "^\s*assert(" src/test/kotlin/ | grep -v "assertEquals\|assertTrue\|ass
 grep -rl "HttpClient(" src/test/kotlin/ | grep "Tests\.kt$"
 grep -r "Map<String, Any>" src/test/kotlin/
 grep -rL "Strict-Transport-Security" src/test/kotlin/*/tests/*Tests.kt
+grep -rL "HttpTimeout" src/test/kotlin/*/requests/*Client.kt
 ```
 ⛔ Any match on lines 1-2 → FAIL (BANNED pattern detected).
 The `assert(` check (line 2) catches Kotlin builtin `assert()` while excluding JUnit `assertEquals`/`assertTrue`/etc.
 Any POS-test file without HSTS check → FAIL (Protocol 3).
+Any client file without HttpTimeout → FAIL (Protocol 2n).
 ```bash
 grep -rL "AfterEach\|finally" src/test/kotlin/*/tests/*Tests.kt
 ```
@@ -188,6 +196,7 @@ If `test-scenarios.md` contains `Cleanup:` for POS/L10N scenarios, every test fi
 - Every mutating positive test (POST/PUT/DELETE) MUST contain a **Side Effects** check: DB state (`DB:`), queue events, or Cache — via Helper method call.
 - All negative tests MUST verify not only the HTTP code but also the **business error code** (`assertEquals(expectedCode, response.body.code, "error code mismatch")`).
 - **No duplication:** entity creation logic — only in Helpers; data logic — only in TestData/FakerService. Inline strings in tests are FORBIDDEN.
+- **Assertion DRY Rule:** If ≥3 test methods repeat an identical assertion block of ≥5 lines (e.g., HTTP status + security headers), extract it into a `@Step`-annotated Helper method (e.g., `assertSuccessfulRegistration(response)`). Inline repetition of security-header checks across tests is a DRY violation.
 - **Time/Date Assertions:** Never use exact match for timestamps. Use relative matchers: `assertTrue(ChronoUnit.SECONDS.between(expected, actual) < 5, "timestamp drift")`. Never use `LocalDateTime.now()` in assertions.
 - **Anti-Pattern "The Giant":** One `@Test` method MUST NOT exceed 30 lines. Extract setup into `@Step`-annotated Helper methods.
 - **Anti-Pattern "The Liar":** Every `@Test` MUST contain at least one `assertEquals` or `assertTrue` evaluating the response body or side-effects.
@@ -265,9 +274,11 @@ Status of remaining items:
 2. Check against **Protocol** + `references/api-patterns.md#architecture` + `qa-antipatterns/_index.md`.
 3. Report: `⛔ Violation (ref: antipattern)` / `✅ Pass`. DO NOT EDIT.
 
-## Repo-Scout Cross-References
+## Repo-Scout Cross-References (Conditional Fallback)
 
-If `audit/repo-scout-report*.md` exists, read sections §11–§15 for test generation context:
+**Primary source:** Use `## Test Generation Context` block from `audit/test-scenarios.md` (emitted by `/api-test-cases` Phase 6.5). This block pre-filters and documents all extracted constraints from repo-scout.
+
+**Fallback (only if context block is absent):** If `audit/repo-scout-report*.md` exists and `## Test Generation Context` block is not in `audit/test-scenarios.md`, read sections §11–§15 directly:
 
 | Report Section | Impact on Test Generation |
 |---------------|--------------------------|

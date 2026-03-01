@@ -46,4 +46,4 @@ Invoke with `$skill-name` or via the skill selector:
 | `$agents-checker`   | Agent setup validation                       |
 | `$qa-translate`     | Technical translation RU→EN                  |
 
-**Recommended Workflow:** `$repo-scout` → `$spec-audit` → `$api-isolated-tests` → `$api-tests`
+**Recommended Workflow:** `$repo-scout` → `$api-test-cases` → `$api-tests` → `$api-test-review`

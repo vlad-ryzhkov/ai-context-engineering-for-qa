@@ -138,6 +138,7 @@ Three layers, loaded on demand (not all at once):
 | `/api-isolated-tests` | `.claude/skills/api-isolated-tests/SKILL.md` |   300 | Generation | Test case generation from specification    |
 | `/api-mocks`          | `.claude/skills/api-mocks/SKILL.md`          |    70 | Generation | HTTP mock server generation                |
 | `/api-test-cases`     | `.claude/skills/api-test-cases/SKILL.md`     |   335 | Generation | Bulk test cases for entire API             |
+| `/api-test-review`    | `.claude/skills/api-test-review/SKILL.md`    |   ~400 | Analysis   | Deep code review of generated API tests    |
 | `/api-tests`          | `.claude/skills/api-tests/SKILL.md`          |   288 | Generation | API automated tests (Kotlin + JUnit 5)     |
 | `/api-tests-java`     | `.claude/skills/api-tests-java/SKILL.md`     |   220 | Generation | API automated tests (Java 17+ + JUnit 5)   |
 | `/doc-lint`           | `.claude/skills/doc-lint/SKILL.md`           |   248 | Analysis   | Documentation quality audit                |
@@ -299,7 +300,7 @@ Approaches used in this project. Each pattern solves a specific problem.
 ### 9. Cross-Skill Pipeline
 
 **Problem:** Skills run in isolation, not building on each other's output.
-**Solution:** `/spec-audit` → `/api-isolated-tests` → `/api-tests` — each skill expects upstream artifacts.
+**Solution:** `/repo-scout` → `/api-test-cases` → `/api-tests` → `/api-test-review` — each skill builds on upstream artifacts.
 
 ### 10. Compilation Gate
 
@@ -482,6 +483,7 @@ Official alternative: [skill-creator](https://github.com/anthropics/skills/tree/
 
 | Date       | Description                                                                                                                                                                                       |
 |------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 2026-03-01 | Added `/api-test-review` skill (deep code review of generated API tests). Updated main pipeline. Total: 20 skills, 31 anti-patterns |
 | 2026-02-28 | Added `/api-tests-java` skill (Java 17+ test generation), 4 Java-specific anti-patterns (api/java/inline-http-calls, api/java/map-instead-of-dto, platform/java/completablefuture-no-timeout, platform/java/flaky-sleep-tests), 1 reference (api-patterns-java). Updated sdet.md with Java Compilation Rules. Total: 19 skills, 31 anti-patterns, 26 references |
 | 2026-02-28 | Added 4 skills (api-mocks, api-test-cases, fix-markdown, pr), 2 anti-patterns (batch-partial-failure, eventual-consistency-writes), 3 reference files (api-test-cases refs). Updated all line counts. Total: 18 skills, 27 anti-patterns, 25 references |
 | 2026-02-21 | Rewrote intro and pattern catalog for clarity. Added 3 skills (agents-checker, qa-translate, output-review), expanded anti-patterns to 22 files, updated line counts, synced tech stack with CLAUDE.md |

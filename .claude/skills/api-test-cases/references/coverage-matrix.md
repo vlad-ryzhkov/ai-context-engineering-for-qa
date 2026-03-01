@@ -69,7 +69,7 @@ Rules:
 
 ### Streaming Test Classification
 
-- `[UNIT_TEST_CANDIDATE]` — scenario tests server lifecycle (timer expiry, context cancellation, shutdown). Cannot be executed via gRPC client alone. **Recommendation:** unit test with mock timer/context. Move to `unit-like_test-scenarios.md`.
+- `[UNIT_TEST_CANDIDATE]` — scenario tests server lifecycle (timer expiry, context cancellation, shutdown). Cannot be executed via gRPC client alone. **Recommendation:** unit test with mock timer/context. Action: exclude from generation. Log in developer-questions file under "## Q{N} [P2] — Unit Test Candidate: {scenario name}".
 - `[MANUAL]` — scenario requires external coordination (parallel terminal, specific timing, concurrency). Mark as manual in Scope Reduction Log; do not generate automated test row.
 
 ---
@@ -132,11 +132,11 @@ Read-only → `Cleanup: N/A`.
 |---|---|---|
 | DH-01 | Repeating Validation Pattern — null/empty/wrong-type across N fields, same error code | Keep 1 representative field per check type |
 | DH-02 | Complexity Rule Combinatorics — M sub-rules for one field | Keep 1 representative NEG |
-| DH-03 | Infrastructure BVA — boundary defined by schema/proto validate tag WITHOUT named business rule in spec/checklist | Classify as [INFRA_BVA]: move to `unit-like_test-scenarios.md`. Exception: if boundary is named in checklist → keep as API test. Rule: "Named in checklist = API test. Schema-only = unit-like." |
+| DH-03 | Infrastructure BVA — boundary defined by schema/proto validate tag WITHOUT named business rule in spec/checklist | Classify as [INFRA_BVA]: exclude from generation. Log in Scope Reduction Log with `DH-03` reference: "Schema-only boundary — out of scope for API integration testing." Exception: if boundary is named in checklist → keep as API test. |
 | DH-04 | Format/Whitespace Consolidation — 3+ regex/spacing variants for same field | Keep 1 representative |
 | DH-05 | Length Boundary Deduplication — NEG row = same boundary as BVA row | Keep BVA row, remove NEG duplicate |
 | DH-06 | Read-Only IDEM — IDEM for endpoint without state mutation (List, Get) | SKIP entirely. Log in Scope Reduction Log: "IDEM_READONLY: read-only endpoint, no state mutation, idempotency not applicable" |
-| DH-07 | Degraded-State NEG — scenario requires intentionally broken service (uninitialized client, missing dependency, infrastructure failure) | Classify as [INFRA_STATE]: move to `unit-like_test-scenarios.md`. Not testable via API test harness. |
+| DH-07 | Degraded-State NEG — scenario requires intentionally broken service (uninitialized client, missing dependency, infrastructure failure) | Classify as [INFRA_STATE]: exclude from generation. Log in Scope Reduction Log with `DH-07` reference: "Requires infrastructure-level fault injection — out of scope for API integration testing." If applicable, add P2 entry to developer-questions file. |
 | DH-08 | Data-Driven Consolidation — ≥3 scenarios for same endpoint differing only in 1-2 input fields with predictable expected results (e.g., auth variants, role-based access, locale variants, error code variants) | Consolidate into Data-Driven block: 1 parent row + parameter table. Threshold: ≥3 variants of the same check type for same endpoint. Preserves coverage while reducing table rows ≥3:1. Exception: Do NOT consolidate if expected HTTP status differs across variants (each status needs its own row for traceability). |
 
 ### Exceptions (heuristic does NOT reduce)

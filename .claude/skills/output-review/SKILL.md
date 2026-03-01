@@ -264,6 +264,33 @@ Logic: each FAIL/PARTIAL is a symptom of a missing or unclear rule in the skill.
 
 ---
 
+## Anti-Patterns
+
+| Anti-Pattern | Why It Breaks | Fix |
+|---|---|---|
+| Self-check results inflated by skill in SKILL COMPLETE block | Auditor later finds issues skill missed; false confidence | `/output-review` provides independent validation; always verify via this skill, not skill's self-assessment |
+| Checklist items from only one section (e.g., only Quality Gates) | Other checks missed (Post-Check, BANNED items); incomplete audit | Extract from ALL sections: Quality Gates + Self-Check + Post-*Check + BANNED + definitions |
+| Checklist verified visually, not via Grep | Missed instances; false PASS | Use Grep for pattern verification (assertions without messages, hardcoded values, etc.) |
+| FAIL marked without file:line reference | Recommendation vague; developer can't find the issue | Every FAIL must cite exact artifact location: `FileName.kt:lineNumber` |
+| Scorecard arithmetic error | Score misrepresents quality; wrong decision | Verify formula: (PASS + PARTIAL×0.5) / (PASS + PARTIAL×0.5 + FAIL) × 100 |
+| Artifact read incompletely (>500 lines, skipped sections) | Key issues missed due to size | For large files: check key patterns (assertions, hardcoding, cleanup), document sections skipped |
+
+## Quality Gate (Self-Review)
+
+Before saving the output-review report:
+
+- [ ] All extracted checklist items verified (Quality Gates + Self-Check + BANNED)
+- [ ] Each FAIL includes specific evidence (file:line)
+- [ ] BANNED items checked via Grep, not visual inspection
+- [ ] Scorecard calculated with formula shown
+- [ ] No false FAILs — context re-verified for each finding
+- [ ] Full report saved to `audit/output-review_{skill-name}_{YYYY-MM-DD}.md`
+
+**Gardener Protocol**: Call `.claude/protocols/gardener.md`. If you identified missing rules
+or inefficiencies during this run, output a brief proposal table. Otherwise: `🌱 Gardener: No updates needed.`
+
+---
+
 ## Constraints
 
 - Save full report to `audit/output-review_{skill-name}_{YYYY-MM-DD}.md`, brief summary (5 lines) — in chat

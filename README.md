@@ -2,8 +2,8 @@
 
 Stop writing ad-hoc prompts. Start using engineered AI skills for QA.
 
-This repository is a ready-to-use library of **19 AI skills**, **31 anti-pattern quality gates**, 
-and **2 specialized agents** designed specifically for QA workflows. Copy the `.claude/` folder into your project, 
+This repository is a ready-to-use library of **20 AI skills**, **31 anti-pattern quality gates**,
+and **2 specialized agents** designed specifically for QA workflows. Copy the `.claude/` folder into your project,
 and your AI assistant immediately knows how to audit specs, generate test cases, write API tests (Kotlin/Java), and check its own output.
 
 Works with Claude Code, OpenCode, Cursor, VS Code Copilot, and Codex.
@@ -39,8 +39,8 @@ You don't need to read the whole repo. Three steps to start getting value:
 The main pipeline — choose your starting point based on scope:
 
 ```text
-/repo-scout       →  /api-test-cases     →  /api-tests
-(backend repo)       (test scenarios)       (QA test repo)
+/repo-scout       →  /api-test-cases     →  /api-tests      →  /api-test-review
+(backend repo)       (test scenarios)       (QA test repo)     (code review)
 ```
 
 | Skill             | Input                 | Output                             | What you get                                         |
@@ -49,6 +49,7 @@ The main pipeline — choose your starting point based on scope:
 | `/api-test-cases` | Specification + audit | Test scenario matrix (Markdown)    | Exhaustive test cases for all endpoints, by priority |
 | `/api-tests`      | Test scenarios + spec | Kotlin test code (JUnit 5, Allure) | Production-ready tests, run with `./gradlew test`    |
 | `/api-tests-java` | Test scenarios + spec | Java 17+ test code (JUnit 5, Allure, AssertJ) | Same as above, Java teams opt-in |
+| `/api-test-review` | Test code + spec | Review report (Markdown) | Deep code review: security, architecture, quality |
 
 > While `/api-tests` provides good coverage out of the box, it is designed to be adapted to your team's architectural guidelines.
 >
@@ -65,7 +66,7 @@ The main pipeline — choose your starting point based on scope:
 | `/fix-markdown`  | Fix markdownlint errors across the repo                                     |
 | `/pr`            | Create a pull request with conventional commit title                        |
 
-> Full catalog of all 18 skills (setup, audit, analysis, translation): [docs/ai-setup.md](docs/ai-setup.md)
+> Full catalog of all 20 skills (setup, audit, analysis, translation): [docs/ai-setup.md](docs/ai-setup.md)
 
 > **Disclaimer:** Always review AI-generated results. Even with well-crafted prompts and agents, outputs must be validated by a human before being merged or executed.
 
@@ -106,7 +107,7 @@ This library is a starting point. To make it yours:
 
 ## Architecture
 
-- **19 skills** in `.claude/skills/` — from repo scanning to test generation to translation
+- **20 skills** in `.claude/skills/` — from repo scanning to test generation to translation
 - **31 anti-pattern quality gates** in `.claude/qa-antipatterns/` — the AI checks generated code against these before finishing
 - **2 specialized agents** (Auditor + SDET) in `.claude/agents/` — delegate planning vs. code generation
 - **Progressive Disclosure** — `CLAUDE.md` → `qa_agent.md` → `SKILL.md` load only on demand, saving tokens

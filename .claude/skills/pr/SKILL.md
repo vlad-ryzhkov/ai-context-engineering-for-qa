@@ -6,6 +6,8 @@ allowed-tools: "Bash Read Edit Glob Grep"
 
 # /pr — Pull Request Creator
 
+> **Execution**: Output only the final result and PR URL. Suppress intermediate command output unless an error blocks the PR.
+
 ## When to Use
 
 - All planned changes are implemented and locally verified
@@ -70,6 +72,15 @@ EOF
 
 - [ ] `./scripts/pre-push.sh` → all checks passed
 - [ ] PR title: conventional commits, Latin only (CI enforced)
+
+## Self-Review Checklist
+
+Before creating the PR:
+- [ ] All planned changes are staged and locally committed
+- [ ] Branch is up to date with remote base branch
+- [ ] Pre-push hook passes without errors
+
+**Gardener**: If you notice rule drift or improvements during this run, briefly note it here.
 
 ## Rules
 

@@ -66,8 +66,22 @@
 
 ## Phase 1: Scope Definition
 1. Accept file/directory path from user (e.g., `src/test/kotlin/domain/users/tests/`)
-2. List all test files (*.kt, *.java)
-3. Confirm scope: number of files, approximate lines of code
+2. List all test files (`*.kt`, `*.java`) via Glob
+3. **API Integration Test Filter (mandatory):** For each file, check if it imports an HTTP client library:
+   - In scope: file imports `io.ktor.client`, `java.net.http`, `okhttp3`, or `io.restassured`
+   - Out of scope: file has `@Test` methods but no HTTP client import (pure logic/unit test) — skip silently
+   - Out of scope: file path contains `/unit/` or class name ends with `UnitTest` / `UnitSpec` — skip silently
+4. Log classification result:
+   ```
+   Phase 1 — Scope:
+   ├─ Files found: {total}
+   ├─ API integration tests: {in-scope count} → will review
+   └─ Skipped (unit/non-HTTP tests): {out-of-scope count} → {file names}
+   ```
+5. If ALL files are out of scope → output:
+   `⛔ SCOPE MISMATCH: No API integration test files found in {path}. This skill reviews tests that use HTTP clients. Unit tests are out of scope.`
+   STOP execution.
+6. Proceed with only in-scope files for phases 2–8.
 
 ## Phase 2: Security Audit
 Scan for hardcoded secrets, PII, unsafe data patterns, and auth management:

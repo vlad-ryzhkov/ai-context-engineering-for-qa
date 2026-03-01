@@ -228,6 +228,24 @@ Post-Check format — same as `/spec-audit` (see qa_agent.md § Skill Completion
 
 ---
 
+## Quality Gate (Self-Review)
+
+Before saving the final report:
+
+- [ ] All target files scanned (via Glob)
+- [ ] Size thresholds verified from `references/check-rules.md`
+- [ ] Cross-file duplicates detected via signature comparison
+- [ ] SSOT violations flagged (same content in multiple files)
+- [ ] Safe-fix script generates without syntax errors
+- [ ] Report file saved with timestamp
+
+**Gardener Protocol**: Call `.claude/protocols/gardener.md`. If you identified missing rules
+or inefficiencies during this run, output a brief proposal table. Otherwise: `🌱 Gardener: No updates needed.`
+
+> **Status Reporting**: After Phase 4 (duplicates scan), emit JSON progress: `{"phase": 4, "files_scanned": N, "duplicates_found": N}`
+
+---
+
 ## Related Files
 
 | File | Content |

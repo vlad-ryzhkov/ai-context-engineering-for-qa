@@ -291,6 +291,22 @@ Before completion, verify:
 
 ---
 
+## Quality Gate (Self-Review)
+
+Before finalizing the screenshot audit:
+
+- [ ] All screenshots scanned (via Glob or user path)
+- [ ] Semantic translation errors checked (false friends, context issues)
+- [ ] Layout issues verified (truncation, overflow, RTL mirroring)
+- [ ] CLDR formats validated (numbers, currency, date, time)
+- [ ] Consistency verified (single language, terminology, numerals)
+- [ ] Report artifact generated with timestamp
+
+**Gardener Protocol**: Call `.claude/protocols/gardener.md`. If you identified missing rules
+or inefficiencies during this run, output a brief proposal table. Otherwise: `🌱 Gardener: No updates needed.`
+
+---
+
 ## Related Files
 
 | File | Contents |

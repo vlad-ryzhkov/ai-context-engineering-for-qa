@@ -487,6 +487,23 @@ Self-Review for this skill **is not generated** (read-only scanning, not content
 └─ Blueprint: {F cross-cutting flows} + {R high-risk areas} + {B blocker constraints}
 ```
 
+## Quality Gate (Self-Review)
+
+Before finalizing the repo-scout report:
+
+- [ ] All 9 phases completed (or Phases 1-2, 6-10 if shallow mode)
+- [ ] API surface documented with endpoint count
+- [ ] Database schema extracted (tables, relationships)
+- [ ] State machines and entity flows identified
+- [ ] Behavioral nuances documented (error handling, validation rules)
+- [ ] Test Generation Blueprint section complete
+- [ ] Report saved with timestamp
+
+**Gardener Protocol**: Call `.claude/protocols/gardener.md`. If you identified missing rules
+or inefficiencies during this run, output a brief proposal table. Otherwise: `🌱 Gardener: No updates needed.`
+
+---
+
 ## Related Files
 
 - Language patterns (index): `references/lang-patterns.md` (Language Detection, Testing Libraries, Concurrency, Common Patterns, Host System, gRPC Streaming)

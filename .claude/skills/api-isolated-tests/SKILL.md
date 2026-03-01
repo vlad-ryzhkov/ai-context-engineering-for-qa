@@ -272,7 +272,13 @@ Create file `docs/api-isolated-tests/test-scenarios_{timestamp}.md` (timestamp f
    - [ ] **Explicitly named business rules preserved?** (heuristics did NOT reduce spec-named rules)
 5. **Write:** Save output to `docs/api-isolated-tests/test-scenarios.md` (or split into files per endpoint in `docs/api-isolated-tests/`).
 
+> **Loop Guard**: If a spec parse error or constraint violation (hardcoded data, ambiguous expected results)
+> persists after two fix attempts, output an ESCALATION block with the error details and wait for user instruction.
+
 ## Quality Gates
+
+**Agent Collaboration**: Output is a standalone scenario matrix for handoff to `/api-tests` (Kotlin) or `/api-tests-java` (Java)
+for implementation. Include traceability metadata if upstream `/spec-audit` was run (reference its timestamp).
 
 - **Zero scenarios from `EXCLUDED_SCENARIOS` or `EXCLUDED_TYPES` remain in the output** — `## Scope Reduction Log` is present and accounts for every deletion
 - Every endpoint has at minimum: 1 POS + 1 NEG per validation class (missing, null/empty, wrong-type, invalid-value) + 1 BVA + 1 SEC + 1 HEADERS; every POST/PUT additionally at minimum 1 IDEM. In `mode: api-integration` the NEG minimum is 1 per validation class (not 1 per field × class)

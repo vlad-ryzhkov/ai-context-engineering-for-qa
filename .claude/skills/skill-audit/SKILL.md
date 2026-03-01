@@ -203,9 +203,49 @@ Count total occurrences per file.
 - Why: LLMs perform better when they understand the *reason* behind a rule. Excessive uppercase imperatives add noise without improving compliance.
 - Recommendation: "Excessive rigid constraints detected ({N} occurrences of ALWAYS/NEVER/MUST). Replace with rationale-driven phrasing — explain *why* the rule exists."
 
-### Check 11: Paired Skill Drift + Intra-doc Redundancy
+### Check 11: Token Economy / SILENT MODE (Tier 1 Baseline — WARNING during V2 migration)
 
-#### 11a: Paired Skill Drift
+Grep for explicit "SILENT MODE" or instruction to suppress intermediate chat output.
+
+- Severity: **WARNING** (if absent during migration; CRITICAL after V2 completion)
+- Why: Agents without this protocol pollute chat, output intermediate tables and lists, waste tokens on chatter
+- Recommendation: Add Block A (SILENT MODE) from `init-skill/references/skill-template.md`
+
+### Check 12: Self-Review Checklist (Tier 1 Baseline — WARNING during V2 migration)
+
+Grep: `- [ ]` checklist or equivalent verification step (Quality Gate section) before SKILL COMPLETE block.
+
+- Severity: **WARNING** (if absent during migration; CRITICAL after V2 completion)
+- Why: Structured self-review prevents accidental oversights and improves output quality
+- Recommendation: Add Block B or Block B-Lite (Quality Gate) from `init-skill/references/skill-template.md`
+
+### Check 13: Gardener Integration (Tier 1 Baseline — WARNING during V2 migration)
+
+Grep: explicit reference to `.claude/protocols/gardener.md` or Gardener call in Quality Gate section.
+
+- Severity: **WARNING** (if absent during migration; CRITICAL after V2 completion)
+- Why: Gardener Protocol closes the feedback loop on rule drift and process improvements
+- Recommendation: Add Block B (Quality Gate + Gardener) from `init-skill/references/skill-template.md`
+
+### Check 14: Anti-Patterns Section (Tier 2 Recommended — SUGGESTION)
+
+Grep: "Anti-patterns", "BANNED", "Common Mistakes", or ❌/✅ pairs.
+
+- Severity: **SUGGESTION** (if missing from code-generating or analysis skills)
+- Applicable only if skill generates code or complex text
+- Recommendation: Add anti-patterns section or reference `qa-antipatterns/` folder with skill-specific examples
+
+### Check 15: Loop Guard / Escalation (Tier 3 Specialized — SUGGESTION)
+
+Grep: "Loop Guard", "Escalation", "3-Strike", or `> **Loop Guard**`.
+
+- Severity: **SUGGESTION** (if missing from testing/compilation/iterative skills)
+- Applicable only if skill involves code testing, compilation, or iterative fixing (api-tests, api-mocks, api-isolated-tests)
+- Recommendation: Add Block C (Loop Guard) from `init-skill/references/skill-template.md`
+
+---
+
+### Check 11a: Paired Skill Drift (Legacy — still CRITICAL)
 
 `api-tests/SKILL.md` and `api-tests-java/SKILL.md` are paired skills — intentionally similar. Divergence is allowed only where the language differs (Kotlin vs Java syntax, types, tooling). All behavioral rules (numbered labels `2a`–`2l`, Quality Gates, Workflow, Completion Contract) must be synchronized.
 
@@ -244,10 +284,11 @@ Output to chat only:
 
 | Severity | What it catches |
 |----------|-----------------|
-| **CRITICAL** | "DO NOT FIX", SKILL.md >500 lines, artifact-generating skills without timestamping |
+| **CRITICAL** | "DO NOT FIX", SKILL.md >500 lines, artifact-generating skills without timestamping, paired skill drift (api-tests / api-tests-java) |
 | **ERROR** | Stale cross-references in qa_agent.md |
-| **WARNING** | Bloated Self-Review (>50 lines), Tech Stack duplication, code >50 lines inline, Anti-Patterns >30 lines, 300–500 lines, SKILL.md >400 lines without Progressive Disclosure, excessive rigid constraints (ALWAYS/NEVER/MUST > 5), paired skill drift (missing/diverged rules between api-tests and api-tests-java) |
-| **INFO** | Decorative ``` blocks, rarely-used sections inline, intra-doc redundancy (same rule in multiple sections) |
+| **WARNING** | Bloated Self-Review (>50 lines), Tech Stack duplication, code >50 lines inline, Anti-Patterns >30 lines, 300–500 lines, SKILL.md >400 lines without Progressive Disclosure, excessive rigid constraints (ALWAYS/NEVER/MUST > 5), **Tier 1 Baseline missing during V2 migration** (SILENT MODE, Self-review checklist, Gardener integration) |
+| **SUGGESTION** | Tier 2–3 features missing (Anti-patterns, Loop Guard), decorative ``` blocks, rarely-used sections inline, intra-doc redundancy |
+| **INFO** | Minor style or organization suggestions |
 
 ---
 

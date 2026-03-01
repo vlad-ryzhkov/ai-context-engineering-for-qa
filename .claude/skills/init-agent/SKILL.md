@@ -8,6 +8,9 @@ context: fork
 
 # /init-agent — qa_agent.md Generator
 
+> **SILENT MODE**: Execute all phases silently. Do not output intermediate analysis
+> or conversational filler. Only the final qa_agent.md artifact and SKILL COMPLETE block go to chat.
+
 <purpose>
 Creating a "job description" for the AI: mindset, anti-patterns, quality gates.
 Focus: broad-profile QA engineers (API, UI, Mobile, Performance).
@@ -188,13 +191,28 @@ AI: Generating qa_agent.md for universal QA...
 Save to .claude/qa_agent.md? (y/n)
 ```text
 
-## Self-Check (before saving)
+## Anti-Patterns
+
+| Anti-Pattern | Why It Breaks | Fix |
+|---|---|---|
+| Generic mindset principles (e.g., "be thorough") | Vague, not actionable; AI doesn't know what "thorough" means for this team | Use specific examples: "Verify every required field in validation responses" |
+| Anti-patterns missing from qa_agent.md | AI doesn't know the team's specific pain points | Always include ≥5 BANNED patterns (use `qa-profiles.md` as reference) |
+| Hardcoded `/testcases` → `/api-tests` workflow without `/spec-audit` | Tests built without verifying spec first; catch bugs late | Always include `/spec-audit` as first step |
+| `[xxx]` placeholders left unfilled | Template cruft confuses AI during execution | Remove all `[Profile]`, `[Language]` references before saving |
+| Quality Gates missing Commit + PR + Release sections | Incomplete checklist coverage; CI fails later | All 3 gates required per init-agent standard |
+
+## Quality Gate (Self-Review)
+
+Before saving the generated `qa_agent.md`:
 
 - [ ] **Core Principles:** 3-5 principles selected and filled in?
 - [ ] **Anti-Patterns:** Table contains at least 5 entries?
 - [ ] **Quality Gates:** All 3 sections (commit/PR/release) present?
 - [ ] **No placeholders:** No remaining `[xxx]` in the text?
 - [ ] **Cross-Skill Protocol:** Section present with `/spec-audit` → `/testcases` → `/api-tests`?
+
+**Gardener Protocol**: Call `.claude/protocols/gardener.md`. If you identified missing rules
+or inefficiencies during this run, output a brief proposal table. Otherwise: `🌱 Gardener: No updates needed.`
 
 ## Related Files
 

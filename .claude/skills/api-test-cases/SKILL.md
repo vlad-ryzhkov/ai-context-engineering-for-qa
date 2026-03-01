@@ -55,7 +55,7 @@ If no exclusions found → `EXCLUDED_TYPES = []`, `EXCLUDED_SCENARIOS = []`, app
 
 ## Input Strategy (Auto-Discovery)
 
-1. **Primary:** `audit/repo-scout-report.md` — extract endpoint catalog from API Surface section.
+1. **Primary:** Glob `audit/repo-scout-report*.md` — read the most recently modified file, then extract endpoint catalog from API Surface section.
 2. **Fallback:** Scan `specifications/` directory for `*.md`, `*.yaml`, `*.json`, `*.proto`, `*.graphql`, `*.gql` files.
 3. **Direct:** `$ARGUMENTS` path or user-provided file path.
 4. **Enrichment:** `audit/spec-audit-report.md` (if exists) — incorporate findings.
@@ -244,6 +244,16 @@ Merge all per-domain test scenario files into `audit/test-scenarios.md`:
 2. Add cross-domain dependency header from Phase 5
 3. Preserve domain section headers for navigation
 4. Remove Scope Reduction Logs (already archived in per-domain files)
+5. **Add Test Generation Context block** (new):
+   - Insert a `## Test Generation Context` header section AFTER the cross-domain dependency header
+   - Extract and document from `audit/repo-scout-report*.md` (if available):
+     - **Create-Order Chain** (§12) — ordered list of resource types for setup/teardown
+     - **Consistency Model** — table mapping write→read pairs to consistency guarantees (immediate/eventual)
+     - **Eventual Consistency Pairs** — pre-filtered list of (write_endpoint, read_endpoint) for Awaitility usage
+     - **State Transitions** (§11) — pre-filtered list of rejected guard failures
+     - **Behavioral Nuances** (§13) — conditional test flags (e.g., internal vs external, search semantics)
+   - Format: Markdown tables + bullet lists for easy parsing by `/api-tests`
+   - If `audit/repo-scout-report*.md` not found → emit empty placeholder: `<!-- Test Generation Context: Not available (repo-scout not run). /api-tests will extract from spec. -->`
 
 This file is the PRIMARY input for `/api-tests`.
 
@@ -306,6 +316,34 @@ Skip Phase 7 if no SPEC AMBIGUITY, UNIT_TEST_CANDIDATE, or INFRA_STATE items wer
 - All selected domains have generated files
 - Summary file exists with aggregated statistics
 - Cross-domain dependency map present
+
+---
+
+## Anti-Patterns
+
+| Anti-Pattern | Why It Breaks | Fix |
+|---|---|---|
+| Expected Results with multiple HTTP codes (`201 OR 400`) | Atomicity violated; AI can't generate single test from ambiguous scenario | Each scenario = exactly 1 Expected Result with 1 HTTP code. Separate into two scenarios if needed. |
+| Hardcoded test data (email: "user@test.com", name: "John") | Non-unique data; tests collide or conflict in CI; not production-realistic | Always use placeholders/fixtures: `{email}`, `{full_name}`. Generate unique values per test. |
+| BVA boundary without source (e.g., "max_length: 256" with no spec reference) | AI doesn't know if boundary is valid; tests may be wrong | Every boundary MUST reference spec section or be marked `ASSUMED` with rationale. |
+| Missing Cleanup in POS scenarios with state changes (Create, Update, Delete) | Tests leave orphaned data; next test fails; order-dependent | Every Create/Update/Delete must include cleanup: "DELETE /{resource}/{id}" or rollback statement. |
+| EXCLUDED_SCENARIOS not read before generating domain batch | Template scenarios included that should be skipped; bloated test suite | Re-read EXCLUDED_SCENARIOS before each domain. Apply before generating scenarios. |
+| No Contract Match for POS responses | Tests pass with wrong data shape; real failures hidden | Every POS scenario MUST include: "Response matches OpenAPI schema for {endpoint}" as separate expectation. |
+
+## Quality Gate (Self-Review)
+
+Before finalizing test-scenarios files:
+
+- [ ] All domains scanned and grouped correctly
+- [ ] No endpoint missed (coverage percentage = M/T)
+- [ ] EXCLUDED_TYPES and EXCLUDED_SCENARIOS parsed from spec before generation
+- [ ] All scenarios have exactly 1 HTTP code + business logic assertion
+- [ ] POS scenarios include Contract Match + Cleanup
+- [ ] No hardcoded test data (all placeholders like {email}, {id}, etc.)
+- [ ] Summary file with statistics exists (total scenarios, breakdown by type)
+
+**Gardener Protocol**: Call `.claude/protocols/gardener.md`. If you identified missing rules
+or inefficiencies during this run, output a brief proposal table. Otherwise: `🌱 Gardener: No updates needed.`
 
 ---
 

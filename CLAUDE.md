@@ -124,6 +124,7 @@ When asked to shorten, simplify, or trim output/content — remove only what is 
 | `/api-test-cases`     | SDET    | Bulk test cases for entire API   |
 | `/api-tests`          | SDET    | API automated tests (Kotlin)     |
 | `/api-tests-java`     | SDET    | API automated tests (Java 17+)   |
+| `/api-test-review`    | Auditor | Deep code review of generated API tests  |
 | `/doc-lint`           | Auditor | Documentation audit              |
 | `/skill-audit`        | Auditor | SKILL.md files audit             |
 | `/output-review`      | Auditor | Skill output audit               |
@@ -134,6 +135,6 @@ When asked to shorten, simplify, or trim output/content — remove only what is 
 | `/update-ai-setup`    | QA Lead | AI setup registry update         |
 | `/qa-translate`       | Auditor | Technical translation RU→EN      |
 
-**Workflow:** `/repo-scout` → `/spec-audit` → `/api-test-cases` | `/api-isolated-tests` → `/api-tests`
+**Workflow:** `/repo-scout` → `/spec-audit` → `/api-test-cases` | `/api-isolated-tests` → `/api-tests` → `/api-test-review`
 
 **Structure:** `.claude/` → `qa_agent.md`, `agents/`, `skills/`, `qa-antipatterns/`, `references/`

@@ -111,16 +111,6 @@ Key differences from api-service template:
 
 ---
 
-## Unit-Like Scenarios (Moved to unit-like_test-scenarios.md)
-
-| ID     | Type                                                       | Reason                          | Recommendation                                      |
-|--------|------------------------------------------------------------|---------------------------------|-----------------------------------------------------|
-| {ID}   | [INFRA_BVA/INFRA_STATE/IDEM_READONLY/UNIT_TEST_CANDIDATE] | {DH-XX rule reference}          | {unit test / skip / N/A}                            |
-
-> None identified. ← (use this if none)
-
----
-
 ## Cross-Domain Dependencies
 - **Auth tokens:** Required by {list of endpoints in other domains}
 - **Shared entities:** {entity} created in {domain A}, referenced in {domain B}

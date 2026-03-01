@@ -50,6 +50,11 @@ object RegistrationClient {
                 }
             }
             install(Logging) { level = LogLevel.ALL }
+            install(HttpTimeout) {
+                requestTimeoutMillis = 30_000L
+                connectTimeoutMillis = 10_000L
+                socketTimeoutMillis = 30_000L
+            }
         }
     }
 
@@ -77,6 +82,18 @@ object RegistrationHelper {
     suspend fun deleteUser(userId: String) {
         val response = RegistrationClient.delete(userId)
         assertEquals(204, response.status.value, "Cleanup failed for user $userId")
+    }
+
+    @Step("Assert 201 response with required security headers")
+    fun assertSuccessfulRegistration(response: HttpResponse) {
+        assertEquals(201, response.status.value, Msgs.STATUS_MISMATCH)
+        assertEquals("application/json", response.headers["Content-Type"], "Content-Type header mismatch")
+        assertEquals("nosniff", response.headers["X-Content-Type-Options"], "X-Content-Type-Options header missing")
+        assertEquals(
+            "max-age=31536000; includeSubDomains",
+            response.headers["Strict-Transport-Security"],
+            "Strict-Transport-Security header missing"
+        )
     }
 }
 ```
@@ -123,14 +140,7 @@ class RegistrationPositiveTests {
 
         val response = RegistrationClient.register(request)
 
-        assertEquals(201, response.status.value, Msgs.STATUS_MISMATCH)
-        assertEquals("application/json", response.headers["Content-Type"], "Content-Type header mismatch")
-        assertEquals("nosniff", response.headers["X-Content-Type-Options"], "X-Content-Type-Options header missing")
-        assertEquals(
-            "max-age=31536000; includeSubDomains",
-            response.headers["Strict-Transport-Security"],
-            "Strict-Transport-Security header missing"
-        )
+        RegistrationHelper.assertSuccessfulRegistration(response)
 
         val body = response.body<RegisterResponse>()
         assertNotNull(body.id, "Response ID must not be null")

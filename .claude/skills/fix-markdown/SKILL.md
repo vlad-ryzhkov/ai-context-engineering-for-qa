@@ -31,3 +31,5 @@ Fix all markdownlint errors in .md files across the repository.
 
 3. Fix remaining errors manually using Edit tool (line length, heading levels, inline HTML)
 4. Verify: re-run step 2, expect zero errors
+
+> **Gardener**: If you noticed rule drift or improvements during this run, briefly note it here.

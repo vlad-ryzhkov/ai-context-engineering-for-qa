@@ -6,6 +6,12 @@ allowed-tools: "Read Glob Grep Edit Write"
 
 # /agents-checker — AI Agent Setup Validator
 
+> **SILENT MODE**: Execute all validation phases silently. Do not output intermediate
+> findings or progress per file. Only the final audit report and SKILL COMPLETE block go to chat.
+
+> **Status Reporting**: After Phase 2 (qa_agent.md checks) and Phase 3 (each agent file),
+> emit a single-line JSON progress: `{"phase": N, "files_scanned": N, "issues_found": N}`
+
 **Type:** Audit Utility
 **Category:** QA Setup / Compliance
 
@@ -126,6 +132,33 @@ Algorithm:
 | Skill cross-references to non-existent skills | May be intentional (planned future skill) |
 
 **After fixes:** Re-run Phases 2–3 on modified files to confirm healing was effective. Report delta.
+
+---
+
+## Anti-Patterns
+
+| Anti-Pattern | Why It Breaks | Fix |
+|---|---|---|
+| Agent file missing `## Role` heading | AI doesn't know which agent this is; routing fails | Add explicit role heading: `## Role: API Test Specialist` |
+| Identical content in agent file and `qa_agent.md` (verbatim copy) | Duplication wastes tokens; conflicting updates | Keep canonical content in `qa_agent.md`; use reference in agent file if needed |
+| Placeholder text `[Profile]`, `[Language]`, `[xxx]` left unfilled | Template cruft confuses the AI; treated as actual rules | Remove all placeholder lines after initial setup |
+| Broken `agent:` reference in SKILL.md | Skill cannot find its agent profile; falls back to defaults | Verify agent file exists at `.claude/agents/{name}.md` |
+| `## Anti-Patterns` table with < 3 rows | Insufficient guidance for that role | Add role-specific patterns from the agent's domain |
+| Missing `## Verbosity Protocol` in agent file | AI outputs verbose intermediate findings; wastes tokens | Add protocol section explaining output format |
+
+---
+
+### Quality Gate (Self-Review)
+
+Before finalizing the audit:
+- [ ] All 3 required files scanned (qa_agent.md + all agents/*.md)
+- [ ] Phases 1–5 completed without early exit
+- [ ] No critical issues left unflagged or auto-repaired unsafely
+- [ ] Report artifact generated with timestamp
+- [ ] JSON progress emitted after Phases 2–3
+
+**Gardener Protocol**: Call `.claude/protocols/gardener.md`. If you identified missing rules
+or inefficiencies during this run, output a brief proposal table. Otherwise: `🌱 Gardener: No updates needed.`
 
 ---
 

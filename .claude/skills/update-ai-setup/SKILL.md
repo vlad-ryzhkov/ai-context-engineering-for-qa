@@ -161,6 +161,35 @@ Before saving:
 - [ ] Plugin count in table = number of keys in `settings.json → enabledPlugins`
 - [ ] MCP server count in table = number of keys in `.mcp.json → mcpServers`
 
+## Anti-Patterns
+
+| Anti-Pattern | Why It Breaks | Fix |
+|---|---|---|
+| Line count not verified with `wc -l` | Registry documents stale sizes; capacity tracking wrong | After scanning each file, record `wc -l` result. Compare with Registry. |
+| New skill added to `.claude/skills/` but not in Registry | Skill exists but AI setup docs don't list it; hidden from users | Skill count in Registry MUST equal number of `.claude/skills/*/SKILL.md` files. |
+| Plugins/MCP servers changed but Registry unchanged | Docs lag behind reality; users unaware of available integrations | After reading settings.json and .mcp.json, update both tables in Registry. |
+| No changelog entry for the update | No audit trail; can't track when Registry was last refreshed | Every Registry update includes changelog entry with date and delta (e.g., "+1 skill"). |
+| `[xxx]` placeholders left in final Registry document | Template cruft misleads users; unprofessional | All `[xxx]` fields MUST be replaced with actual data. Verify before saving. |
+| Delta detection skipped (assumes no changes) | Missed files may be undocumented; Registry degrades over time | Always compare scan results with current Registry. Never assume no delta. |
+
+## Quality Gate (Self-Review)
+
+Before saving the updated Registry:
+
+- [ ] All paths on disk verified via Glob
+- [ ] Line counts match `wc -l` results
+- [ ] No `[xxx]` placeholders in final document
+- [ ] Changelog contains new entry with current date
+- [ ] Skill count = number of `.claude/skills/*/SKILL.md` files
+- [ ] Anti-pattern count = number of `.claude/qa-antipatterns/*/*.md` files
+- [ ] Plugin table count = keys in `settings.json → enabledPlugins`
+- [ ] MCP server count = keys in `.mcp.json → mcpServers`
+
+**Gardener Protocol**: Call `.claude/protocols/gardener.md`. If you identified missing rules
+or inefficiencies during this run, output a brief proposal table. Otherwise: `🌱 Gardener: No updates needed.`
+
+---
+
 ## Related Files
 
 - Registry: `docs/ai-setup.md`

@@ -43,7 +43,7 @@ The rest — **delegate** to specialized agents.
 | Role        | File                | Skills                                                                                | When to invoke                               |
 |-------------|---------------------|---------------------------------------------------------------------------------------|----------------------------------------------|
 | **SDET**    | `agents/sdet.md`    | `/api-isolated-tests`, `/api-test-cases`, `/api-tests`, `/api-tests-java`, `/init-skill`      | Code generation                              |
-| **Auditor** | `agents/auditor.md` | `/output-review`, `/skill-audit`, `/doc-lint`, `/screenshot-analyze` | Artifact quality review AFTER generation     |
+| **Auditor** | `agents/auditor.md` | `/output-review`, `/skill-audit`, `/doc-lint`, `/screenshot-analyze`, `/api-test-review` | Artifact quality review AFTER generation     |
 
 ### What You Do NOT Do
 
@@ -73,7 +73,7 @@ The rest — **delegate** to specialized agents.
 
 ## Cross-Skill Protocol
 
-`/repo-scout` → `/spec-audit` → `/api-test-cases` | `/api-isolated-tests` **(SDET)** → `/api-tests` **(SDET)** → `/output-review` **(Auditor)**
+`/repo-scout` → `/spec-audit` → `/api-test-cases` | `/api-isolated-tests` **(SDET)** → `/api-tests` **(SDET)** → `/api-test-review` **(Auditor)**
 
 ---
 
@@ -169,7 +169,7 @@ Sub-agents operate in `context: fork` — pass **exhaustive context** in the pro
 
 ### Cross-Skill Dependencies
 
-`/repo-scout` → `/spec-audit` → `/api-test-cases` | `/api-isolated-tests` **(SDET)** → `/api-tests` **(SDET)** → `/output-review` **(Auditor)**
+`/repo-scout` → `/spec-audit` → `/api-test-cases` | `/api-isolated-tests` **(SDET)** → `/api-tests` **(SDET)** → `/api-test-review` **(Auditor)**
 
 #### Repo-Scout Data Flow (§11–§15 → Downstream Skills)
 

@@ -7,6 +7,9 @@ context: fork
 
 # /init-project — CLAUDE.md Generator
 
+> **SILENT MODE**: Execute all phases silently. Do not output intermediate scan results
+> or file findings. Only the final CLAUDE.md artifact and SKILL COMPLETE block go to chat.
+
 <purpose>
 Automatic creation of CLAUDE.md (AI onboarding into the project) based on repository analysis.
 Focus: QA projects (API tests, UI tests, load testing).
@@ -171,6 +174,34 @@ Before saving, verify:
 ## Output
 
 Save the result to `CLAUDE.md` in the project root.
+
+## Anti-Patterns
+
+| Anti-Pattern | Why It Breaks | Fix |
+|---|---|---|
+| Tech Stack inferred from only one source (package.json only) | Misses critical dependencies in lock files or transitive deps | Check both manifest (package.json) AND lock files (yarn.lock, package-lock.json) |
+| Hardcoded tech stack that doesn't match actual project | CLAUDE.md contradicts reality; AI gets confused | Scan build files, import statements; verify before writing |
+| `[xxx]` placeholders left unfilled (e.g., `[Language]`, `[MainBranch]`) | Template cruft confuses AI; interpreted as literal values | Replace all placeholders via Step 1 data; remove if unknown |
+| QA Skills section added when `.claude/skills/` doesn't exist | Empty section wastes tokens; creates confusion | **Only** add QA Skills section if `.claude/skills/` actually exists |
+| No API Documentation section when spec files exist | AI doesn't know about the API spec; generates tests without reference | Always scan for OpenAPI/gRPC/GraphQL specs in Step 1.7 |
+| CI/CD section missing when workflows are present | Incomplete context on how tests are run; CD assumptions break | Include CI/CD section if `.github/workflows/`, `.gitlab-ci.yml`, or `Jenkinsfile` found |
+
+## Quality Gate (Self-Review)
+
+Before saving the generated `CLAUDE.md`:
+
+- [ ] Tech Stack matches actual project dependencies
+- [ ] Commands work (`./gradlew`, `npm`, `pytest`, etc. all exist)
+- [ ] Structure reflects actual directories (`src/test/`, `tests/`, etc.)
+- [ ] **No** `[xxx]` or TODO placeholders remain
+- [ ] **No** HTML comments `<!-- -->` from template
+- [ ] Heading `#` = project name (not "CLAUDE.md")
+- [ ] QA Skills section present **only if** `.claude/skills/` exists in project
+- [ ] CI/CD Flow section present if CI configs were found
+- [ ] API Documentation section present **only if** spec files were found
+
+**Gardener Protocol**: Call `.claude/protocols/gardener.md`. If you identified missing rules
+or inefficiencies during this run, output a brief proposal table. Otherwise: `🌱 Gardener: No updates needed.`
 
 ## Example Dialog
 
