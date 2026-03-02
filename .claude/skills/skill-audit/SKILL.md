@@ -243,6 +243,17 @@ Grep: "Loop Guard", "Escalation", "3-Strike", or `> **Loop Guard**`.
 - Applicable only if skill involves code testing, compilation, or iterative fixing (api-tests, api-mocks, api-isolated-tests)
 - Recommendation: Add Block C (Loop Guard) from `init-skill/references/skill-template.md`
 
+### Check 16: Cross-Skill Improvement Section (Tier 2)
+
+Pipeline consumer skills (skills that consume structured artifacts produced by another skill,
+e.g., `/api-tests` consuming `test-scenarios.md` from `/api-test-cases`) MUST have a
+`## 💡 {Source} Improvements (Gardener)` section embedded inside the Completion Contract.
+
+- Grep for `Scenario Source Improvements\|Blueprint Source Improvements\|Generator Improvements` in SKILL.md
+- If skill reads `audit/test-scenarios.md` as primary input AND no such section exists → **WARNING** (Tier 2)
+- If skill is a pure auditor of another skill's output AND no such section exists → **WARNING** (Tier 2)
+- OMIT this check for generative skills that produce artifacts without consuming upstream skill output
+
 ---
 
 ### Check 11a: Paired Skill Drift (Legacy — still CRITICAL)

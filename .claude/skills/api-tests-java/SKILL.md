@@ -143,7 +143,7 @@ Shared infra in `core/src/main/java/`. No DI framework assumptions — use const
 
 ## Verbosity Protocol
 
-**Code first, talk later:** Generation → Compilation → Post-Check → SKILL COMPLETE. No intermediate explanations.
+**Code first, talk later:** Generation → Compilation → Post-Check → SKILL COMPLETE → Gardener [→ Scenario Source Improvements]. No intermediate explanations.
 
 **FORBIDDEN:**
 - "I will now create..." — just Create
@@ -280,6 +280,9 @@ If `audit/repo-scout-report*.md` exists, read sections §11–§15 for test gene
 - Anti-patterns: `.claude/qa-antipatterns/_index.md` → `platform/java/`, `api/java/`, `common/`, `security/`
 - Repo-scout report: `audit/repo-scout-report*.md` (§11–§15 for entity/state/nuance context)
 
+**Gardener Protocol**: Call `.claude/protocols/gardener.md`. If you identified missing rules
+or inefficiencies during this run, output a brief proposal table. Otherwise: `🌱 Gardener: No updates needed.`
+
 ## Completion Contract
 
 ### Success (Full Coverage)
@@ -313,3 +316,12 @@ If `audit/repo-scout-report*.md` exists, read sections §11–§15 for test gene
 - After 3 failed compilations on a single endpoint (Escalation)
 - Technical blocker (library does not support the feature)
 - Incomplete specification for one endpoint (the rest are covered)
+
+**After the SKILL COMPLETE block, also output (if applicable):**
+
+## 💡 Scenario Source Improvements (Gardener)
+
+`1–3 concrete suggestions on what to change in /api-test-cases to prevent implementation issues
+found during this run (e.g., ambiguous scenario inputs, missing cleanup steps, underdefined BVA
+boundaries, incorrect HTTP codes in Expected column). Omit this section entirely if
+test-scenarios.md was clear and complete.`

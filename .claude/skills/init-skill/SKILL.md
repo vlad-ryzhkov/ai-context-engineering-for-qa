@@ -266,6 +266,7 @@ Before finalizing SKILL.md, ensure all **Tier 1 Baseline** features are present:
 | Code generation / audit | **Anti-patterns section** | After Algorithm or before Quality Gates |
 | Testing / compilation | **Loop Guard** | Inside execution phase |
 | Multi-file scan | **Status Reporting** | Inside heaviest processing phase |
+| Pipeline consumer (skill consumes output of another skill) | **Cross-skill improvement section** (`## 💡 {Source} Improvements (Gardener)`) | Inside Completion Contract, after SKILL COMPLETE block |
 
 See `references/skill-template.md` → section "Tier 1 Baseline Injection" for exact injectable blocks.
 

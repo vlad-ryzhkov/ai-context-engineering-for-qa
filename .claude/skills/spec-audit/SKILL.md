@@ -265,6 +265,21 @@ Before output, check yourself against 10 specific errors in the specification:
 
 **Audit report:** File only. Risk matrix, tables, and Defect details — FORBIDDEN to output in chat.
 
+### Output Discipline (Action-First)
+
+**Priority Threshold:** Defects with Priority 1–3 → include in artifact as appendix only. Never surface in the chat block or highlighted sections. Only Priority 4+ defects count toward the Score formula and appear in the main Risk Matrix.
+
+**Action-First Report Structure in artifact:**
+1. Priority 10 (Blocker) defects FIRST
+2. Priority 8-9 (Critical) defects SECOND
+3. Priority 6-7 (Major) defects THIRD
+4. Priority 4-5 (Minor) defects FOURTH
+5. Executive Summary LAST (after all defects, not before)
+
+**Mute Empty Bands Rule:** If an entire priority band has zero defects → omit that band's section entirely from the artifact. Do not output empty tables or "No issues found" placeholders for bands.
+
+**Blocking Questions Rule:** If the Blocking Questions section is empty (no unanswered questions exist) → omit the entire section from the artifact. Do not output "None" or empty numbered list.
+
 ### Completion
 
 1. Run Gardener Analysis (per `.claude/protocols/gardener.md`) → append `## 🌱 Gardener Analysis` section to the artifact file.

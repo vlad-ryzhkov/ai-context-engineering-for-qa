@@ -424,6 +424,10 @@ Output a structured review report **in Action-First order** (violations only):
 ## 📝 Summary
 
 [1-2 sentences on overall quality and next steps]
+
+## 💡 Generator Improvements (Gardener)
+
+`1–3 concrete suggestions on what to change in /api-tests or /api-tests-java skills (e.g., add default @Step template, enforce exact status codes in generator prompt) to prevent found issues in future generations. Omit this section entirely if no systemic generator issues are found.`
 ```
 
 **KEY RULES:**

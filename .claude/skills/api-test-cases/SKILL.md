@@ -371,3 +371,12 @@ or inefficiencies during this run, output a brief proposal table. Otherwise: `�
 ├─ Blockers: [description]
 └─ Ready for: /api-tests (partial — missing domains: {list})
 ```
+
+**After the SKILL COMPLETE block, also output (if applicable):**
+
+## 💡 Blueprint Source Improvements (Gardener)
+
+`1–3 concrete suggestions on what to change in /repo-scout to improve blueprint completeness
+(e.g., missing auth roles in auth matrix, underdocumented response schemas, gaps in endpoint
+discovery, missing §12 create-order chains). Omit this section entirely if the repo-scout
+report was complete and sufficient.`

@@ -36,6 +36,10 @@ Generate report in **Action-First** order (violations only, Confidence ≥ 80):
 ## 📝 Summary
 
 {1-2 sentences on overall quality and next steps}
+
+## 💡 Generator Improvements (Gardener)
+
+{1–3 concrete suggestions on what to change in /api-tests or /api-tests-java to prevent found issues in future. Omit if no systemic issues found.}
 ```
 
 ---
@@ -62,6 +66,7 @@ response.status.shouldBe(201)  // Created, not just any 2xx
 3. **Never output 🟡 MINOR issues** in main report (waste of time)
 4. **One issue = max 4 lines** (title | location | why | fix)
 5. **If zero violations → output only "Test Overview" + "Passing Categories"** (1 page max)
+6. **Omit Generator Improvements if no systemic issues** — only write it when patterns clearly trace back to the generator template, not one-off mistakes
 
 ---
 
@@ -123,6 +128,11 @@ fun testCreateUserWithInvalidEmail() {
 ## 📝 Summary
 
 2/6 files have MAJOR issues (blurry assertions, missing Allure steps). Fix these before merging; they block release validation and observability in CI/CD.
+
+## 💡 Generator Improvements (Gardener)
+
+1. **Add exact status code assertion to default test template** — The generator currently produces `response.status should { it in 200..299 }`. Change the `/api-tests` template to emit `response.status.shouldBe(201)` by default for POST endpoints.
+2. **Inject @Step wrapper into test method template** — Add `step("...")` scaffolding to the generated test body so Allure steps are present out of the box.
 ```
 
 ---

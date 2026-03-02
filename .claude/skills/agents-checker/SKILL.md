@@ -214,6 +214,12 @@ Date: {YYYY-MM-DD}
 
 **Chat output** (summary only):
 
+**All-pass shortcut:** If all files pass with ✅ PASS and cross-refs are clean → replace the 4-row status table with a single line:
+```text
+✅ All files compliant (qa_agent.md, auditor.md, sdet.md, cross-refs)
+```
+Only expand the status table when ≥1 file has ⚠️ WARNINGS or ❌ FAIL.
+
 ```text
 🛡️ AGENT SETUP AUDIT
 ├─ qa_agent.md:   [✅ PASS / ⚠️ WARNINGS / ❌ FAIL]

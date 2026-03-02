@@ -151,7 +151,7 @@ AllureId: `./gradlew checkAllureIds --clean` (NEVER manually assign `@AllureId` 
 
 ## Verbosity Protocol
 
-**Code first, talk later:** Generation → Compilation → Post-Check → SKILL COMPLETE. No intermediate explanations.
+**Code first, talk later:** Generation → Compilation → Post-Check → SKILL COMPLETE → Gardener [→ Scenario Source Improvements]. No intermediate explanations.
 
 **FORBIDDEN:**
 - "I will now create..." — just Create
@@ -346,6 +346,9 @@ Manual Review Required:
 - Repo-scout report: `audit/repo-scout-report*.md` (§11–§15 for entity/state/nuance context)
 - Anti-patterns (new): `api/eventual-consistency-writes.md`, `api/batch-partial-failure.md`
 
+**Gardener Protocol**: Call `.claude/protocols/gardener.md`. If you identified missing rules
+or inefficiencies during this run, output a brief proposal table. Otherwise: `🌱 Gardener: No updates needed.`
+
 ## Completion Contract
 
 ### Success (Full Coverage)
@@ -379,3 +382,12 @@ Manual Review Required:
 - After 3 failed compilations on a single endpoint (Escalation)
 - Technical blocker (library does not support the feature)
 - Incomplete specification for one endpoint (the rest are covered)
+
+**After the SKILL COMPLETE block, also output (if applicable):**
+
+## 💡 Scenario Source Improvements (Gardener)
+
+`1–3 concrete suggestions on what to change in /api-test-cases to prevent implementation issues
+found during this run (e.g., ambiguous scenario inputs, missing cleanup steps, underdefined BVA
+boundaries, incorrect HTTP codes in Expected column). Omit this section entirely if
+test-scenarios.md was clear and complete.`

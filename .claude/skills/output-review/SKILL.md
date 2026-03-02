@@ -173,36 +173,44 @@ For each item from Phase 2:
 
 **If a file with this name already exists — add suffix `_2`, `_3`, etc.**
 
+#### Output Discipline
+
+**Action-First Report Structure:**
+
+1. ❌ FAIL / ⚠️ PARTIAL rows FIRST — across all groups, sorted by severity
+2. ✅ Group summaries SECOND — one line per group with 100% PASS
+3. Scorecard THIRD
+4. Recommendations LAST
+
+**Group Summary Rule:** If a check group has 100% PASS → output a single summary line instead of individual rows:
+```text
+✅ Self-Check / Definition of Done: 8/8 passed
+✅ BANNED: 5/5 passed
+✅ Anti-Patterns: 3/3 clean
+✅ Universal Checks: 3/3 passed
+```
+Only expand a group's table when it contains ≥1 FAIL or PARTIAL row.
+
+**Zero Violations Rule:** If zero FAIL or PARTIAL items found across all groups → output only Scorecard + group summary lines. Omit the Recommendations section entirely.
+
 #### Results Table (by groups)
 
 ```markdown
 ## Output Review Report: /{skill-name}
 
-### Self-Check / Definition of Done
+<!-- FAIL/PARTIAL rows first, across all groups -->
 
-| # | Item | Verdict | Comment |
-|---|------|---------|---------|
-| 1 | Architecture | ✅ PASS | config/, requests/, helpers/ (main) + tests (test) — present |
-| 2 | assertions with message | ❌ FAIL | assertEquals without message in RegistrationApiTests.kt:45 |
+### ❌ Findings
 
-### BANNED
+| # | Group | Item | Verdict | Comment |
+|---|-------|------|---------|---------|
+| 1 | Self-Check | assertions with message | ❌ FAIL | assertEquals without message in RegistrationApiTests.kt:45 |
+| 2 | Universal Checks | 5 format fields | ⚠️ PARTIAL | Missing Coverage |
 
-| # | Rule | Verdict | Comment |
-|---|------|---------|---------|
-| 1 | Thread.sleep() | ✅ PASS | Not found |
+<!-- Then one-line summaries for fully-passing groups -->
 
-### Anti-Patterns (agents/sdet.md)
-
-| # | Pattern | Verdict | Comment |
-|---|---------|---------|---------|
-| 1 | PII in code | ✅ CLEAN | @gmail.com not found |
-
-### Universal Checks
-
-| # | Check | Verdict | Comment |
-|---|-------|---------|---------|
-| 1 | SKILL COMPLETE block | ✅ PASS | Present |
-| 2 | 5 format fields | ⚠️ PARTIAL | Missing Coverage |
+✅ BANNED: 1/1 passed
+✅ Anti-Patterns: 1/1 clean
 ```
 
 #### Scorecard
