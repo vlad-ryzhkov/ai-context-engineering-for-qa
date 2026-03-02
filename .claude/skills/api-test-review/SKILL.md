@@ -105,7 +105,7 @@ grep -rn "@Step\|step(" --include="*.kt" --include="*.java" src/test | wc -l  # 
 
 When reviewing tests, follow this strict protocol to prevent hallucinations and ensure evidence-based recommendations:
 
-1. **Phase 0 Prerequisite** — Complete Phase 0 (Context Discovery), Phase 0.1 (Language Lock), and Phase 0.2 (Dynamic Antipattern Loading) BEFORE beginning code analysis.
+1. **[INTERNAL] Phase 0 & Subphases** — Execute Phase 0 (Context Discovery), Phase 0.1 (Language Lock), Phase 0.2 (Dynamic Antipattern Loading), Phase 0.3 (Contract Discovery), and Phase 0.5 (Upstream Context) as internal Chain-of-Thought only. **Never output these in the final report.**
 2. **Initial Scan** — Use the grep patterns above to quickly identify problem areas.
 3. **File Inspection** — Use `Glob` to list test files, then `Read` to inspect contents with focus on flagged lines.
 4. **Language Enforcement** — Respect the LANGUAGE_MODE determined in Phase 0.1:
@@ -119,7 +119,8 @@ When reviewing tests, follow this strict protocol to prevent hallucinations and 
    - → **EXTRACT** the exact fix pattern from that reference
    - → **APPLY** the fix pattern to the user's specific test code in your recommendation
 7. **Never** suggest framework syntax (Kotest, Allure, RestAssured) from memory alone. Always cite the reference file used.
-8. **GROUP SIMILAR ISSUES:** If finding >5 similar issues, list the top 5 with file:line, then group the rest as "5+ more instances of [pattern]" to keep the report actionable.
+8. **Confidence Score Filter:** Discard ALL findings with Confidence Score < 80. Only violations scoring 80–89 (MAJOR) or 90–100 (CRITICAL) are reported. (This is the key to "action-first" output.)
+9. **GROUP SIMILAR ISSUES:** If finding >5 similar issues, list the top 5 with file:line, then group the rest as "5+ more instances of [pattern]" to keep the report actionable.
 
 ---
 
@@ -127,16 +128,21 @@ When reviewing tests, follow this strict protocol to prevent hallucinations and 
 
 ### Output Discipline: Reduce Overwhelm
 
-- **Focus on the Top 3–5 Most Critical Issues per phase.** Do not overwhelm the user with 20+ findings. If you identify many similar issues, consolidate:
+**GOLDEN RULE: Mute all successful checks. Output ONLY violations.**
+
+- **Never report passing checks.** If an entire category (Security, Architecture, HTTP Validation) has no violations, output a single line: `✅ Security: No issues found.`
+- **Never output verbose "PASSing checks" blocks.** These waste time. Focus on actionable violations only.
+- **Focus on the Top 3–5 Most Critical Issues per phase.** If you identify many similar issues, consolidate:
   - List the top 5 with exact `file:line` references
   - Group the rest as `"5+ more instances of [BANNED pattern]"` with a count
 - **Prioritize by impact:** Security (CRITICAL) > Architecture (MAJOR) > Code quality (MINOR)
 - **Each finding must be actionable.** User should be able to copy-paste the suggested fix.
+- **Raise the bar for reporting:** Only issues with **Confidence Score ≥ 80** are actionable. Anything below 80 is likely a nitpick or false positive and should be discarded (not reported).
 
 ### Scope Boundaries
 
 | Action | Rule |
-|---|---|
+| --- | --- |
 | **DO** | Focus on **semantic issues:** logic errors, security leaks, architectural violations, missing assertions, improper HTTP handling, test independence. |
 | **DO** | Verify OpenAPI/Swagger contract compliance. |
 | **DO** | Explain *why* a fix is needed (mentorship tone). |
@@ -148,6 +154,7 @@ When reviewing tests, follow this strict protocol to prevent hallucinations and 
 | **DON'T** | Include full build output or verbose terminal logs in the report. |
 | **DON'T** | Review generated/build folders (`build/`, `out/`, `.gradle/`). Always exclude them. |
 | **DON'T** | Review unit test files (no HTTP client imports, `*UnitTest.kt`, or `/unit/` package). This skill is API integration test scoped. Log skipped files in Phase 1 output. |
+| **DON'T** | Flag missing `@AfterEach` cleanup IF the test generates isolated, unique data per run (e.g., using `UserHelpers.createActualUserId()`, fresh UUIDs, or random emails). Only flag missing cleanup if shared mutable state or hardcoded IDs are causing order-dependency. |
 
 ---
 
@@ -283,21 +290,28 @@ When reviewing tests, follow this strict protocol to prevent hallucinations and 
 
 ## Execution Flow
 
-Full 12-phase review process:
+Full 8-phase review process **(Phases 0–0.5 are internal Chain-of-Thought only; not output to user):**
 
-1. **Phase 0:** Context Discovery — Identify testing stack (HTTP client, assertions, async framework)
-   - **Phase 0.1:** Language Lock — Detect Kotlin vs Java and enforce language-specific rules
-   - **Phase 0.2:** Dynamic Antipattern Loading — Load language-specific antipattern set
-   - **Phase 0.3:** Contract Discovery (Optional) — Locate API contracts (OpenAPI/Swagger/Protobuf/GraphQL) for specification-driven validation
-2. **Phase 0.5:** Upstream Context (Optional) — Load test scenarios and auth matrix from upstream pipeline artifacts
-3. **Phase 1:** Scope Definition — Accept input, list test files
-4. **Phase 2:** Security Audit — Scan for hardcoded secrets, PII
-5. **Phase 3:** Architecture Audit — DTO isolation, HTTP clients, contract compliance, package organization
-6. **Phase 4:** Language Idioms & Quality — Async patterns (coroutines/CompletableFuture), collections, scope functions (Kotlin-only)
-7. **Phase 5:** Test Quality & DRY — Parameterization, helpers, fixtures
-8. **Phase 6:** HTTP Validation Rules — Status codes, response bodies, cleanup, timeouts, connection leaks, scenario completeness
-9. **Phase 7:** Allure Integration & Logging — @Step annotations, assertions, logging
-10. **Phase 8:** Self-Verification — Internal consistency check before output generation
+### Internal Phases (Chain-of-Thought, Hidden from Output)
+
+**Phase 0:** Context Discovery — Identify testing stack (HTTP client, assertions, async framework)
+- **Phase 0.1:** Language Lock — Detect Kotlin vs Java and enforce language-specific rules
+- **Phase 0.2:** Dynamic Antipattern Loading — Load language-specific antipattern set
+- **Phase 0.3:** Contract Discovery (Optional) — Locate API contracts (OpenAPI/Swagger/Protobuf/GraphQL)
+- **Phase 0.5:** Upstream Context (Optional) — Load test scenarios and auth matrix from upstream artifacts
+
+### Internal Evaluation Phases (Analyze in this order, but do not output as headings)
+
+1. **Phase 1:** Scope Definition — Test files, count, language stats
+2. **Phase 2:** Security Audit — Hardcoded secrets, PII
+3. **Phase 3:** Architecture Audit — DTO isolation, HTTP clients, contract compliance
+4. **Phase 4:** Language Idioms & Quality — Async patterns, collections, scope functions
+5. **Phase 5:** Test Quality & DRY — Parameterization, helpers, fixtures
+6. **Phase 6:** HTTP Validation Rules — Status codes, response bodies, cleanup, timeouts, leaks
+7. **Phase 7:** Allure Integration & Logging — @Step annotations, assertions
+8. **Phase 8:** Self-Verification — Internal consistency check before output generation
+
+*Note: Group any violations found during these phases directly under 🔴 CRITICAL or 🟠 MAJOR headings in the final output.*
 
 See [references/phases-and-rules.md](references/phases-and-rules.md) for detailed rules, BANNED patterns, and output formats for each phase.
 
@@ -327,7 +341,7 @@ This helps users understand progress and indicates the agent has not stalled.
 ## Severity Levels
 
 | Level | Criteria | Action |
-|---|---|---|
+| --- | --- | --- |
 | **🔴 CRITICAL** | Secrets exposed, compilation fail, data loss, security hole. | **BLOCK MERGE.** Detailed recommendation to fix. |
 | **🟠 MAJOR** | Code duplication, blurry assertions, missing Allure steps, async bugs. | **REQUEST CHANGES.** List line numbers, suggest fixes. |
 | **🟡 MINOR** | Typos in test names, style inconsistency, minor inefficiency. | **SUGGESTION.** Can merge with note. |
@@ -338,13 +352,19 @@ This helps users understand progress and indicates the agent has not stalled.
 
 | Score | Severity | Meaning | Action |
 | --- | --- | --- | --- |
-| **0–25** | Ignore | Likely false positive or pre-existing issue | **DO NOT REPORT** |
-| **26–50** | Ignore | Minor nitpick, not explicitly in rules | **DO NOT REPORT** |
-| **51–75** | 🟡 MINOR | Valid but low-impact issue | **REPORT as MINOR suggestion** |
-| **76–90** | 🟠 MAJOR | Important issue violating explicit guidelines | **REPORT as MAJOR, request changes** |
-| **91–100** | 🔴 CRITICAL | Secret leak, bug, or severe architectural flaw | **REPORT as CRITICAL, block merge** |
+| **0–79** | Ignore | False positive, nitpick, or stylistic issue | **DO NOT REPORT** |
+| **80–89** | 🟠 MAJOR | Important issue violating explicit guidelines; impacts test reliability or security | **REPORT as MAJOR, request changes** |
+| **90–100** | 🔴 CRITICAL | Secret leak, critical bug, data loss, or severe architectural flaw; blocks merge | **REPORT as CRITICAL, block merge** |
 
-**GOLDEN RULE:** Report **ONLY** issues with **Confidence Score ≥ 51**.
+**GOLDEN RULE:** Report **ONLY** issues with **Confidence Score ≥ 80**.
+
+**Why raise the threshold to 80?** Issues below 80 are typically:
+- Stylistic preferences (if/else vs when, variable naming)
+- Minor inefficiencies that don't affect correctness
+- Context-dependent decisions (e.g., cleanup strategies that work fine for the team's use case)
+- Framework version compatibility that users can handle themselves
+
+Reporting these wastes reviewer time and dilutes important findings. **Action-first output means: only violations that truly matter.**
 
 ---
 
@@ -366,16 +386,53 @@ If you have terminal execution capabilities, verify suggested fixes by running t
 
 ## Completion Protocol
 
-Output a structured review report following this template:
+Output a structured review report **in Action-First order** (violations only):
 
 **Output Artifact Naming:** Write report to `audit/api-test-review-report_{domain}_{timestamp}.md`
 - Replace `{domain}` with test domain name (e.g., `users`, `orders`, `auth`)
 - Replace `{timestamp}` with ISO timestamp (e.g., `20260301_134510` for 2026-03-01 13:45:10)
-- This pattern ensures each invocation creates a new timestamped artifact, preserving audit history
 
-See [references/output-template.md](references/output-template.md) for the complete output structure with all phases, verdicts, and recommendation section.
+### Output Structure (Action-First)
 
-After completing all 7 phases and before the `SKILL COMPLETE` block, run the Gardener protocol (see `.claude/protocols/gardener.md`) to analyze findings and propose new rules if needed.
+```markdown
+# API Test Review Report: {domain}
+
+## 🔴 CRITICAL Issues
+
+`List all CRITICAL issues with exact file:line and fix code, mentorship tone`
+`If no CRITICAL issues → omit this section entirely`
+
+## 🟠 MAJOR Issues
+
+`List all MAJOR issues with exact file:line and fix code, mentorship tone`
+`If no MAJOR issues → omit this section entirely`
+
+## Test Overview
+
+- **Files analyzed:** N
+- **Language mode:** Kotlin | Java
+- **Total tests:** N
+- **Verdict:** ✅ PASS | 🔴 NEEDS FIXES
+
+## ✅ Passing Categories
+
+- Security: No issues found
+- Architecture: No issues found
+- HTTP Validation: No issues found
+- [List only categories with zero violations]
+
+## 📝 Summary
+
+[1-2 sentences on overall quality and next steps]
+```
+
+**KEY RULES:**
+- **Never output 🟡 MINOR issues** in the main report (they waste time)
+- **Never list passing checks** (e.g., "✅ No hardcoded secrets detected")
+- **Omit entire sections** if there are no violations in that category
+- **If zero violations:** Output only "Test Overview" + "Passing Categories" (1 page max)
+
+After completing all 8 phases and before the `SKILL COMPLETE` block, run the Gardener protocol (see `.claude/protocols/gardener.md`) to analyze findings and propose new rules if needed.
 
 ### Mentorship Tone Examples
 
@@ -408,40 +465,28 @@ Each test should clean up after itself in an `@AfterEach` block. Right now, if `
 the second test uses data from the first, which can hide bugs. Adding cleanup also makes tests independent — they can run in any order.
 ```
 
-### Issue Format
+### Issue Format (Compact, Action-Oriented)
 
-For **EACH** issue listed in the "📝 Key Recommendations" section, use this format:
+For **EACH** violation reported, use this compact format:
 
 ```markdown
-**Issue:** [Name of the rule broken, e.g., "Blurry HTTP Status Check"]
-**Severity:** [🔴 CRITICAL / 🟠 MAJOR / 🟡 MINOR]
-**Confidence Score:** [51–100] (reasoning grounded in Chain-of-Thought)
-**Location:** [`src/test/kotlin/domain/users/tests/UserTests.kt:45-48`]
-**Reference Used:** [e.g., `qa-antipatterns/http/status-codes.md`]
-**Fix:**
+🟠 MAJOR: [Short title, e.g., "Blurry HTTP Status Check"]
+📍 src/test/kotlin/domain/users/tests/UserTests.kt:45-48
+[Brief explanation: 1 sentence on why this matters + impact]
+
+Fix:
 \`\`\`kotlin
-// The corrected code applied to the user's context
+// The corrected code applied to user's specific context
 \`\`\`
-**Why:** [Brief explanation of why this matters for API tests — use mentorship tone, explain the impact]
 ```
 
-**CRITICAL RULE: Confidence Score Derivation**
-- **Score must be grounded** in Chain-of-Thought reasoning (preceding tokens justify the number)
-- **Score determines severity** per Confidence Score Matrix (51–75 = MINOR, 76–90 = MAJOR, 91–100 = CRITICAL)
-- **Only report issues ≥51** — discard all findings with Confidence Score < 51 (false positives, nitpicks)
-- **Each score in output** = mathematical grounding, not guessing
+**GOLDEN RULES:**
+1. **Confidence Score:** Only report issues with Confidence Score ≥ 80 (80–89 = MAJOR, 90–100 = CRITICAL)
+2. **Location:** MUST include exact file path + line range (e.g., `:45-48`). User must navigate directly.
+3. **Why:** Keep to 1–2 sentences (mentorship tone, explain impact). Don't explain the whole Allure API — assume the developer knows testing.
+4. **Fix:** Always provide copy-paste-ready code. Never say "you should..."
+5. **No confidence score in output** — it's internal. Only severity emoji (🔴 or 🟠) shown.
 
-**CRITICAL RULE:** The **Location** field MUST include:
-- **Exact file path** (relative to repository root)
-- **Line number range** where the issue occurs (e.g., `:45-48` for multi-line issues)
-- Do NOT summarize findings without exact references
-- User must be able to open the file and navigate directly to the issue
-
-**Communication Protocol:**
-- **MINIMAL VERBOSITY:** Output only tool invocations and completion block
-- **No preamble:** No "Let me read the file", "I'll analyze", etc.
-- **Evidence-based (STRICT):** Every finding MUST include exact file:line reference — no exceptions
-- **Actionable:** Each recommendation includes concrete code snippet
 
 ---
 
@@ -493,25 +538,20 @@ This skill is part of the QA automation pipeline. Understand where it sits and w
 
 ### Review & Output
 
-- **Output Format:** Structured review report with 8 phases, severity levels (🔴 CRITICAL, 🟠 MAJOR, 🟡 MINOR), and actionable fixes
-- **Confidence Threshold:** Only report issues with Confidence Score ≥ 51 (no nitpicks, no false positives)
+- **Output Format:** Action-First report (CRITICAL and MAJOR issues only at the top, brief summary at the bottom).
+- **Confidence Threshold:** STRICTLY ≥ 80. Do not report MINOR issues or anything scoring below 80.
 
 ### Output Hand-off & Next Actions
 
 **If 🔴 CRITICAL issues found:**
-- → Provide detailed recommendations with code snippets
-- → Instruct user to pass your review report back to the developer or re-run `/api-tests` with corrected specifications
-- → Block merge until CRITICAL issues are resolved
+- → Block merge. Provide exact file:line references and fix patterns.
+- → Instruct user to fix locally or re-run `/api-tests` with corrected specifications.
 
 **If 🟠 MAJOR issues found:**
-- → List with exact file:line references and fix patterns
-- → User should address before merging; can be fixed in follow-up PR if time-constrained
-
-**If 🟡 MINOR issues found:**
-- → Suggestions only; can merge with note to address in future refactoring
+- → Request changes. List exact file:line references and fix patterns.
 
 **If specification/API contract issues detected:**
-- → Suggest invoking `/spec-audit` to verify if the OpenAPI spec itself is outdated or incomplete
+- → Suggest invoking `/spec-audit` to verify if the OpenAPI spec itself is outdated or incomplete.
 - → Reference the specific contract violation (e.g., "Test asserts `field_name` but OpenAPI spec shows `fieldName`")
 
 ### Quality Loop

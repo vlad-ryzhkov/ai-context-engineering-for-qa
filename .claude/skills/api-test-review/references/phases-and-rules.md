@@ -1,4 +1,15 @@
-# Execution Flow: 10-Phase Review
+# Execution Flow: 8-Phase Review (Phase 0-0.5 Internal, Phase 1-8 Reported)
+
+**CRITICAL UPDATE (2026-03-02):**
+- **Confidence Score Threshold:** Only report issues with Score ≥ 80 (80–89 = MAJOR, 90–100 = CRITICAL)
+- **Output Discipline:** Never output PASS blocks, verbose success messages, or 🟡 MINOR issues in final report
+- **Action-First Structure:** CRITICAL + MAJOR violations first, then passing categories (1 line each), then summary (1-2 lines)
+- **Internal Phases:** Phase 0, 0.1, 0.2, 0.3, 0.5 are Chain-of-Thought only — never output to user report
+
+**NOTE: Output Format sections below are for INTERNAL PHASE LOGIC ONLY.**
+Actual user-facing report uses Action-First format from `references/output-template.md` (violations only, no PASS blocks, no MINOR issues).
+
+---
 
 ## Phase 0.5: Upstream Context (Optional)
 
