@@ -1,6 +1,6 @@
 ---
 name: fix-markdown
-description: Fix all markdownlint errors in .md files across the repository. Use when markdown linting fails in CI or before committing documentation changes.
+description: Fix all markdownlint errors in .md files across the repository. Use when markdown linting fails in CI or before committing documentation changes. Do not use for content editing — only for lint fixes.
 allowed-tools: "Read Edit Bash(npx*)"
 ---
 

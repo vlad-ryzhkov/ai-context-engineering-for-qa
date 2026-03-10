@@ -2,7 +2,7 @@
 name: doc-lint
 description: Documentation quality audit — size, structure, cross-file duplicates, SSOT violations. Use for quality control of human-readable files, finding duplication, and structure verification. Do not use for code review or source code analysis.
 allowed-tools: "Read Write Edit Glob Grep Bash(wc*)"
-agent: agents/auditor.md
+agent: auditor
 context: fork
 ---
 

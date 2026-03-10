@@ -60,7 +60,7 @@
 name: spec-audit
 description: Audits OpenAPI/Proto specification for completeness and correctness. Use before /testcases for endpoint validation. Do not use for code review.
 allowed-tools: "Read Write Edit Glob Grep"
-agent: agents/auditor.md
+agent: auditor
 context: fork
 ---
 ```
@@ -72,7 +72,7 @@ context: fork
 name: api-tests
 description: Generates Kotlin automated tests from test cases. Use after /testcases for automation. Do not use without prepared test cases.
 allowed-tools: "Read Write Edit Glob Grep Bash"
-agent: agents/sdet.md
+agent: sdet
 context: fork
 ---
 ```
@@ -84,7 +84,7 @@ context: fork
 name: lint-tests
 description: Validates automated tests against standards. Use after /api-tests for quality control. Do not use for production code.
 allowed-tools: "Read Glob Grep"
-agent: agents/auditor.md
+agent: auditor
 context: fork
 ---
 ```

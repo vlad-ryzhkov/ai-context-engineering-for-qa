@@ -171,3 +171,36 @@ All tests meet baseline standards. Well-organized, clear assertions, proper clea
 - **Evidence-based (STRICT):** Every finding MUST include exact file:line reference
 - **Actionable:** Each recommendation includes copy-paste-ready code
 - **Verifiable:** User can navigate directly to the issue using file:line reference
+
+---
+
+## Mentorship Tone Examples
+
+When suggesting fixes, always briefly explain the **why** — not just the **what**. Here are examples of mentorship tone:
+
+❌ **Harsh tone (avoid):**
+
+```text
+This hardcoded token is a security disaster. CHANGE IT IMMEDIATELY.
+```
+
+✅ **Mentorship tone (preferred):**
+
+```text
+Instead of hardcoding the JWT token here, let's use `AuthFixture.generateToken()` helper.
+This prevents the token from being accidentally committed to version control and keeps our tests isolated —
+if the auth implementation changes, we just update the fixture, not 50 test methods.
+```
+
+❌ **Harsh tone (avoid):**
+
+```text
+Missing cleanup. Tests are order-dependent. REFACTOR NOW.
+```
+
+✅ **Mentorship tone (preferred):**
+
+```text
+Each test should clean up after itself in an `@AfterEach` block. Right now, if `testCreateUser` runs before `testUpdateUser`,
+the second test uses data from the first, which can hide bugs. Adding cleanup also makes tests independent — they can run in any order.
+```

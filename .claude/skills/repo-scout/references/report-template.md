@@ -8,7 +8,7 @@
 
 ---
 
-```markdown
+````markdown
 # Repo Scout Report: {repo-name}
 
 > Generated: {date} | Skill: /repo-scout
@@ -476,4 +476,4 @@ Formula: covered endpoints / (REST + gRPC) × 100
 > - Retry + write: network failure on write endpoint → assert no duplicate records
 > - Circuit breaker: mock downstream errors at threshold → assert fallback triggers
 > - [NO_TIMEOUT]: flag for load testing — do NOT skip
-```
+````

@@ -1,3 +1,8 @@
+---
+name: sdet
+description: Code generator that converts test plans into compilable automated tests in Kotlin or Java.
+---
+
 # SDET Agent
 
 ## Role

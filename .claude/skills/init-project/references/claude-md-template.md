@@ -1,6 +1,8 @@
-# CLAUDE.md — Project Onboarding Template
+# CLAUDE.md — Minimal Project Template
 
-> **Purpose:** Project wiki for the AI. First day for a new employee — what language, where are configs, how we format code.
+> **Purpose:** Minimal context for the AI: tech stack, commands, banned alternatives.
+> Do NOT add codebase overviews, directory listings, or architecture descriptions.
+> Research: [arxiv.org/abs/2602.11988](https://arxiv.org/abs/2602.11988)
 
 ---
 
@@ -24,12 +26,6 @@
 | Test Framework | [JUnit 5/pytest/Jest] | [alternatives] |
 | Reporting | [Allure] | — |
 
-## Project Structure
-
-```text
-[Actual project structure]
-```
-
 ## Commands
 
 | Action | Command |
@@ -38,50 +34,12 @@
 | Test | `[command]` |
 | Single test | `[command]` |
 
-## Safety Protocols
-
-⛔ **FORBIDDEN:** `git reset --hard`, `git clean -fd`, branch deletion
-✅ **MANDATORY:** Backup before destructive operations
-⚠️ **OVERRIDE:** Requires the word **DESTROY**
-
-## Token Economy
-
-- PAUSE on tasks > 20,000 tokens
-- Full scan only with **FULL_SCAN**
-
-## Workflow
-
-For tasks > 3 files: Analysis → Plan → Execute → Verify
-
-<!-- SECTION: Architecture — only for infra/backend projects (no src/test/) -->
-## Architecture
-
-[Narrative about key design decisions: components, interaction schema, non-trivial configurations]
-
-<!-- SECTION: Key Values — if non-trivial defaults exist in values.yaml / application.yml / .env -->
+<!-- SECTION: Key Values — ONLY if non-trivial defaults exist in values.yaml / application.yml / .env -->
 ## Key Values
 
 ### [Subsection by component]
 
 - `[key]` — [what it does, why it matters]
-
-<!-- SECTION: CI/CD Flow — if .github/workflows/, .gitlab-ci.yml, Jenkinsfile found -->
-## CI/CD Flow
-
-```text
-[pipeline diagram: step → step → step]
-```
-
-<!-- SECTION: QA Skills — only if .claude/skills/ exists in the project -->
-## QA Skills
-
-| Skill | Purpose |
-|-------|---------|
-| `/spec-audit` | QA audit of requirements |
-| `/api-isolated-tests` | Test cases from specification |
-| `/api-tests` | API automated tests |
-
-**Workflow:** `/spec-audit` → `/api-isolated-tests` → `/api-tests`
 
 <!-- SECTION: API Documentation — only if swagger/proto/graphql/.http/postman files found -->
 ## API Documentation
@@ -154,6 +112,3 @@ project-root/
 
 ---
 
-## Full Guide
-
-`docs/ai-files-handbook.md` → Part 1: CLAUDE.md

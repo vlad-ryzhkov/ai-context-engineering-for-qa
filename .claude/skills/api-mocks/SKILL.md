@@ -1,12 +1,14 @@
 ---
 name: api-mocks
-description: Generates in-process HTTP mock server for the API under test + WireMock singletons for external services. Use when tests fail with ConnectException or no live server is available.
-agent: agents/sdet.md
+description: Generates in-process HTTP mock server for the API under test + WireMock singletons for external services. Use when tests fail with ConnectException or no live server is available. Do not use when a live test server is available.
+agent: sdet
+context: fork
 input: specification file (same path used for /api-tests)
 output: helpers/MockServer.kt, helpers/MockServerExtension.kt, META-INF/services/, junit-platform.properties
 ---
 
 ## When to Use
+
 - Tests fail with `ConnectException` / `Connection refused`
 - No live API server available (CI, local dev without backend)
 - Starting a new endpoint — generate mock before writing tests
@@ -49,6 +51,7 @@ output: helpers/MockServer.kt, helpers/MockServerExtension.kt, META-INF/services
 - Add `junit.jupiter.extensions.autodetection.enabled=true` (preserve existing properties)
 
 ## BASE_URL Rule (CRITICAL)
+
 API client `BASE_URL` MUST be a computed property — read on every call, not once at object init:
 ```kotlin
 val BASE_URL: String get() = System.getProperty("BASE_URL", "http://localhost:8080")
@@ -56,6 +59,7 @@ val BASE_URL: String get() = System.getProperty("BASE_URL", "http://localhost:80
 A static `val` captures the port at class-load time and breaks when the second test class starts a new server on a different port.
 
 ## Known Limitation
+
 TLS-enforcement tests (expect `plain HTTP → 301/400/426`) **cannot pass** with an HTTP mock.
 Leave them as-is — they will fail at infra level. Document in Smoke Run output: `INFRA (TLS-enforcement test)`.
 
@@ -94,7 +98,8 @@ Before finalizing, verify internally:
 or inefficiencies during this run, output a brief proposal table. Otherwise: `🌱 Gardener: No updates needed.`
 
 ## Completion Contract
-```
+
+```text
 ✅ SKILL COMPLETE: /api-mocks
 ├─ Artifacts: helpers/{Name}MockServer.kt + MockServerExtension.kt + META-INF/services/ + junit-platform.properties
 ├─ Compilation: PASS

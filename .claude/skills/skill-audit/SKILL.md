@@ -2,7 +2,7 @@
 name: skill-audit
 description: Audit SKILL.md and qa_agent.md for bloat, duplication, harmful patterns ("DO NOT FIX", bloated templates). Use to optimize AI setup and reduce token usage. Do not use for documentation audit — use /doc-lint instead.
 allowed-tools: "Read Write Edit Glob Grep Bash(wc*)"
-agent: agents/auditor.md
+agent: auditor
 context: fork
 ---
 
@@ -90,7 +90,33 @@ For each SKILL.md verify frontmatter against rules from `init-skill/references/y
 - `description` < 1024 chars, no XML characters (`<`, `>`), single-line
 - If `agent:` is present — referenced file exists
 
-Severity: **ERROR** (required field missing), **WARNING** (description format violation).
+Severity: **ERROR** (required field missing), **WARNING** (description format violation, missing `allowed-tools`).
+
+### Check 1c: Side-Effect Skill Safety
+
+Grep for `disable-model-invocation: true` in skills that have side effects.
+
+**Side-effect skills** (MUST have `disable-model-invocation: true`):
+- Skills that push code, create PRs, or call `gh pr create` (`/pr`)
+- Skills that generate persistent files outside `audit/` (`/init-project`, `/init-skill`)
+- Skills that deploy, release, or modify shared infrastructure
+
+Algorithm:
+1. Grep each SKILL.md `allowed-tools` for `Bash(git*` or `Bash(gh*`
+2. If found AND `disable-model-invocation: true` absent → **ERROR**
+3. Grep for `Write` in `allowed-tools` AND skill creates files outside `audit/` → check `disable-model-invocation`
+
+Severity: **ERROR** (side-effect skill without `disable-model-invocation: true`)
+
+### Check 1d: STOP/WARN/INFORM Checkpoints
+
+Grep each SKILL.md for structured phase checkpoints.
+
+Pattern to detect: `STOP if:` or `STOP  if:` block at skill entry point.
+
+- Severity: **WARNING** if absent from parametrized skills (`/api-tests`, `/api-isolated-tests`, `/spec-audit`, `/repo-scout`)
+- Why: Without explicit STOP conditions, AI may proceed silently past missing required inputs
+- Recommendation: Add Phase Checkpoints block (STOP/WARN/INFORM) per `init-skill/references/yaml-reference.md`
 
 ### Check 1b: Verbosity Protocol
 
@@ -296,8 +322,8 @@ Output to chat only:
 | Severity | What it catches |
 |----------|-----------------|
 | **CRITICAL** | "DO NOT FIX", SKILL.md >500 lines, artifact-generating skills without timestamping, paired skill drift (api-tests / api-tests-java) |
-| **ERROR** | Stale cross-references in qa_agent.md |
-| **WARNING** | Bloated Self-Review (>50 lines), Tech Stack duplication, code >50 lines inline, Anti-Patterns >30 lines, 300–500 lines, SKILL.md >400 lines without Progressive Disclosure, excessive rigid constraints (ALWAYS/NEVER/MUST > 5), **Tier 1 Baseline missing during V2 migration** (SILENT MODE, Self-review checklist, Gardener integration) |
+| **ERROR** | Stale cross-references in qa_agent.md \| Side-effect skill missing `disable-model-invocation: true` (Check 1c) |
+| **WARNING** | Bloated Self-Review (>50 lines), Tech Stack duplication, code >50 lines inline, Anti-Patterns >30 lines, 300–500 lines, SKILL.md >400 lines without Progressive Disclosure, excessive rigid constraints (ALWAYS/NEVER/MUST > 5), missing `allowed-tools` (Check 1a), missing STOP/WARN/INFORM checkpoints in framework skills (Check 1d), **Tier 1 Baseline missing during V2 migration** (SILENT MODE, Self-review checklist, Gardener integration) |
 | **SUGGESTION** | Tier 2–3 features missing (Anti-patterns, Loop Guard), decorative ``` blocks, rarely-used sections inline, intra-doc redundancy |
 | **INFO** | Minor style or organization suggestions |
 

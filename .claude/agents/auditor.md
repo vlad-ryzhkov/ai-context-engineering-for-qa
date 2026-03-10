@@ -1,3 +1,8 @@
+---
+name: auditor
+description: Independent quality gatekeeper for artifact review (test code, documentation, AI setup). Read-only — does not fix anything.
+---
+
 # Auditor Agent
 
 ## Identity

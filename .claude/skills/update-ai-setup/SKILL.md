@@ -2,7 +2,7 @@
 name: update-ai-setup
 description: Scans project AI files and updates the docs/ai-setup.md Registry with current data. Use to synchronize the Registry after adding/removing Skills, patterns, or configs. Do not use to create a Registry from scratch — create docs/ai-setup.md manually instead.
 allowed-tools: "Read Write Edit Glob Grep Bash(wc*) Bash(ls*)"
-agent: agents/auditor.md
+agent: auditor
 context: fork
 ---
 
@@ -28,8 +28,6 @@ Read `.claude/qa_agent.md` and `.claude/agents/auditor.md`.
 ## Input
 
 None required. The Skill runs automatically based on the current file state.
-
-## Algorithm
 
 ## Verbosity Protocol
 
@@ -77,7 +75,6 @@ Required:
   - .claude/qa-antipatterns/_index.md
   - .claude/qa-antipatterns/*/*.md
   - .claude/skills/*/references/*
-  - docs/ai-files-handbook.md
   - docs/ai-setup.md
 ```
 
@@ -89,6 +86,22 @@ For each found file, count lines via `wc -l`.
 2. Read `.mcp.json` → extract keys from `mcpServers`
 3. Compare with "Plugins" and "MCP Servers" tables in `docs/ai-setup.md`
 4. Delta: add new / remove missing / update changed rows
+
+### Step 2c: Cross-IDE Sync Check
+
+Scan IDE compatibility files and compare skill lists with `.claude/skills/*/SKILL.md` on disk:
+
+1. **AGENTS.md** (root) — extract skill names from Skills table → compare with disk
+2. **`.agents/skills/`** — list dirs with SKILL.md → compare with `.claude/skills/`
+   - Flag wrappers for deleted skills (ghost references)
+   - Flag skills without wrappers
+3. **`.github/copilot-instructions.md`** — extract skill refs → compare with disk
+4. **`.cursor/rules/`** — list .mdc files → compare skill refs with disk
+
+Output delta in report:
+
+| IDE Target | File | Listed | On Disk | Missing | Stale |
+|------------|------|--------|---------|---------|-------|
 
 ### Step 3: Detect Delta
 
@@ -160,6 +173,7 @@ Before saving:
 - [ ] Anti-pattern count in Registry = number of `.claude/qa-antipatterns/*/*.md` (files in subdirectories, excluding `_index.md`)
 - [ ] Plugin count in table = number of keys in `settings.json → enabledPlugins`
 - [ ] MCP server count in table = number of keys in `.mcp.json → mcpServers`
+- [ ] Cross-IDE sync check: no ghost references, missing wrappers reported
 
 ## Anti-Patterns
 
@@ -172,19 +186,6 @@ Before saving:
 | `[xxx]` placeholders left in final Registry document | Template cruft misleads users; unprofessional | All `[xxx]` fields MUST be replaced with actual data. Verify before saving. |
 | Delta detection skipped (assumes no changes) | Missed files may be undocumented; Registry degrades over time | Always compare scan results with current Registry. Never assume no delta. |
 
-## Quality Gate (Self-Review)
-
-Before saving the updated Registry:
-
-- [ ] All paths on disk verified via Glob
-- [ ] Line counts match `wc -l` results
-- [ ] No `[xxx]` placeholders in final document
-- [ ] Changelog contains new entry with current date
-- [ ] Skill count = number of `.claude/skills/*/SKILL.md` files
-- [ ] Anti-pattern count = number of `.claude/qa-antipatterns/*/*.md` files
-- [ ] Plugin table count = keys in `settings.json → enabledPlugins`
-- [ ] MCP server count = keys in `.mcp.json → mcpServers`
-
 **Gardener Protocol**: Call `.claude/protocols/gardener.md`. If you identified missing rules
 or inefficiencies during this run, output a brief proposal table. Otherwise: `🌱 Gardener: No updates needed.`
 
@@ -193,5 +194,4 @@ or inefficiencies during this run, output a brief proposal table. Otherwise: `�
 ## Related Files
 
 - Registry: `docs/ai-setup.md`
-- Guide: `docs/ai-files-handbook.md`
 - Skill template: `.claude/skills/init-skill/references/skill-template.md`

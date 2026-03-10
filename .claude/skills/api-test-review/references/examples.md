@@ -218,6 +218,7 @@ All tests meet baseline standards. Well-organized, exact assertions, proper Allu
 ## Key Patterns to Recognize
 
 ### ✅ Confidence ≥ 80 (Report)
+
 - Hardcoded secrets, API keys, PII
 - Blurry HTTP assertions (ranges, < operators)
 - Missing @Step annotations (blocks observability)
@@ -225,6 +226,7 @@ All tests meet baseline standards. Well-organized, exact assertions, proper Allu
 - Connection leaks (.use{} missing)
 
 ### ❌ Confidence < 80 (Ignore)
+
 - Style preferences (if/else vs when)
 - Variable naming conventions
 - Minor inefficiencies (could use .first() instead of [0])

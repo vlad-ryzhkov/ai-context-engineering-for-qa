@@ -1,6 +1,7 @@
 #!/bin/bash
-# Post-edit hook: быстрая валидация SKILL.md и qa_agent.md
-# Полный аудит: /skill-audit
+# Post-edit hook: fast validation of SKILL.md and qa_agent.md
+# Full audit: /skill-audit
+# Full pipeline: bash scripts/skill-quality.sh
 
 set -e
 
@@ -24,22 +25,44 @@ LABEL="${SKILL_DIR}/${FILENAME}"
 # Check 1: Line count
 LINE_COUNT=$(wc -l < "$FILE_PATH" | tr -d ' ')
 if [ "$LINE_COUNT" -gt 500 ]; then
-  echo "  ⚠️ WARNING: ${LINE_COUNT} строк (рекомендация: ≤500, split → references/)" >&2
+  echo "  ⚠️ WARNING: ${LINE_COUNT} lines (limit: ≤500, split to references/)" >&2
 fi
 
 # Check 2: Self-Review Protocol (the anti-pattern, not the prohibition)
 if grep -q 'Формат отчёта Self-Review\|Алгоритм Self-Review\|Scorecard Self-Review' "$FILE_PATH" 2>/dev/null; then
-  FINDINGS="${FINDINGS}\n  ⛔ CRITICAL: Self-Review Protocol — заменить на Post-Check inline"
+  FINDINGS="${FINDINGS}\n  ⛔ CRITICAL: Self-Review Protocol detected — replace with Post-Check inline"
 fi
 
-# Check 3: "НЕ ИСПРАВЛЯТЬ" as instruction (bold markdown = instruction, backticks = reference)
-if grep -q '\*\*НЕ ИСПРАВЛЯТЬ\*\*' "$FILE_PATH" 2>/dev/null; then
-  FINDINGS="${FINDINGS}\n  ⛔ CRITICAL: 'НЕ ИСПРАВЛЯТЬ' — заменить на 'ИСПРАВЬ КОД/аудит'"
+# Check 3: "DO NOT FIX" / "НЕ ИСПРАВЛЯТЬ" as instruction
+if grep -q '\*\*НЕ ИСПРАВЛЯТЬ\*\*\|\*\*DO NOT FIX\*\*' "$FILE_PATH" 2>/dev/null; then
+  FINDINGS="${FINDINGS}\n  ⛔ CRITICAL: 'DO NOT FIX' instruction — replace with 'FIX CODE/audit'"
+fi
+
+# Check 4: Tier 1 Baseline — Quality Gate / Self-Review section
+if [[ "$FILE_PATH" == *SKILL.md ]]; then
+  if ! grep -qiE 'quality gate|self-review|post-check' "$FILE_PATH" 2>/dev/null; then
+    FINDINGS="${FINDINGS}\n  ⚠️ WARN: Missing Quality Gate / Self-Review section (Tier 1 Baseline S10)"
+  fi
+
+  # Check 5: Gardener reference
+  if ! grep -qi 'gardener' "$FILE_PATH" 2>/dev/null; then
+    FINDINGS="${FINDINGS}\n  ⚠️ WARN: Missing Gardener protocol reference (Tier 1 Baseline S11)"
+  fi
+
+  # Check 6: SILENT MODE / Verbosity
+  if ! grep -qiE 'silent mode|verbosity|token economy|machine mode' "$FILE_PATH" 2>/dev/null; then
+    FINDINGS="${FINDINGS}\n  ⚠️ WARN: Missing SILENT MODE / Verbosity (Tier 1 Baseline S12)"
+  fi
+
+  # Check 7: Completion block
+  if ! grep -qiE 'skill complete|completion' "$FILE_PATH" 2>/dev/null; then
+    FINDINGS="${FINDINGS}\n  ⚠️ WARN: Missing SKILL COMPLETE block (Tier 1 Baseline S13)"
+  fi
 fi
 
 if [ -n "$FINDINGS" ]; then
   echo -e "🔍 skill-lint: ${LABEL}${FINDINGS}" >&2
-  echo -e "  💡 Исправь найденные проблемы. Для полного аудита: /skill-audit" >&2
+  echo -e "  💡 Fix issues above. Full audit: /skill-audit | Full pipeline: bash scripts/skill-quality.sh" >&2
   exit 2
 fi
 

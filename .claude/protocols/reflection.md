@@ -1,0 +1,35 @@
+# Reflection Protocol — Structured Failure Analysis
+
+## Trigger
+
+Activates when:
+- Skill ends with `⚠️ SKILL PARTIAL` or `🛑 LOOP_GUARD_TRIGGERED`
+- User explicitly says "reflect" / "what went wrong"
+
+## Algorithm
+
+1. **Identify root cause** (not symptom) of the failure
+2. **Formulate exactly 1 rule:**
+   ```text
+   - RULE: [prohibition/requirement]. Reason: [why]. Source: [skill, date]
+   ```
+3. **Dedup check:** Grep `CLAUDE.md`, `qa-antipatterns/`, relevant `SKILL.md` for keyword overlap
+4. **If rule is genuinely new** → append to `.ai-lessons/pending.md` (Delta Update: append only)
+5. **If duplicate** → output "Existing rule covers this: [ref]"
+
+## Output Format (mandatory)
+
+```text
+🔍 REFLECTION
+├─ Root cause: [specific technical reason]
+├─ New rule: [yes/no — if yes, appended to .ai-lessons/pending.md]
+└─ Ref: [existing rule path if duplicate]
+```
+
+## Rules
+
+- One reflection per failure — do not batch multiple root causes
+- Root cause must be specific and technical, not "something went wrong"
+- Formulate rules as prohibitions or requirements, never wishes
+- FORBIDDEN: rewriting `.ai-lessons/pending.md` — append only (Delta Update Protocol)
+- If the failure is caused by external factors (network, missing dependency) — note it but do not create a rule

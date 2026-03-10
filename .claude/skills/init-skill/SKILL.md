@@ -2,7 +2,7 @@
 name: init-skill
 description: Generates new skills with interactive workflow, checkpoints, and iterative refinement. Use when you need to create a new skill, standardize a QA process, or automate routine checks. Use when creating a new skill or improving an existing one.
 allowed-tools: "Read Write Edit Glob Grep Bash"
-agent: agents/sdet.md
+agent: sdet
 context: fork
 ---
 
@@ -202,9 +202,38 @@ Read `references/yaml-reference.md` for the full reference on fields, constraint
 
 **Key rules:**
 - `name`: kebab-case, matches the directory name, no "claude"/"anthropic"
-- `description`: formula `[What it does]. [When to use]`, < 1024 characters, no XML tags
+- `description`: formula `[What it does]. [When to use]. [When NOT to use]`, < 1024 characters, no XML tags
+- `allowed-tools`: REQUIRED — declare tools the skill uses (e.g., `"Read Write Edit Glob Grep"`)
+- `disable-model-invocation`: set to `true` if skill has side effects (pushes code, creates PRs, writes persistent files outside `audit/`)
 
 **Use trigger phrases from Checkpoint 1** to formulate "When to use".
+
+**Scaffold standard for generated skills:**
+
+```yaml
+---
+name: [skill-name]
+description: [What it does]. [When to use]. [When NOT to use]
+allowed-tools: "Read Write Edit Glob Grep Bash(npx*)"
+disable-model-invocation: false   # set true for side-effect skills
+agent: sdet                       # omit if no dedicated agent
+context: fork
+---
+```
+
+### Step 3.2: Determine if skill needs STOP/WARN/INFORM checkpoints
+
+If the skill takes parameters (framework, file path, entity name), add a Phase Checkpoints block at the entry:
+
+```markdown
+## Phase Checkpoints
+
+\`\`\`text
+STOP  if: [required param missing] | [required file not found]
+WARN  if: [optional convention files unfilled] | [recommended prerequisite absent]
+INFORM: [what was detected/resolved]
+\`\`\`
+```
 
 ### ✅ CHECKPOINT 3: YAML Frontmatter Confirmation
 
@@ -214,6 +243,8 @@ YAML Frontmatter (will be visible in the system prompt):
 ---
 name: [skill-name]
 description: [your variant]
+allowed-tools: [tools]
+disable-model-invocation: [true|false]
 ---
 
 Acceptable? (yes / suggest your variant)
@@ -334,5 +365,4 @@ echo "✅ Validation passed ($lines lines)"
 
 - Init script: `.claude/skills/init-skill/scripts/init_skill.sh`
 - Template: `references/skill-template.md`
-- Full guide: `docs/ai-files-handbook.md`
 - Examples: `.claude/skills/*/SKILL.md`

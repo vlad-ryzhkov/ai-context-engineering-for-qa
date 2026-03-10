@@ -105,7 +105,7 @@
 name: spec-audit
 description: Проводит глубокий QA-аудит спецификации на основе стандартов ISTQB, BABOK и OWASP. Выявляет не только архитектурные дыры, но и логические противоречия между Требованиями, Схемой данных и Примерами (Dry Run). Используй перед написанием тестов, при ревью требований или анализе спецификации на противоречия. Не используй для code review или анализа тестового кода.
 allowed-tools: "Read Write Glob"
-agent: agents/auditor.md
+agent: auditor
 context: fork
 ---
 
@@ -123,7 +123,7 @@ context: fork
 name: spec-audit
 description: Performs deep QA audit of specifications based on ISTQB, BABOK, and OWASP standards. Identifies not only architectural gaps but also logical contradictions between Requirements, Data schema, and Examples (Dry Run). Use before writing tests, during requirements review, or when analyzing specifications for contradictions. Do not use for code review or test code analysis.
 allowed-tools: "Read Write Glob"
-agent: agents/auditor.md
+agent: auditor
 context: fork
 ---
 

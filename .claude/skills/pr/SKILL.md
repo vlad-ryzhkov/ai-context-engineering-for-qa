@@ -1,6 +1,6 @@
 ---
 name: pr
-description: Create a pull request — runs tests, commits changes, pushes branch, opens PR with conventional commit title. Use when ready to submit work for review.
+description: Create a pull request — runs tests, commits changes, pushes branch, opens PR with conventional commit title. Use when ready to submit work for review. Do not use for committing without PR or direct pushes to main.
 allowed-tools: "Bash Read Edit Glob Grep"
 ---
 
@@ -32,7 +32,7 @@ Stop and report failures before proceeding.
 
 Stage relevant files (not `.env`, secrets, or build output). Commit with conventional commit format:
 
-```
+```text
 <type>: <description in English>
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>

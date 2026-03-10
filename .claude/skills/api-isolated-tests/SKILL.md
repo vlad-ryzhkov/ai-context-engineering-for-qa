@@ -2,7 +2,7 @@
 name: api-isolated-tests
 description: Generates an exhaustive test scenario matrix (Markdown) directly from API specifications. Use when you need full regression coverage, find edge cases, or prepare a strict spec for automated tests. Do not use for generating automated test code — use /api-tests for that.
 allowed-tools: "Read Write Edit Glob Grep"
-agent: agents/sdet.md
+agent: sdet
 context: fork
 ---
 
@@ -68,45 +68,10 @@ Before execution the agent MUST load: `.claude/protocols/gardener.md`
      - `BVA:{field}` — BVA for a specific field (e.g. `BVA:password`), if length is delegated to Middleware
      - `POS:encoding_variants` — extra Happy Path with Unicode/hyphens on top of basic POS if standard validation library covers them
 
-   **Ownership → EXCLUDED_SCENARIOS mapping (parse spec's exclusion table row by row):**
-   | Spec ownership marker | Add to EXCLUDED_SCENARIOS |
-   |---|---|
-   | `delegated to Middleware (Zod/Pydantic)` for field X | `NEG:format_X`, `BVA:X` — only `NEG:missing_X` survives |
-   | `covered by library` for feature Y | `NEG:Y_detail` — keep one representative NEG (any input = error) only |
-   | `Unit tests of shared-library` | `NEG:{feature}_combinations` — keep only one POS + one basic NEG |
-   | `"Field presence only: missing → 400"` | All NEG for that field **except** `NEG:missing_{field}` |
-   | `DB level` (BVA) | `BVA:{field}` for all mentioned fields |
-   | `L10N: out of scope` | `L10N:*` for all text fields |
+   **Ownership → EXCLUDED_SCENARIOS mapping:** See `_shared/coverage-matrix.md` § Spec Exclusions Parsing.
 
    - If no exclusions found — `EXCLUDED_TYPES = []`, `EXCLUDED_SCENARIOS = []`, apply the full Coverage Matrix.
-3a. **API Integration Test Focus (DEFAULT — `mode: api-integration`):**
-   **Prevention-first:** Do NOT generate unit-level scenarios — apply heuristics as generation constraints, not post-generation filters. Skipped when `mode: full-matrix`.
-   **Testing Level Classification:**
-   | API-level (ALWAYS generate) | Unit-level (1 representative) |
-   |---|---|
-   | Contract: status codes, response schema, headers | Same validation × N fields, same error code |
-   | Business logic: state transitions, side effects, named rules | M sub-rules of one regex/validator |
-   | Cross-field / state-dependent validation | BVA for infrastructure fields (no business rule) |
-   | Auth/authz (SEC), Idempotency (IDEM), L10N round-trip | Whitespace/spacing/format variants of same check |
-   | Error code routing (distinct codes = distinct scenarios) | NEG duplicating a BVA boundary |
-   Principle: 1 representative proves the validator is wired; proving it for field B after A — unit-test scope.
-   **Precedence:** Spec markers (`EXCLUDED_SCENARIOS`) > DEFAULT_HEURISTICS > `mode: full-matrix` override.
-
-   **DEFAULT_HEURISTICS:**
-   | ID | Heuristic | Action |
-   |---|---|---|
-   | DH-01 | Repeating Validation Pattern — null/empty/wrong-type across N fields, same error code | Keep 1 representative field per check type (e.g., 1 for missing, 1 for null, 1 for wrong-type — not per-field) |
-   | DH-02 | Complexity Rule Combinatorics — M sub-rules for one field | Keep 1 representative NEG |
-   | DH-03 | Infrastructure BVA — schema-only length, no named business rule | Keep 1 BVA pair for 1 representative field |
-   | DH-04 | Format/Whitespace Consolidation — 3+ regex/spacing variants for same field | Keep 1 representative |
-   | DH-05 | Length Boundary Deduplication — NEG row = same boundary as BVA row | Keep BVA row, remove NEG duplicate |
-
-   **Exceptions (heuristic does NOT reduce):**
-   - Scenario tests an explicitly named business rule from spec (e.g., "Apostrophes are not allowed")
-   - Scenario produces a different error code / HTTP status from others in its group
-   - Scenario tests state-dependent validation
-   - Endpoint is `[CRITICAL]` + scenario tests security/data-integrity
-   **API Coverage Guarantee (heuristics NEVER reduce):** All POS, SEC, IDEM, L10N, HEADERS; scenarios with distinct error code/HTTP status; explicitly named business rules; state-dependent and cross-field validation; `[CRITICAL]` security/data-integrity; ≥1 NEG per validation class; ≥1 BVA pair for field with business rule.
+3a. **API Integration Test Focus:** See `references/coverage-heuristics.md` for DEFAULT_HEURISTICS (DH-01–DH-05), Testing Level Classification, and API Coverage Guarantee. Skipped when `mode: full-matrix`.
 4. **Risk-Based Prioritization:**
    Before generating scenarios, assess the business risk of each endpoint:
    - **[CRITICAL]** — Money (payment, refund, discount, balance), Security (auth, tokens, permissions, password reset), Data Integrity (user deletion, account merge, data migration). For `[CRITICAL]` endpoints generate **expanded NEG scenarios**: race conditions (`concurrent {ACTION} with same {ID}`), double execution (`duplicate {PAYMENT_ID} within 1s`), partial failure (`timeout after debit before credit`).
@@ -125,67 +90,11 @@ Before execution the agent MUST load: `.claude/protocols/gardener.md`
 
 ## Expected Result Engineering
 
-Rules for the `Expected Result (HTTP + Logic)` column — mandatory for all scenarios:
-
-### 1. Contract-First (Schema Validation)
-
-For **POS** scenarios of mutating and read operations `Expected Result` MUST contain a JSON schema reference:
-- Format: `Contract Match: {field}({type}), {field}({type})`
-- Types: `string`, `UUID`, `ISO8601`, `boolean`, `integer`, `array`
-- Example: `201 Created. Contract Match: verification_token(string/UUID), expires_at(ISO8601), status(string)`
-- Benefit: a single test automatically catches field renaming, type change, or removal of a required key.
-
-### 2. State Verification (Side Effects)
-
-For **any** scenario with a **2xx response** that mutates the system, `Expected Result` MUST contain a state check: DB (`DB: users.status = 'PENDING'`), Queue (`Event published: user.registered`), Cache (`Cache invalidated: user:{UUID}`), or `State: N/A (read-only)`.
-**External API (Isolation):** If business logic calls an external service, specify mock contract: `Mock: {System_Name} returns {Response}`. For `[CRITICAL]` also add failure mock: `Mock: PaymentGW returns 503 → Expected: 502 + body.code: 'UPSTREAM_ERROR'`.
-
-### 3. Headers & Security
-
-For **POS Happy Path** of each endpoint add a header verification row (`Type: HEADERS`):
-- `Content-Type: application/json; charset=utf-8` — mandatory
-- Security headers: `X-Content-Type-Options: nosniff`
-- Example table row: `| REG-01h | HEADERS | Response headers | — | Content-Type: application/json; charset=utf-8. X-Content-Type-Options: nosniff |`
-
-### 4. Audit-Ready (NEG Specificity)
-
-For **NEG** scenarios `Expected Result` MUST contain `code` from the response body, not just the HTTP status:
-- Format: `{HTTP_CODE} + body.code: '{ERROR_CODE}'`
-- Example: `400 Bad Request + body.code: 'VALIDATION_ERROR'` (❌ just `400 Bad Request`)
-
-### 5. Cleanup / Teardown
-
-Every **POS** scenario that creates data MUST end with a cleanup step (re-running tests MUST NOT produce uniqueness conflicts).
-
-**Priority order:** (1) `Cleanup: DB: DELETE FROM {table} WHERE {field} = {VALUE}` (2) `Cleanup: Admin API: DELETE /admin/{resource}/{UUID}` (3) `Cleanup: Test API: DELETE /test/{resource}/{UUID}` (4) `Cleanup: Public API: DELETE /{resource}/{UUID} (requires auth token from step POS-01)`.
-**NEVER** write `Cleanup: DELETE /users/{UUID}` without auth mechanism — unauthenticated public DELETE is a security anti-pattern.
-**If unknown from spec** → `Cleanup: ⚠️ mechanism unspecified — requires Admin API or DB access.`
-Read-only → `Cleanup: N/A`.
+> Full rules (Contract-First, State Verification, Headers, Audit-Ready, Cleanup): `references/expected-result-rules.md`
 
 ## Constraints (Violation = REJECT)
 
-| Category         | Rule                      | Violation → Correct                                                                                                                                                                                                                                                     |
-|------------------|---------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Format**       | NO CODE                   | `@Test fun...` (❌) → `\| ID \| Scenario \|` (✅)                                                                                                                                                                                                                         |
-| **Data**         | Placeholders              | `test@test.com` (❌) → `{UNIQUE_EMAIL}` (✅)                                                                                                                                                                                                                              |
-| **Privacy**      | NO PII                    | `ivan.petrov` (❌) → `user_{uuid}` (✅)                                                                                                                                                                                                                                   |
-| **Privacy**      | RFC 2606 Only             | `@gmail.com` (❌) → `@example.com` (✅)                                                                                                                                                                                                                                   |
-| **Expectations** | Specificity               | "Error" (❌) → "400 Bad Request + Code 'INVALID_ID'" (✅)                                                                                                                                                                                                                 |
-| **Expectations** | NO Vague                  | `X OR Y` in Expected Result (❌). Rules: (1) success vs. error (2xx OR 4xx) → two atomic scenarios (✅); (2) two different success codes (200 OR 201) → ⚠️ WARNING: clarify the contract in spec, then one specific code; (3) vendor-specific ambiguity — still two rows. |
-| **Atomicity**    | 1 Row = 1 Check           | "Success then Fail" (❌) → Two separate rows (✅)                                                                                                                                                                                                                         |
-| **BVA**          | Full Coverage             | Only Min-1 (fail) (❌) → Min-1 (fail) + Min (success) (✅)                                                                                                                                                                                                                |
-| **Completeness** | Full Grid                 | Only Happy Path (❌) → POS + NEG + BVA + SEC + HEADERS (✅)                                                                                                                                                                                                               |
-| **Duplication**  | NO Duplicates             | Same Action + Same Expected = Remove duplicate                                                                                                                                                                                                                          |
-| **Contract**     | Schema-First              | `"Token returned"` (❌) → `"Contract Match: token(UUID), expires_at(ISO8601)"` (✅)                                                                                                                                                                                       |
-| **State**        | Side Effects              | `"201 Created"` (❌) → `"201 Created. DB: status='PENDING'"` (✅) for POST/PATCH                                                                                                                                                                                          |
-| **Audit**        | NEG Specificity           | `"400 Bad Request"` (❌) → `"400 + body.code: 'VALIDATION_ERROR'"` (✅)                                                                                                                                                                                                   |
-| **Headers**      | Content-Type              | Content-Type not specified (❌) → separate `HEADERS` row for each endpoint (✅)                                                                                                                                                                                           |
-| **Cleanup**      | Teardown                  | POS without cleanup (❌) → `"Cleanup: DB: DELETE FROM {table} WHERE ..."` or Admin API (✅). `Cleanup: DELETE /resource/{UUID}` without auth/ownership specified (❌)                                                                                                      |
-| **L10N**         | UTF-8 Round-Trip          | Only ASCII in name/address (❌) → `{CYR_NAME}`, `{AR_NAME}`, `{EMOJI_STRING}` (✅) if field is text                                                                                                                                                                       |
-| **IDEM**         | Idempotency               | No repeated request (❌) → IDEM scenarios mandatory for all POST/PUT: repeated request without duplicate + 409 on conflict (✅)                                                                                                                                           |
-| **IDEM**         | Cache-expiry + uniqueness | `IDEM expired → 201 Created` (❌) → `IDEM expired → 409 Conflict` when entity was persisted and uniqueness constraint applies (✅)                                                                                                                                        |
-| **Risk**         | Risk Tag                  | `[CRITICAL]` endpoint without expanded NEG (race condition, double execution) (❌) → `[CRITICAL]` endpoints MUST have expanded NEG set (✅)                                                                                                                               |
-| **Isolation**    | External API Mock         | Calls external API without mock spec (❌) → `Mock: {System} returns {Response}` in Expected Result (✅)                                                                                                                                                                   |
+> Full constraints table: `references/constraints.md`
 
 
 ## Output Template
@@ -232,31 +141,7 @@ Create file `docs/api-isolated-tests/test-scenarios_{timestamp}.md` (timestamp f
    - **If endpoint calls external APIs** — add `Mock: {System} returns {Response}` to Expected Result; for `[CRITICAL]` add failure mock scenario.
    - **IDEM Self-Check (MANDATORY after IDEM generation):** Count IDEM rows. Minimum: (a) first request, (b) cached repeat, (c) cache-expiry, (d) body mismatch (if spec defines it). Verify cache-expiry expects `409` (not `201`) when uniqueness applies. Missing rows → ADD before proceeding.
 3. **Scope Purge Pass (MANDATORY — execute before writing any output):**
-   Active deletion step. Go through every generated row and apply the following rules in order. For each matching row: **delete it**, do not keep it.
-
-   **Purge rules (apply to every row):**
-   - Row's Scenario tests **format, regex, or special-character rules** for a field listed in `EXCLUDED_SCENARIOS` as `NEG:format_{field}` → **DELETE**
-   - Row's Scenario tests **string/number length boundaries (BVA)** for a field listed as `BVA:{field}` → **DELETE**
-   - Row's Scenario tests **internal rule combinations** (password complexity variants, PII substring combos, encoding permutations) for a feature listed as `NEG:{feature}_combinations` → **DELETE** (the one representative NEG kept in step 2 survives)
-   - Row's Type is in `EXCLUDED_TYPES` → **DELETE**
-   - Row matches any remaining pattern in `EXCLUDED_SCENARIOS` → **DELETE**
-
-   **DEFAULT_HEURISTICS safety net (skip ALL if `mode: full-matrix`):**
-   Apply AFTER spec-driven rules. Catches unit-level rows that slipped past generation constraints. Check §3a exceptions before deleting.
-   - **DH-01:** Row tests validation (null/empty/missing/wrong-type) that repeats across N fields with same error code → keep 1 representative field per check type, **DELETE** the rest
-   - **DH-02:** Row tests one of M complexity sub-rules for a single field (e.g., password: uppercase, digit, special char) → keep 1 representative NEG, **DELETE** the rest
-   - **DH-03:** Row tests BVA for an infrastructure-only field (schema length constraint, no named business rule) → keep 1 BVA pair for 1 representative field, **DELETE** the rest
-   - **DH-04:** Row tests one of 3+ regex/whitespace/spacing variants for same field → keep 1 representative, **DELETE** the rest
-   - **DH-05:** NEG row tests the exact same boundary already covered by a BVA row → keep BVA row, **DELETE** NEG duplicate
-
-   **After purge — append `## Scope Reduction Log` to the output file:**
-   ```markdown
-   ## Scope Reduction Log
-   | Removed ID | Scenario | Reason |
-   |---|---|---|
-   | REG-NEG-FORMAT-01 | Invalid phone format (non-E.164) | NEG:format_phone — delegated to Middleware (spec: Excluded from Test Scope) |
-   ```
-   If no rows were deleted → `## Scope Reduction Log\n> No rows removed.`
+   Execute purge rules from `references/scope-purge-pass.md`. Apply spec-driven rules first, then DEFAULT_HEURISTICS safety net.
 
 4. **Compliance Checklist:**
    - [ ] BVA complete? (Min-1/Min, Max/Max+1) — **skip if BVA ∈ `EXCLUDED_TYPES`**

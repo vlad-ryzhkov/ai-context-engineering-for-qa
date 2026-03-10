@@ -201,6 +201,3 @@ Use for multi-file scan skills (doc-lint, agents-checker, skill-audit).
 
 ---
 
-## Full Guide
-
-`docs/ai-files-handbook.md` → Part 3: Skills

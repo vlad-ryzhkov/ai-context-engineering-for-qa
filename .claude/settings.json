@@ -38,6 +38,12 @@
             "type": "command",
             "command": ".claude/hooks/skill-lint.sh",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/delta-guard.sh",
+            "timeout": 10,
+            "async": true
           }
         ]
       }

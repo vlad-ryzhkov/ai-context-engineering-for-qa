@@ -1,6 +1,6 @@
 ---
 name: agents-checker
-description: "Verifies structural integrity and compliance of .claude/agents/ and .claude/qa_agent.md against init-agent standards."
+description: "Verifies structural integrity and compliance of .claude/agents/ and .claude/qa_agent.md against init-agent standards. Use after modifying agent files. Do not use for SKILL.md audit — use /skill-audit."
 allowed-tools: "Read Glob Grep Edit Write"
 ---
 

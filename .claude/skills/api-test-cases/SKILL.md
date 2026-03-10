@@ -2,7 +2,7 @@
 name: api-test-cases
 description: Generates exhaustive test scenario matrices for ALL API endpoints grouped by domain. Use for full regression coverage across entire API surface. Do not use for single-endpoint deep-dive — use /api-isolated-tests.
 allowed-tools: "Read Write Edit Glob Grep AskUserQuestion"
-agent: agents/sdet.md
+agent: sdet
 context: fork
 ---
 
@@ -21,7 +21,7 @@ For single-endpoint deep-dive use `/api-isolated-tests` instead.
 
 Before execution the agent MUST load (via `Read` tool):
 1. `.claude/protocols/gardener.md`
-2. `.claude/skills/api-test-cases/references/coverage-matrix.md`
+2. `.claude/skills/_shared/coverage-matrix.md`
 3. `.claude/skills/api-test-cases/references/quality-gates.md`
 4. `.claude/skills/api-test-cases/references/output-template.md`
 
@@ -47,7 +47,7 @@ Markers: `handled by ORM`, `delegated to Middleware`, `covered by library (Zod/P
   - `BVA:{field}` — BVA for specific field delegated to Middleware
   - `POS:encoding_variants` — extra Happy Path with Unicode/hyphens
 
-Full ownership → EXCLUDED_SCENARIOS mapping: see `references/coverage-matrix.md` § Spec Exclusions Parsing.
+Full ownership → EXCLUDED_SCENARIOS mapping: see `_shared/coverage-matrix.md` § Spec Exclusions Parsing.
 
 If no exclusions found → `EXCLUDED_TYPES = []`, `EXCLUDED_SCENARIOS = []`, apply full Coverage Matrix.
 
@@ -126,7 +126,7 @@ Detect from `audit/repo-scout-report.md` or override via `$ARGUMENTS`:
 
 4. **Output domain summary table** (to chat):
 
-```
+```text
 📊 API Surface Map
 | # | Domain | Endpoints | Risk | Spec Source | Batch |
 |---|--------|-----------|------|-------------|-------|
@@ -145,7 +145,7 @@ Wait for user response before proceeding. **Non-interactive fallback:** If `AskU
 
 ### Phase 4: Chunked Generation (Per-Domain Loop)
 
-```
+```text
 FOR each selected domain batch:
   1. Output active exclusions as internal reasoning step:
      "Active EXCLUDED_TYPES: [...], Active EXCLUDED_SCENARIOS: [...]"
@@ -155,11 +155,11 @@ FOR each selected domain batch:
   3.5. Load anti-patterns: Read `.claude/qa-antipatterns/_index.md`. Apply relevant patterns
        as generation constraints (e.g., `api/eventual-consistency-writes.md` for write→read pairs,
        `api/batch-partial-failure.md` for batch endpoints).
-  4. Apply coverage matrix (→ references/coverage-matrix.md):
+  4. Apply coverage matrix (→ _shared/coverage-matrix.md):
      - CRITICAL: 7 dimensions + expanded NEG (race conditions, double execution, partial failure)
      - HIGH: 7 dimensions (POS/NEG/BVA/SEC/L10N/IDEM/HEADERS)
      - MEDIUM: POS + key NEG + SEC + HEADERS only (skip BVA/L10N/IDEM)
-  5. **If `service_type: proxy-filter`:** Apply PROXY_HEURISTICS (PH-01..PH-05) as generation constraints FIRST (→ references/coverage-matrix.md § PROXY_HEURISTICS). Then apply DEFAULT_HEURISTICS. Skip both when `mode: full-matrix`.
+  5. **If `service_type: proxy-filter`:** Apply PROXY_HEURISTICS (PH-01..PH-05) as generation constraints FIRST (→ _shared/coverage-matrix.md § PROXY_HEURISTICS). Then apply DEFAULT_HEURISTICS. Skip both when `mode: full-matrix`.
      **If `service_type: api-service`:** Apply DEFAULT_HEURISTICS (DH-01..DH-07) as **generation constraints** (prevention-first: do NOT generate unit-level scenarios, apply heuristics DURING generation, not as post-filters). Skip when `mode: full-matrix`.
   6. Execute Scope Purge Pass (→ references/quality-gates.md)
   7. Run Quality Gates checklist for this domain

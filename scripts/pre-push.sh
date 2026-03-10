@@ -75,15 +75,24 @@ if ! ./gradlew compileTestKotlin -q; then
   exit 1
 fi
 
-# 5. Markdownlint (auto-fix first; warn only if npx unavailable)
+# 5. Markdownlint (check only — never modify files during push)
 if command -v npx >/dev/null 2>&1; then
   echo "[pre-push] Running markdownlint..."
-  npx markdownlint-cli --fix "**/*.md" --ignore node_modules --ignore audit 2>/dev/null || true
   if ! npx markdownlint-cli "**/*.md" --ignore node_modules --ignore audit 2>/dev/null; then
     echo -e "${YELLOW}[pre-push] WARNING: markdownlint found issues. Run 'npx markdownlint-cli --fix **/*.md' to fix.${NC}"
   fi
 else
   echo -e "${YELLOW}[pre-push] WARNING: npx not found — markdownlint skipped.${NC}"
+fi
+
+# 6. Regression warning for .claude/ changes (non-blocking)
+CLAUDE_CHANGES=$(echo "$DIFF_FILES" | grep -E '^\.(claude)/' || true)
+if [ -n "$CLAUDE_CHANGES" ]; then
+  if [ -f "scripts/lib/regression-detect.sh" ] && [ -f ".claude/baselines/skill-snapshot.json" ]; then
+    if ! bash scripts/lib/regression-detect.sh >/dev/null 2>&1; then
+      echo -e "${YELLOW}[pre-push] WARNING: Regression detected in .claude/ files. Run 'bash scripts/skill-quality.sh --check regression' for details.${NC}"
+    fi
+  fi
 fi
 
 echo "[pre-push] All checks passed."

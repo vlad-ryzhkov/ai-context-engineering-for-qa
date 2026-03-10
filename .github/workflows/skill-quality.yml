@@ -1,0 +1,94 @@
+name: Skill Quality Pipeline
+
+on:
+  pull_request:
+    paths:
+      - '.claude/**'
+      - 'CLAUDE.md'
+      - 'AGENTS.md'
+      - 'scripts/lib/**'
+      - 'scripts/skill-quality.sh'
+
+jobs:
+  quality:
+    name: Skill Quality Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run agnix lint
+        id: agnix
+        run: npx agnix --target claude-code .
+        continue-on-error: true
+
+      - name: Run custom quality checks
+        id: custom
+        run: bash scripts/skill-quality.sh --ci
+        continue-on-error: true
+
+      - name: Post PR comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const agnixResult = '${{ steps.agnix.outcome }}';
+            const customResult = '${{ steps.custom.outcome }}';
+            const passed = agnixResult === 'success' && customResult === 'success';
+
+            const body = [
+              '## Skill Quality Pipeline',
+              '',
+              `| Check | Status |`,
+              `|-------|--------|`,
+              `| agnix lint (230+ rules) | ${agnixResult === 'success' ? '✅ Pass' : '❌ Fail'} |`,
+              `| Tier 1 Baseline + Regression | ${customResult === 'success' ? '✅ Pass' : '❌ Fail'} |`,
+              '',
+              passed ? '✅ All checks passed' : '❌ Quality checks failed — see job logs for details',
+              '',
+              '---',
+              '*Automated by [Skill Quality Pipeline](.github/workflows/skill-quality.yml)*'
+            ].join('\n');
+
+            // Update existing comment or create new one
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const marker = '## Skill Quality Pipeline';
+            const existing = comments.find(c => c.body.startsWith(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Fail on errors
+        if: steps.agnix.outcome == 'failure' || steps.custom.outcome == 'failure'
+        run: |
+          echo "Quality checks failed"
+          exit 1

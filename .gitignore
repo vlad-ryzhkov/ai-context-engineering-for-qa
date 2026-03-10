@@ -49,6 +49,9 @@ src/test/kotlin/rawResults/**
 # IDE (full ignore)
 .idea/
 
+# Node.js
+node_modules/
+
 # macOS
 .DS_Store
 **/.DS_Store

@@ -63,13 +63,15 @@ Three layers, loaded on demand (not all at once):
 │   │     └── agents/auditor.md   →  /skill-audit, /doc-lint, /screenshot-analyze
 │   │
 │   ├── protocols/                   # Agent behavior protocols
-│   │   └── gardener.md              # "Suggest improvements" protocol
+│   │   ├── gardener.md              # "Suggest improvements" protocol
+│   │   └── reflection.md            # Failure analysis → pending lessons
 │   ├── settings.json                # Plugins, permissions, hooks
 │   ├── agents/                      # Role-specific agents
 │   │   ├── sdet.md                  #   Test code generation
 │   │   └── auditor.md               #   Planning + quality audit
 │   ├── hooks/                       # PostToolUse hooks
-│   │   └── skill-lint.sh            #   SKILL.md validation on every edit
+│   │   ├── skill-lint.sh            #   SKILL.md validation on every edit
+│   │   └── delta-guard.sh           #   Warns on Write to governed files
 │   ├── qa-antipatterns/             # Code quality checks (31 files + 1 index)
 │   │   ├── _index.md
 │   │   ├── api/                     # 12 patterns
@@ -78,7 +80,7 @@ Three layers, loaded on demand (not all at once):
 │   │   ├── platform/               # 6 patterns
 │   │   │   └── java/                # 2 Java-specific patterns
 │   │   └── security/               # 3 patterns
-│   └── skills/                      # Skills (19 total)
+│   └── skills/                      # Skills (21 total)
 │       ├── agents-checker/          # /agents-checker — agent compliance check
 │       ├── api-isolated-tests/      # /api-isolated-tests — test case generation
 │       ├── api-mocks/               # /api-mocks — HTTP mock server generation
@@ -97,17 +99,31 @@ Three layers, loaded on demand (not all at once):
 │       ├── screenshot-analyze/      # /screenshot-analyze — L10n UI audit
 │       ├── skill-audit/             # /skill-audit — SKILL.md audit
 │       ├── spec-audit/              # /spec-audit — QA audit of requirements
+│       ├── curate-lessons/          # /curate-lessons — lesson curation
 │       └── update-ai-setup/         # /update-ai-setup — registry update
+│
+├── .ai-lessons/                     # Pending + graduated lessons (ACE)
+│   ├── pending.md
+│   └── graduated.md
 │
 ├── .cursor/rules/                   # Cursor wrappers → reference .claude/ files
 ├── .agents/skills/                  # Codex wrappers → reference .claude/ files
 ├── .github/
-│   └── copilot-instructions.md      # Copilot wrapper → key project rules
+│   ├── copilot-instructions.md      # Copilot wrapper → key project rules
+│   └── workflows/
+│       └── skill-quality.yml        # CI: skill quality pipeline
 │
 ├── docs/
 │   ├── ai-setup.md                  # This file
 │   ├── api-isolated-tests/                  # Manual test scenarios
 │   └── workshop-commands.md         # Workshop commands per IDE
+│
+├── scripts/
+│   ├── skill-quality.sh             # Quality pipeline orchestrator
+│   └── lib/
+│       ├── skill-structure.sh       # Tier 1 Baseline checks
+│       ├── token-budget.sh          # Token counting + snapshots
+│       └── regression-detect.sh     # Section removal detection
 │
 ├── specifications/                  # API specifications for analysis
 │
@@ -126,6 +142,7 @@ Three layers, loaded on demand (not all at once):
 | CLAUDE.md         | `CLAUDE.md`                     |   129 | Main onboarding: stack, safety, conventions           |
 | QA Agent          | `.claude/qa_agent.md`           |   188 | Mindset, anti-patterns, Cross-Skill Protocol          |
 | Gardener Protocol | `.claude/protocols/gardener.md` |    55 | "Suggest improvements" protocol injected at runtime   |
+| Reflection Protocol | `.claude/protocols/reflection.md` |    36 | Failure analysis → pending lessons                  |
 | Settings          | `.claude/settings.json`         |    50 | Plugins, permissions, hooks                           |
 | MCP Servers       | `.mcp.json`                     |    12 | context7 + sequential-thinking                        |
 | Markdownlint      | `.markdownlint.yaml`            |    38 | Markdown linting rules                                |
@@ -153,6 +170,7 @@ Three layers, loaded on demand (not all at once):
 | `/screenshot-analyze` | `.claude/skills/screenshot-analyze/SKILL.md` |   300 | Analysis   | L10N and UI defects                        |
 | `/skill-audit`        | `.claude/skills/skill-audit/SKILL.md`        |   224 | Analysis   | SKILL.md audit                             |
 | `/spec-audit`         | `.claude/skills/spec-audit/SKILL.md`         |   284 | Analysis   | QA audit of requirements                   |
+| `/curate-lessons`     | `.claude/skills/curate-lessons/SKILL.md`     |   163 | Meta       | Lesson curation from pending.md            |
 | `/update-ai-setup`    | `.claude/skills/update-ai-setup/SKILL.md`    |   168 | Meta       | This registry update                       |
 
 ### Anti-Patterns
@@ -238,11 +256,24 @@ Supporting data for skills — templates, examples, glossaries:
 | auditor | `.claude/agents/auditor.md` |   169 | Planning + quality audit |
 | sdet    | `.claude/agents/sdet.md`    |   201 | Test code generation     |
 
-### Hooks
+### Hooks and Scripts
 
-| File          | Path                          | Lines | Trigger                  | Purpose                     |
-|---------------|-------------------------------|------:|--------------------------|-----------------------------|
-| skill-lint.sh | `.claude/hooks/skill-lint.sh` |    46 | PostToolUse (Write/Edit) | SKILL.md validation on edit |
+| File             | Path                            | Lines | Trigger / Usage          | Purpose                        |
+|------------------|---------------------------------|------:|--------------------------|--------------------------------|
+| skill-lint.sh    | `.claude/hooks/skill-lint.sh`   |    46 | PostToolUse (Write/Edit) | SKILL.md validation on edit    |
+| delta-guard.sh   | `.claude/hooks/delta-guard.sh`  |    38 | PostToolUse (Write)      | Warns Write on governed files  |
+| pre-commit.sh    | `scripts/pre-commit.sh`        |     — | git pre-commit           | Blocks secrets from commit     |
+| pre-push.sh      | `scripts/pre-push.sh`          |     — | git pre-push             | Blocks secrets from push       |
+| setup-hooks.sh   | `scripts/setup-hooks.sh`       |     — | manual                   | Installs git hooks             |
+
+### Quality Scripts
+
+| Script                | Path                               | Purpose                               |
+|-----------------------|------------------------------------|---------------------------------------|
+| skill-quality.sh      | `scripts/skill-quality.sh`         | Pipeline orchestrator (agnix + checks)|
+| skill-structure.sh    | `scripts/lib/skill-structure.sh`   | Tier 1 Baseline (S8–S17)             |
+| token-budget.sh       | `scripts/lib/token-budget.sh`      | Token counting + snapshots            |
+| regression-detect.sh  | `scripts/lib/regression-detect.sh` | Section removal detection             |
 
 ### Documentation
 
@@ -395,19 +426,76 @@ How the system improves over time:
 | Plan → Execution | Endpoint coverage, priorities, gaps in specifications   | Missing Critical endpoints               |
 | Execution → Done | Compilation, `@Link` to specification, coverage vs plan | `compileTestKotlin` fail (max 3 retry)   |
 
-### Self-Improvement Mechanisms
+### Quality Pipeline
 
-| #  | Mechanism                     | What it does                                                                  |
-|----|-------------------------------|-------------------------------------------------------------------------------|
-| 1  | Multi-Agent Orchestration     | 2 agents (SDET, Auditor) + orchestrator `qa_agent.md`                         |
-| 2  | Doc-Lint                      | Cross-file duplicates, SSOT violations, health score                          |
-| 3  | Skill-Audit                   | 9 checks: bloat, waste sections, duplication, harmful patterns                |
-| 4  | AI Registry Sync              | Delta update of this file — registry of all project AI files                  |
-| 5  | Real-Time Hook                | `skill-lint.sh` validates SKILL.md on every edit                              |
-| 6  | Gardener Protocol             | AI notices "smells" during work → suggests fixes without blocking             |
-| 7  | Anti-Pattern Library          | 31 pattern files across 4 categories — reference-driven checks                 |
-| 8  | kotlin-lsp Plugin             | Kotlin code navigation and analysis                                           |
-| 9  | Segregation of Duties         | SDET codes, Auditor reviews — no one reviews their own work                   |
+Automated enforcement for AI context files: `bash scripts/skill-quality.sh`
+
+```text
+skill-quality.sh (orchestrator)
+├── npx agnix                          # 230+ generic AI config rules
+├── scripts/lib/skill-structure.sh     # Tier 1 Baseline (S8-S17)
+├── scripts/lib/token-budget.sh        # Token counting + snapshots
+└── scripts/lib/regression-detect.sh   # Section removal detection
+```
+
+Baseline: `.claude/baselines/skill-snapshot.json` — tracks 21 skills (tokens, lines, section compliance).
+
+<details>
+<summary>Pipeline modes and CI integration</summary>
+
+| Command | What it does |
+|---------|-------------|
+| `bash scripts/skill-quality.sh` | Full: agnix + structure + budget |
+| `--check structure` | Tier 1 Baseline only |
+| `--check budget` | Token budget report |
+| `--check regression` | Detect removed sections vs baseline |
+| `--snapshot` | Save current state as baseline |
+| `--diff` | Compare current vs baseline |
+| `--ci` | CI mode: agnix + structure + regression + diff |
+
+CI: `.github/workflows/skill-quality.yml` runs on PRs touching `.claude/`.
+
+</details>
+
+### Adaptive Context Evolution (ACE)
+
+Adopted from [ACE paper (arXiv:2510.04618)](https://arxiv.org/abs/2510.04618).
+
+| ACE Concept | Implementation | Files |
+|-------------|----------------|-------|
+| **Delta Updates** | Surgical `Edit`, never full `Write`. `delta-guard.sh` warns. | `CLAUDE.md`, `.claude/hooks/delta-guard.sh` |
+| **Rule Annotations** | `Freq` column in antipattern index (`high`/`med`/`low`). | `.claude/qa-antipatterns/_index.md` |
+| **Reflection** | Failure analysis → 1 rule → `.ai-lessons/pending.md` | `.claude/protocols/reflection.md` |
+| **Lesson Curation** | `/curate-lessons` deduplicates + graduates rules | `.claude/skills/curate-lessons/SKILL.md` |
+
+<details>
+<summary>Learning loop diagram</summary>
+
+```text
+Skill failure (PARTIAL / LOOP_GUARD)
+  → Reflection Protocol
+    → Append to .ai-lessons/pending.md
+      → ≥ 3 lessons → /curate-lessons
+        → Dedup against CLAUDE.md, qa-antipatterns/, SKILL.md
+          → Graduate → target files (Delta Update)
+            → Archive → .ai-lessons/graduated.md
+```
+
+Gardener Protocol also feeds `pending.md` for cross-cutting rules.
+
+</details>
+
+<details>
+<summary>Skipped ACE concepts (and why)</summary>
+
+| Concept | Reason |
+|---------|--------|
+| Auto helpful/harmful counters | No persistent state. Manual `Freq` column substitutes |
+| Embedding dedup | Keyword-grep sufficient for ~31 patterns |
+| Autonomous curation | Auto-mutating context is risky. User-triggered safer |
+| Playbook ID system | File-path referencing serves as ID |
+
+</details>
 
 ---
 
@@ -479,10 +567,22 @@ Official alternative: [skill-creator](https://github.com/anthropics/skills/tree/
 
 ---
 
+<details>
+<summary>Known Limitations and Design Tradeoffs</summary>
+
+| Item | Status | Why |
+|------|--------|-----|
+| `api-test-review` 564 lines, no quality_gate | Known | 8-phase pipeline needs density; splitting breaks phase flow |
+| `spec-audit` no quality_gate | Known | Audit output IS the quality gate |
+| `fix-markdown` / `pr` lite (35/89 lines) | By design | Utility skills; full Tier 1 overhead exceeds logic |
+
+</details>
+
 ## Changelog
 
 | Date       | Description                                                                                                                                                                                       |
 |------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 2026-03-09 | ACE adoption (delta-guard hook, reflection protocol, lesson curation). +1 skill (`/curate-lessons`), +1 protocol (`reflection.md`), +1 hook (`delta-guard.sh`). Quality pipeline documented. Antipattern index enhanced with grep signatures + freq. Total: 21 skills, 31 anti-patterns |
 | 2026-03-01 | Added `/api-test-review` skill (deep code review of generated API tests). Updated main pipeline. Total: 20 skills, 31 anti-patterns |
 | 2026-02-28 | Added `/api-tests-java` skill (Java 17+ test generation), 4 Java-specific anti-patterns (api/java/inline-http-calls, api/java/map-instead-of-dto, platform/java/completablefuture-no-timeout, platform/java/flaky-sleep-tests), 1 reference (api-patterns-java). Updated sdet.md with Java Compilation Rules. Total: 19 skills, 31 anti-patterns, 26 references |
 | 2026-02-28 | Added 4 skills (api-mocks, api-test-cases, fix-markdown, pr), 2 anti-patterns (batch-partial-failure, eventual-consistency-writes), 3 reference files (api-test-cases refs). Updated all line counts. Total: 18 skills, 27 anti-patterns, 25 references |

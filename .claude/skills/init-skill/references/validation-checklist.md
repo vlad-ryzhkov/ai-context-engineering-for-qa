@@ -24,6 +24,8 @@
 - [ ] Has an output example
 - [ ] Has Quality Gates
 - [ ] Large files extracted into references/
+- [ ] Description is minimal — no codebase overview or directory listing language
+- [ ] No content duplicated from existing project documentation
 
 ## If SKILL.md > 500 Lines
 

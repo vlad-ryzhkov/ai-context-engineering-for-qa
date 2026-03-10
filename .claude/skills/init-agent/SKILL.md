@@ -2,7 +2,7 @@
 name: init-agent
 description: Generates qa_agent.md — a job description for the AI with QA team culture, principles, and anti-patterns. Use when setting up AI for a project, onboarding new AI agents, or standardizing testing approaches. Do not use for editing existing qa_agent.md — edit manually.
 allowed-tools: "Read Write Edit Glob Grep"
-agent: agents/auditor.md
+agent: auditor
 context: fork
 ---
 
@@ -218,4 +218,3 @@ or inefficiencies during this run, output a brief proposal table. Otherwise: `�
 
 - Template: `.claude/skills/init-agent/references/qa-agent-template.md`
 - QA profiles: `.claude/skills/init-agent/references/qa-profiles.md`
-- Full guide: `docs/ai-files-handbook.md`

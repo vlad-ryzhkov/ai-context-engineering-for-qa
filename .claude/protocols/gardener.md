@@ -36,6 +36,11 @@ If no proposals:
 
 **Markdown skills** (append to artifact): `api-isolated-tests`, `api-test-cases`, `spec-audit`, `output-review`, `repo-scout`, `doc-lint`, `skill-audit`
 
+**Target file selection:**
+- Rule is skill-specific (checklist step, output format) → `skills/{name}/SKILL.md`
+- Rule is a global QA pattern (assertion, test structure, async) → `qa-antipatterns/{category}.md`
+- Rule is cross-cutting (applies to multiple skills, not captured by existing antipatterns) → `.ai-lessons/pending.md`
+
 ## Generation Rules
 
 - Formulate as a prohibition or specific requirement, not as a wish

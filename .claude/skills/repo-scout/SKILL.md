@@ -2,7 +2,7 @@
 name: repo-scout
 description: Scans a backend repository (Go, Python, Node.js, Java/Kotlin), catalogs API surface, infrastructure, test coverage, and produces a Test Generation Blueprint for downstream skills. Use when entering a new repo before writing tests. Do not use for QA projects — use /init-project for those.
 allowed-tools: "Read Glob Grep Bash(ls*) Bash(wc*) Bash(jq*) Bash(yq*)"
-agent: agents/sdet.md
+agent: sdet
 context: fork
 ---
 

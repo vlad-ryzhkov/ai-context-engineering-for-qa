@@ -2,7 +2,7 @@
 name: output-review
 description: Independent audit of any skill's output against its checklist. Use after skill completion to verify output quality. Do not use for auditing SKILL.md files themselves — use /skill-audit for that.
 allowed-tools: "Read Write Edit Glob Grep Bash(./gradlew*) Bash(wc*)"
-agent: agents/auditor.md
+agent: auditor
 context: fork
 ---
 

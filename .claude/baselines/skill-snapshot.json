@@ -1,0 +1,258 @@
+{
+    "generated": "2026-03-09T07:18:21Z",
+    "core_tokens": 10157,
+    "skills": {
+        "agents-checker": {
+            "skill_tokens": 2900,
+            "refs_tokens": 0,
+            "total_tokens": 2900,
+            "lines": 252,
+            "sections": {
+                "quality_gate": true,
+                "gardener": true,
+                "silent_mode": true,
+                "completion": true
+            }
+        },
+        "api-isolated-tests": {
+            "skill_tokens": 8223,
+            "refs_tokens": 0,
+            "total_tokens": 8223,
+            "lines": 306,
+            "sections": {
+                "quality_gate": true,
+                "gardener": true,
+                "silent_mode": true,
+                "completion": true
+            }
+        },
+        "api-mocks": {
+            "skill_tokens": 1640,
+            "refs_tokens": 0,
+            "total_tokens": 1640,
+            "lines": 102,
+            "sections": {
+                "quality_gate": true,
+                "gardener": true,
+                "silent_mode": true,
+                "completion": true
+            }
+        },
+        "api-test-cases": {
+            "skill_tokens": 5120,
+            "refs_tokens": 7462,
+            "total_tokens": 12582,
+            "lines": 382,
+            "sections": {
+                "quality_gate": true,
+                "gardener": true,
+                "silent_mode": true,
+                "completion": true
+            }
+        },
+        "api-test-review": {
+            "skill_tokens": 7443,
+            "refs_tokens": 13715,
+            "total_tokens": 21158,
+            "lines": 564,
+            "sections": {
+                "quality_gate": false,
+                "gardener": true,
+                "silent_mode": true,
+                "completion": true
+            }
+        },
+        "api-tests-java": {
+            "skill_tokens": 4872,
+            "refs_tokens": 1635,
+            "total_tokens": 6507,
+            "lines": 327,
+            "sections": {
+                "quality_gate": true,
+                "gardener": true,
+                "silent_mode": true,
+                "completion": true
+            }
+        },
+        "api-tests": {
+            "skill_tokens": 6939,
+            "refs_tokens": 2353,
+            "total_tokens": 9292,
+            "lines": 393,
+            "sections": {
+                "quality_gate": true,
+                "gardener": true,
+                "silent_mode": true,
+                "completion": true
+            }
+        },
+        "curate-lessons": {
+            "skill_tokens": 1378,
+            "refs_tokens": 0,
+            "total_tokens": 1378,
+            "lines": 163,
+            "sections": {
+                "quality_gate": true,
+                "gardener": true,
+                "silent_mode": true,
+                "completion": true
+            }
+        },
+        "doc-lint": {
+            "skill_tokens": 1943,
+            "refs_tokens": 3599,
+            "total_tokens": 5542,
+            "lines": 268,
+            "sections": {
+                "quality_gate": true,
+                "gardener": true,
+                "silent_mode": true,
+                "completion": true
+            }
+        },
+        "fix-markdown": {
+            "skill_tokens": 258,
+            "refs_tokens": 0,
+            "total_tokens": 258,
+            "lines": 35,
+            "sections": {
+                "quality_gate": false,
+                "gardener": true,
+                "silent_mode": false,
+                "completion": false
+            }
+        },
+        "init-agent": {
+            "skill_tokens": 1645,
+            "refs_tokens": 1583,
+            "total_tokens": 3228,
+            "lines": 221,
+            "sections": {
+                "quality_gate": true,
+                "gardener": true,
+                "silent_mode": true,
+                "completion": true
+            }
+        },
+        "init-project": {
+            "skill_tokens": 2513,
+            "refs_tokens": 998,
+            "total_tokens": 3511,
+            "lines": 261,
+            "sections": {
+                "quality_gate": true,
+                "gardener": true,
+                "silent_mode": true,
+                "completion": true
+            }
+        },
+        "init-skill": {
+            "skill_tokens": 2847,
+            "refs_tokens": 3984,
+            "total_tokens": 6831,
+            "lines": 369,
+            "sections": {
+                "quality_gate": true,
+                "gardener": true,
+                "silent_mode": true,
+                "completion": true
+            }
+        },
+        "output-review": {
+            "skill_tokens": 2983,
+            "refs_tokens": 0,
+            "total_tokens": 2983,
+            "lines": 326,
+            "sections": {
+                "quality_gate": true,
+                "gardener": true,
+                "silent_mode": true,
+                "completion": true
+            }
+        },
+        "pr": {
+            "skill_tokens": 549,
+            "refs_tokens": 0,
+            "total_tokens": 549,
+            "lines": 89,
+            "sections": {
+                "quality_gate": true,
+                "gardener": true,
+                "silent_mode": false,
+                "completion": false
+            }
+        },
+        "qa-translate": {
+            "skill_tokens": 3459,
+            "refs_tokens": 5729,
+            "total_tokens": 9188,
+            "lines": 282,
+            "sections": {
+                "quality_gate": true,
+                "gardener": true,
+                "silent_mode": true,
+                "completion": true
+            }
+        },
+        "repo-scout": {
+            "skill_tokens": 6913,
+            "refs_tokens": 17769,
+            "total_tokens": 24682,
+            "lines": 516,
+            "sections": {
+                "quality_gate": true,
+                "gardener": true,
+                "silent_mode": true,
+                "completion": true
+            }
+        },
+        "screenshot-analyze": {
+            "skill_tokens": 2314,
+            "refs_tokens": 4783,
+            "total_tokens": 7097,
+            "lines": 316,
+            "sections": {
+                "quality_gate": true,
+                "gardener": true,
+                "silent_mode": true,
+                "completion": true
+            }
+        },
+        "skill-audit": {
+            "skill_tokens": 4040,
+            "refs_tokens": 0,
+            "total_tokens": 4040,
+            "lines": 347,
+            "sections": {
+                "quality_gate": true,
+                "gardener": true,
+                "silent_mode": true,
+                "completion": true
+            }
+        },
+        "spec-audit": {
+            "skill_tokens": 5391,
+            "refs_tokens": 0,
+            "total_tokens": 5391,
+            "lines": 299,
+            "sections": {
+                "quality_gate": false,
+                "gardener": true,
+                "silent_mode": true,
+                "completion": true
+            }
+        },
+        "update-ai-setup": {
+            "skill_tokens": 1993,
+            "refs_tokens": 0,
+            "total_tokens": 1993,
+            "lines": 215,
+            "sections": {
+                "quality_gate": true,
+                "gardener": true,
+                "silent_mode": true,
+                "completion": true
+            }
+        }
+    }
+}

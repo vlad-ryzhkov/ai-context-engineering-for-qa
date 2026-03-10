@@ -1,7 +1,7 @@
 ---
 name: api-test-review
 description: Deep code review of Kotlin/Java API tests for security, architecture, and quality. Use after /api-tests for artifact validation. Do not use for specification analysis or test case generation.
-agent: agents/auditor.md
+agent: auditor
 allowed-tools: "Read Glob Grep"
 context: fork
 ---
@@ -52,52 +52,15 @@ Verify that tests comply with:
 
 ---
 
-## Target Domain Priming (Kotlin/Java Test Stack)
+## Target Domain Priming
 
-Activate knowledge for these domain-specific concepts to ensure comprehensive code review:
-
-**Kotlin Testing Ecosystem:** `runTest`, `TestCoroutineScheduler`, `advanceUntilIdle`, `@JvmStatic`, `Companion object` fixtures, `suspend` test functions, `launch`, `async`, coroutine builders, `coroutineScope`
-
-**HTTP Client & Assertion Patterns:** `ktor-client` (CIO engine), `jackson-module-kotlin` (SNAKE_CASE serialization), JUnit 5 Assertions (`assertEquals`, `assertTrue`, `assertNotNull` — primary for /api-tests output), `Kotest Assertions` (`.shouldBe()`, `.should()` — only if detected in build file), `RestAssured` (anti-pattern awareness: REST DSL, `.then()` chains — BANNED in Ktor projects), `java.net.http.HttpClient` (Java mode only), `WebTestClient`, `MockMvc`
-
-**Async/Concurrency Antipatterns:** `Thread.sleep()` (blocking), `delay()` (in non-suspend context), `Awaitility`, `CountDownLatch`, `Thread.join()`, race conditions
-
-**Architecture & Package Organization:** DTO isolation (`requests/` and `helpers/` packages), test data builders (`*Fixture`, `*Builder`, `*Factory`), test lifecycle (`@BeforeEach`, `@AfterEach`, `@BeforeAll`, `@AfterAll`), resource cleanup (`.use {}`, AutoCloseable)
-
-**Allure Integration:** `@Step` annotations, `@AllureId`, `@DisplayName`, `@Description`, `attachment()` API, test lifecycle reporting
-
-**Mock & Stub Patterns:** `WireMock` (stubs, matchers), `MockK` (mocking, `every`, `coEvery` for suspend), `@MockBean`, `@WebMvcTest` (Spring context)
-
-**Data Security in Tests:** Safe test data (`test@example.com`, faker libraries), environment variable injection, credential fixtures, no secrets in code
+> Domain terminology activation: `references/domain-priming.md`
 
 ---
 
-## Initial Reconnaissance (Concrete Search Patterns)
+## Initial Reconnaissance
 
-Before analyzing code deeply, use these quick grep patterns to locate potential issues:
-
-```bash
-# Security scan
-grep -rn -E "(bearer\s+[a-zA-Z0-9]+|\"secret\"|\"password\"|api[_-]?key)" --include="*.kt" --include="*.java" src/test
-
-# Blurry HTTP assertions
-grep -rn -E "(statusCode|status).*(<|>|in.*\\.\\.|between)" --include="*.kt" --include="*.java" src/test
-grep -rn "\.then()\.statusCode" --include="*.kt" --include="*.java" src/test  # RestAssured anti-pattern
-
-# Blocking delays
-grep -rn "Thread\.sleep|delay(" --include="*.kt" --include="*.java" src/test
-
-# Missing cleanup
-grep -rn "@Test" --include="*.kt" --include="*.java" src/test | wc -l  # Count tests
-grep -rn "@AfterEach" --include="*.kt" --include="*.java" src/test | wc -l  # Count cleanup
-
-# Inline DTOs
-grep -rn "data class.*Request\|data class.*Response" --include="*.kt" src/test/**/tests/  # Inside test classes
-
-# Missing Allure steps
-grep -rn "@Test\|fun test" --include="*.kt" --include="*.java" src/test | wc -l  # Total tests
-grep -rn "@Step\|step(" --include="*.kt" --include="*.java" src/test | wc -l  # Instrumented tests
-```
+> Quick grep scan patterns: `references/recon-patterns.md`
 
 ---
 
@@ -173,83 +136,9 @@ When reviewing tests, follow this strict protocol to prevent hallucinations and 
 3. **Kotlin/JUnit5 Generator Context:** When reviewing output from `/api-tests`, the primary assertion style is JUnit 5 (`assertEquals`, `assertTrue`, `assertNotNull`). Kotest is an alternative only when detected in build.gradle.kts. Do NOT suggest shouldBe migration for valid `assertEquals` calls from generator output.
 4. If the build file is not readable, acknowledge this in the report and proceed with generic best practices.
 
-### Phase 0.1: Language Lock (Mandatory)
+### Phase 0.1–0.3: Language Lock, Antipattern Loading, Contract Discovery
 
-**Purpose:** Prevent cross-language pattern suggestions. Detect the primary test language and enforce strict language mode.
-
-**Actions:**
-1. **Scan input test files for language:**
-   - Use `Glob` to identify test file extensions in the input path:
-     - If **≥50% files are `.kt`** → activate `LANGUAGE_MODE = KOTLIN`
-     - If **≥50% files are `.java`** → activate `LANGUAGE_MODE = JAVA`
-     - If **mixed ratio** (close to 50/50) → log warning "Mixed language project detected; prioritize primary language"
-2. **Apply strict language rules:**
-   - **IF KOTLIN MODE:**
-     - ✅ ALLOWED: coroutines, `runTest`, `launch`, `async`, suspend functions, scope functions (`.let`, `.apply`, `.run`, `.also`)
-     - ✅ ALLOWED: Kotest assertions (if in build file), JUnit 5 assertions
-     - ❌ BANNED: `CompletableFuture`, `java.util.concurrent.*` (use coroutines instead)
-     - ❌ BANNED: `@BeforeClass` / `@AfterClass` (use `@BeforeAll` / `@AfterAll` with companion object)
-     - ❌ BANNED: AssertJ suggestions (unless explicitly in build.gradle.kts)
-     - ❌ BANNED: Awaitility (use `runTest` + `advanceUntilIdle` instead)
-   - **IF JAVA MODE:**
-     - ✅ ALLOWED: `CompletableFuture`, `java.util.concurrent.*`, Awaitility
-     - ✅ ALLOWED: AssertJ assertions, JUnit 5 assertions
-     - ❌ BANNED: coroutines, suspend functions, `runTest` (Java doesn't have these)
-     - ❌ BANNED: Kotlin scope functions (`.let`, `.apply`, `.run`, `.also`)
-     - ❌ BANNED: `kotlinx-coroutines-test` suggestions
-3. **Log language mode:**
-   ```text
-   Phase 0.1 — Language Lock:
-   ├─ Test files scanned: {count}
-   ├─ Language mode: {KOTLIN | JAVA}
-   └─ Enforcing: {language-specific rules}
-   ```
-
-### Phase 0.2: Dynamic Antipattern Loading
-
-**Purpose:** Load antipatterns from language-specific directories to avoid irrelevant suggestions.
-
-**Actions:**
-1. **Determine antipattern directory based on LANGUAGE_MODE:**
-   - **IF KOTLIN:** Read antipatterns from `.claude/qa-antipatterns/platform/` (general platform patterns apply to Kotlin)
-   - **IF JAVA:** Read antipatterns from `.claude/qa-antipatterns/platform/java/` (Java-specific patterns, with fallback to general patterns)
-2. **When reviewing code, reference ONLY the applicable antipattern set:**
-   - Example: "Reviewing .java file → read only from `qa-antipatterns/platform/java/`"
-   - Example: "Reviewing .kt file → read only from `qa-antipatterns/platform/` (unless platform/kotlin/ exists)"
-3. **Antipattern files to load:**
-   - **Common (both Kotlin & Java):** `security/`, `http/`, `common/`
-   - **Platform-specific:**
-     - Kotlin: `platform/coroutine-test-return-type.md`, `platform/flaky-sleep-tests.md`, `platform/controlled-retries.md`, `platform/no-hardcoded-timeouts.md`, `platform/no-shared-mutable-state.md`
-     - Java: `platform/java/completablefuture-no-timeout.md`, `platform/java/flaky-sleep-tests.md`
-4. **Implementation rule for detection:**
-   - If reviewing `.kt` file → only cite patterns from `.claude/qa-antipatterns/platform/` (general or Kotlin-specific if available)
-   - If reviewing `.java` file → ONLY cite patterns from `.claude/qa-antipatterns/platform/java/`; for common issues, cite from parent `platform/` as fallback if Java-specific file doesn't exist
-
-### Phase 0.3: Contract Discovery (Optional)
-
-**Purpose:** Locate API contracts in the repository to enable specification-driven validation in Phase 3C. Prevents false positives on DTO fields that are contractually correct.
-
-**Actions:**
-1. **Glob for contract files** in the repository root and common directories:
-   - OpenAPI/Swagger: `**/*.yaml`, `**/*.yml`, `**/*.json` (filter: must contain `openapi:` or `swagger:` keyword)
-   - Protobuf: `**/*.proto`
-   - GraphQL: `**/*.graphql`, `**/*.graphqls`
-   - Also read: `CLAUDE.md`, `README.md` (architecture/stack notes, max 50 lines each)
-2. **Filter by domain** — match contracts to the domain being reviewed (e.g., if reviewing `users/` tests, prefer `users.yaml` or endpoints containing `/users`)
-3. **Extract relevant definitions** (read limit: max 100 lines per contract file):
-   - OpenAPI: endpoint paths, request/response schema field names and types, required/nullable flags
-   - Protobuf: message field names, types, field numbers
-   - GraphQL: type definitions, query/mutation field names and types
-4. **Store as:** `contractContext = { spec_type, domain, endpoints: [...], schemas: [...] }`
-5. **Log status:**
-   ```text
-   Phase 0.3 — Contract Discovery:
-   ├─ OpenAPI spec: {found: path | not found}
-   ├─ Protobuf: {found: path | not found}
-   ├─ GraphQL: {found: path | not found}
-   └─ CLAUDE.md / README.md: {loaded | not found}
-   ```
-6. **If no contract files found:** skip silently, proceed with heuristic-only review. Phase 3C falls back to annotation-only checks.
+> Full subphase details: `references/phase0-subphases.md` (internal Chain-of-Thought only).
 
 ---
 
@@ -438,36 +327,9 @@ Output a structured review report **in Action-First order** (violations only):
 
 After completing all 8 phases and before the `SKILL COMPLETE` block, run the Gardener protocol (see `.claude/protocols/gardener.md`) to analyze findings and propose new rules if needed.
 
-### Mentorship Tone Examples
+### Mentorship Tone
 
-When suggesting fixes, always briefly explain the **why** — not just the **what**. Here are examples of mentorship tone:
-
-❌ **Harsh tone (avoid):**
-
-```text
-This hardcoded token is a security disaster. CHANGE IT IMMEDIATELY.
-```
-
-✅ **Mentorship tone (preferred):**
-
-```text
-Instead of hardcoding the JWT token here, let's use `AuthFixture.generateToken()` helper.
-This prevents the token from being accidentally committed to version control and keeps our tests isolated —
-if the auth implementation changes, we just update the fixture, not 50 test methods.
-```
-
-❌ **Harsh tone (avoid):**
-
-```text
-Missing cleanup. Tests are order-dependent. REFACTOR NOW.
-```
-
-✅ **Mentorship tone (preferred):**
-
-```text
-Each test should clean up after itself in an `@AfterEach` block. Right now, if `testCreateUser` runs before `testUpdateUser`,
-the second test uses data from the first, which can hide bugs. Adding cleanup also makes tests independent — they can run in any order.
-```
+> Examples and guidelines: `references/output-template.md` § Mentorship Tone Examples
 
 ### Issue Format (Compact, Action-Oriented)
 
@@ -533,32 +395,4 @@ See `.claude/qa-antipatterns/` for detailed patterns. **Language-specific loadin
 
 ## Agent Collaboration Protocol
 
-This skill is part of the QA automation pipeline. Understand where it sits and what to do next:
-
-### Input Hand-off
-
-- **Source:** You receive test code generated by `/api-tests` (Kotlin) or `/api-tests-java` (Java)
-- **Prerequisites:** Test code should compile and pass in local environment before this review
-
-### Review & Output
-
-- **Output Format:** Action-First report (CRITICAL and MAJOR issues only at the top, brief summary at the bottom).
-- **Confidence Threshold:** STRICTLY ≥ 80. Do not report MINOR issues or anything scoring below 80.
-
-### Output Hand-off & Next Actions
-
-**If 🔴 CRITICAL issues found:**
-- → Block merge. Provide exact file:line references and fix patterns.
-- → Instruct user to fix locally or re-run `/api-tests` with corrected specifications.
-
-**If 🟠 MAJOR issues found:**
-- → Request changes. List exact file:line references and fix patterns.
-
-**If specification/API contract issues detected:**
-- → Suggest invoking `/spec-audit` to verify if the OpenAPI spec itself is outdated or incomplete.
-- → Reference the specific contract violation (e.g., "Test asserts `field_name` but OpenAPI spec shows `fieldName`")
-
-### Quality Loop
-
-- **For generated tests:** If test code doesn't compile or your suggested fixes fail locally, flag as "Needs manual verification" in the recommendations
-- **For next iteration:** User can re-run `/api-tests` with improved specifications, then re-submit for review
+> Full protocol (input hand-off, output hand-off, quality loop): `references/agent-collaboration.md`

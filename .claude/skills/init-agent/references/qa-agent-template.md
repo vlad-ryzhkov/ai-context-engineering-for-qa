@@ -102,6 +102,3 @@ try { ... } finally { cleanup() }
 
 ---
 
-## Full Guide
-
-`docs/ai-files-handbook.md` → Part 2: qa_agent.md

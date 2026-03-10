@@ -4,7 +4,7 @@
 
 ## File Naming
 
-```
+```text
 docs/api-test-cases/{domain}_test-scenarios_{YYYYMMDD_HHMMSS}.md
 ```
 

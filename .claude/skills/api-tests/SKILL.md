@@ -2,7 +2,7 @@
 name: api-tests
 description: Generates production-ready API automated tests in Kotlin (JUnit5, Allure). Use when you need to cover REST endpoints with tests from test-scenarios.md or specification. Do not use for test case generation — use /api-isolated-tests for that.
 allowed-tools: "Read Write Edit Glob Grep Bash(./gradlew*)"
-agent: agents/sdet.md
+agent: sdet
 context: fork
 ---
 
@@ -70,100 +70,19 @@ Scenario source — `audit/test-scenarios.md` (result of /api-test-cases) or spe
 
 ## Input Source Strategy
 
-**Primary Source:** `audit/test-scenarios.md` — result of /api-test-cases. Each table row → automated test.
-**Secondary Source:** Specification directly — if test-scenarios.md is missing.
+> Shared rules: `_shared/api-tests-shared.md` § Input Source Strategy. Kotlin upstream: `/api-test-cases`.
 
 ## Input Validation (Mandatory Check)
 
-**CRITICAL:** Before starting generation, perform a 2-phase validation.
-
-### Phase 1: Check test-scenarios availability (Primary Source)
-
-```bash
-[ -f audit/test-scenarios.md ] || echo "WARNING"
-```
-
-**If the file is missing:**
-```text
-⚠️ WARNING: audit/test-scenarios.md not found. Continuing without pre-built scenarios.
-```
-
-### Phase 2: Check for table rows (protection against empty file)
-
-```bash
-grep -q "^|" audit/test-scenarios.md || echo "WARNING"
-```
-
-**If no table rows found:**
-```text
-⚠️ WARNING: test-scenarios.md exists but contains no table rows. Continuing with empty base.
-```
-
-### If all checks pass:
-
-- Read `audit/test-scenarios.md` — extract all table rows (each row = one automated test)
-
-### Parsing test-scenarios.md
-
-1. Read `audit/test-scenarios.md`
-2. For each table row extract: ID, Type, Scenario, Input, Expected
-3. BVA values from the Input column → transfer to the automated test EXACTLY
-
-**If User requests an endpoint without scenarios in the table:**
-```text
-⚠️ WARNING: No scenarios for {endpoint} in audit/test-scenarios.md. Continuing without scenarios for this endpoint.
-```
+> Full 2-phase validation: `_shared/api-tests-shared.md` § Input Validation.
 
 ## Architecture Modes
 
-**Step 0 (Workflow Pre-flight):** Before any generation, run auto-detection (sdet.md → Architecture Routing). Determine `ARCH_MODE = A | B`. All output paths depend on this.
-
-### Mode A: DDD Isolated (default)
-
-```
-src/test/kotlin/{domain}/
-├── tests/      # generated here  (*Tests.kt)
-├── requests/   # generated here
-└── helpers/    # generated here
-```
-
-AllureId: `./gradlew assignAllureIds`.
-
-### Mode B: Gradle Multi-Module Enterprise
-
-```
-# Where to generate for an existing domain module:
-{domain}/src/test/kotlin/{pkg}/{domain}/
-├── {sub-domain}/         # new test class here
-│   └── {Feature}Test.kt  # *Test.kt (not *Tests.kt)
-└── TestBase.kt           # if not present, create
-
-# Where to add domain-specific DTOs:
-{domain}/src/main/kotlin/{pkg}/{domain}/api/
-└── {Feature}Response.kt / {Feature}Request.kt
-
-# If adding shared DTOs used across domains:
-core/src/main/kotlin/{pkg}/core/api/response/
-└── {Shared}Response.kt
-```
-
-AllureId: `./gradlew checkAllureIds --clean` (NEVER manually assign `@AllureId` values). No `by inject()` — use constructor params on `TestBase` or direct instantiation.
+> Shared structure: `_shared/api-tests-shared.md` § Architecture Modes. This skill uses `.kt` extensions, `*Tests.kt` naming. AllureId: `./gradlew assignAllureIds`.
 
 ## Verbosity Protocol
 
-**Code first, talk later:** Generation → Compilation → Post-Check → SKILL COMPLETE → Gardener [→ Scenario Source Improvements]. No intermediate explanations.
-
-**FORBIDDEN:**
-- "I will now create..." — just Create
-- "The test covers..." — coverage goes into SKILL COMPLETE metrics
-- "Let me fix..." — just Fix and Compile
-- Explanation after each file — group all files → one compilation attempt
-
-**Allowed:**
-- Compilation errors — show stderr, not description
-- SKILL COMPLETE — metrics (Coverage, Compilation status)
-
-**Post-Check:** Inline (5 lines), verification against BANNED list and Quality Gates.
+> Shared rules: `_shared/api-tests-shared.md` § Verbosity Protocol.
 
 **Mandatory Checks:**
 ```bash
@@ -204,69 +123,18 @@ If `test-scenarios.md` contains `Cleanup:` for POS/L10N scenarios, every test fi
 
 ## Workflow
 
-0. **Input Check (MANDATORY):**
-   - **Architecture Detection:** Run auto-detection (sdet.md → Architecture Routing). Determine `ARCH_MODE = A | B`. Use detected mode for all output paths (see Architecture Modes section).
-   - Perform 2-phase test-scenarios validation (see Input Validation above)
-   - If any phase FAILs → output ⚠️ WARNING and continue with available data
-   - If all checks PASS → Read `audit/test-scenarios.md`
-1. **Discovery:**
-   - Read `CLAUDE.md`, `build.gradle.kts`.
-   - Read `audit/test-scenarios.md` (Primary Source) → extract all table rows.
-   - Glob `src/**/*Test*.kt`, `src/**/requests/**/*.kt` (for context of existing patterns).
-   - Read `audit/test-plan.md` (if exists) — only for determining P0/P1/P2 priorities.
-   - **Style Analysis:** Glob `src/**/models/**/*.kt`. If fields already use snake_case without `@JsonNaming` → DO NOT add `@JsonNaming` to generated models. Read `src/**/TestBase.kt` — use the same superclasses, class-level annotations, and imports.
-   - Print Summary: N scenarios found, M endpoints in plan, model style: [SnakeCase/Native].
-2. **Plan & Gen:**
-   - **Scenario source:** table rows from `audit/test-scenarios.md`.
-   - Order: by priority from test-plan.md (P0 → P1 → P2). If test-plan.md is missing — row by row.
-   - Check `references/api-patterns.md` for specific logic (Auth/CRUD/Page).
-   - For each table row generate one automated test:
-     - Implement Input as HTTP request parameters
-     - Implement Expected as assertions (HTTP status + logic)
-     - Transfer BVA values from the Input column EXACTLY (boundary values MUST NOT be rounded or modified)
-     - Add `@Link(name = "Scenario {ID}", url = "file://audit/test-scenarios.md")` — mandatory
-   - **Phase 1:** Stateless (Validation, Auth fail).
-   - **Phase 2:** 1-step setup (CRUD, simple flows).
-   - **Phase 3:** Multi-step (Helpers, State transitions).
-3. **Translation & Grouping:** Apply mapping from `references/api-patterns.md#translation-rules`. NEG/BVA grouping — from `api-patterns.md#grouping-strategy`.
-4. **Compile:** `./gradlew compileTestKotlin && ./gradlew ktlintCheck`. If > 1 failed compilations → ESCALATION (see below)
-4a. **Smoke Run:** `./gradlew test 2>&1 | tail -80`. Classify failures:
-   - `ConnectException`/`Connection refused` → 🐛 Missing mock server. Apply Protocol 2j: generate `RegistrationMockServer` + `MockServerExtension`, set `BASE_URL` system property, register `MockServerExtension` via ServiceLoader. Do NOT report as infra-blocked — fix → re-compile → re-run.
-   - `JsonMappingException`/`MismatchedInputException`/`Unrecognized field` → 🐛 DTO bug in generated code. Fix `@JsonNaming`/field names/defaults → re-compile → re-run (max 2 fix iterations).
-   - `NoSuchMethodError`/`ClassNotFoundException` → Dependency mismatch → ESCALATION.
-   - Assertion failure on TLS test (`plain HTTP rejected`) → ⚠️ Infra-level. HTTP mock cannot enforce TLS. Mark test `@Disabled("TLS enforcement: requires HTTPS infrastructure")` or accept as known limitation.
-   - All other failures = Infrastructure-only → **Smoke Run: PASS** (infra-blocked).
-5. **Verify:** Grep BANNED patterns (see Post-Check above). Fix violations → re-compile.
+> Generic steps (Input Check, Discovery, Plan & Gen, Translation, Compile, Verify): `_shared/api-tests-shared.md` § Workflow.
+
+**Language-specific overrides:**
+- Discovery: Glob `src/**/*Test*.kt`, `src/**/requests/**/*.kt`. Read `audit/test-plan.md` for priorities. **Style Analysis:** Glob `src/**/models/**/*.kt` for model conventions.
+- Plan & Gen: Check `references/api-patterns.md` for specific logic. Assertions use JUnit 5 `assertEquals`.
+- Translation: Apply mapping from `references/api-patterns.md#translation-rules`.
+- Compile: `./gradlew compileTestKotlin && ./gradlew ktlintCheck`. If > 1 failed → ESCALATION.
+- Smoke Run: classify `ConnectException` → generate `MockServerExtension`; `JsonMappingException` → fix DTOs (max 2 iterations); `NoSuchMethodError` → ESCALATION; TLS assertion failure → `@Disabled`.
 
 ### Escalation (3-Strike Rule)
 
-**If > 1 failed compilations on a single endpoint:**
-
-1. STOP generation for this item. Do NOT attempt workarounds (`Map<String, Any>`, reflection, custom HTTP client).
-2. Output the following block:
-
-```text
-🚨 ESCALATION: Item #{N} ({METHOD} {endpoint}) UNIMPLEMENTABLE
-
-Problem: {specific description of technical blocker}
-
-Attempts:
-- Attempt 1: Compilation FAIL — {specific compiler error}
-- Attempt 2: Compilation FAIL — {specific compiler error}
-
-Decision required from QA Lead:
-1. Exclude {endpoint} from scope (if non-critical)
-2. Supplement specification with missing DTOs/schemas
-3. Update project dependencies (if version conflict)
-
-⏸️ Awaiting QA Lead decision.
-
-Status of remaining items:
-- Item #{M} ({endpoint}): ✅ DONE (X tests)
-- Item #{K} ({endpoint}): ⏩ SKIPPED (pending blocker resolution)
-```
-
-3. EXIT with `⚠️ SKILL PARTIAL` (see Completion Contract below).
+> Full protocol: `_shared/api-tests-shared.md` § Escalation. Language note: Kotlin uses `Map<String, Any>`.
 
 ## Review Mode (`review` arg)
 
@@ -276,67 +144,11 @@ Status of remaining items:
 
 ## Fix Mode (`fix` arg)
 
-**Purpose:** Surgically remediate BANNED pattern violations in existing test files without regenerating them. Preserves test logic, boundary values, and business assertions.
+> Full protocol: `references/fix-mode.md`. Trigger: `/api-tests fix src/test/kotlin/domain/`
 
-**Trigger:** User invokes `/api-tests fix src/test/kotlin/domain/`
+## Repo-Scout Cross-References
 
-**Rules:**
-- ✅ Use `Read` to read the existing file fully before any edit
-- ✅ Use `Edit` tool for each individual violation — one `Edit` call per fix
-- ✅ Preserve ALL test logic, assertion values, @DisplayName, @AllureId, scenario IDs
-- ❌ DO NOT use `Write` to overwrite the entire file
-- ❌ DO NOT alter boundary values, expected status codes, or business error assertions
-- ❌ DO NOT add new test methods or remove existing ones
-
-**Workflow:**
-1. **Discover violations** — run the same Mandatory Checks grep as post-check:
-   ```bash
-   grep -rn "Thread.sleep\|runBlocking\|delay(\|Map<String, Any>" src/test/kotlin/
-   grep -rn "^\s*assert(" src/test/kotlin/ | grep -v "assertEquals\|assertTrue\|assertNotNull"
-   grep -rl "HttpClient(" src/test/kotlin/ | grep "Tests\.kt$"
-   grep -rL "HttpTimeout" src/test/kotlin/*/requests/*Client.kt
-   ```
-2. **For each violation, apply surgical Edit:**
-
-| BANNED pattern | Safe replacement |
-|---|---|
-| `Thread.sleep(N)` | `await().atMost(N, SECONDS).untilAsserted { ... }` |
-| `runBlocking { ... }` in test | `@Test fun test() = runTest { ... }` |
-| Bare `assert(condition)` | `assertTrue(condition, "descriptive message")` |
-| `Map<String, Any>` request body | Extract typed DTO class to `requests/` package |
-| `HttpClient(` inside `*Tests.kt` | Move to `*Client.kt` in `requests/` package as singleton |
-| Missing `HttpTimeout` in client | Add `install(HttpTimeout) { requestTimeoutMillis = 30_000 }` |
-
-3. **Compile gate:** Run `./gradlew compileTestKotlin` after all edits. If compilation fails → output exact error + revert the offending edit using `Edit` with original content.
-4. **Scope guard:** If a violation requires adding a new class (e.g., extracting a DTO), create the file only in the correct package (`requests/` or `helpers/`). Never create files in `tests/`.
-5. **3-Strike Rule:** If the same violation fails to fix after 3 Edit attempts → output `🛑 LOOP_GUARD_TRIGGERED: Cannot fix [pattern] in [file:line] — requires manual refactoring` and skip to next violation.
-
-**Output:**
-```
-Fix Mode Report — {domain}
-Files scanned: N | Violations found: M | Fixes applied: K | Manual review needed: J
-
-Fixed:
-- [file:line] Thread.sleep(2000) → await().atMost(2, SECONDS)...
-- [file:line] runBlocking → runTest
-
-Manual Review Required:
-- [file:line] Map<String, Any> — DTO structure too complex to extract automatically
-```
-
-## Repo-Scout Cross-References (Conditional Fallback)
-
-**Primary source:** Use `## Test Generation Context` block from `audit/test-scenarios.md` (emitted by `/api-test-cases` Phase 6.5). This block pre-filters and documents all extracted constraints from repo-scout.
-
-**Fallback (only if context block is absent):** If `audit/repo-scout-report*.md` exists and `## Test Generation Context` block is not in `audit/test-scenarios.md`, read sections §11–§15 directly:
-
-| Report Section | Impact on Test Generation |
-|---------------|--------------------------|
-| §11 State Transition Matrix | Generate tests for each valid `From→To` transition + rejected transitions (guard failures) |
-| §12 Entity & Data Model | Use create-order chain for setup/teardown; apply consistency model for assert strategy |
-| §13 Behavioral Nuances | Generate conditional tests (internal vs external, search semantics, non-existent resource) |
-| §14 Config & Host Context | Use test env setup for `@BeforeAll`; skip tests requiring unavailable host system |
-| §15 QA Scenario Matrix | Use P0/P1/P2 priorities for generation order; respect Skip list |
+> Full rules: `_shared/api-tests-shared.md` § Repo-Scout Cross-References.
 
 ## References
 
@@ -351,43 +163,4 @@ or inefficiencies during this run, output a brief proposal table. Otherwise: `�
 
 ## Completion Contract
 
-### Success (Full Coverage)
-
-```text
-✅ SKILL COMPLETE: /api-tests
-├─ Artifacts: src/main/kotlin/**/ (requests, helpers, config) + src/test/kotlin/autotests/**/ (tests)
-├─ Compilation: PASS
-├─ Source: audit/test-scenarios.md (N scenarios)
-├─ Context: audit/test-plan.md (P0: X endpoints, P1: Y endpoints) | "none"
-├─ Coverage: N/M scenarios implemented (NN%)
-├─ Traceability: @Link(scenario ID) in N/N tests (100% mandatory)
-├─ BANNED check: PASS
-└─ Smoke Run: PASS | FAIL (N DTO bugs fixed) | INFRA (TLS-enforcement test only)
-```
-
-### Partial (With Blockers)
-
-```text
-⚠️ SKILL PARTIAL: /api-tests
-├─ Artifacts: [{file1}.kt (✅), {file2}.kt (❌)]
-├─ Compilation: PARTIAL (X/Y files)
-├─ Source: audit/test-scenarios.md (N scenarios)
-├─ Coverage: X/N scenarios implemented (NN%)
-├─ Blockers: 1 UNIMPLEMENTABLE (see ESCALATION above)
-├─ Traceability: @Link present in X/Y successful automated tests
-└─ Status: BLOCKED, Orchestrator decision required
-```
-
-**When to use SKILL PARTIAL:**
-- After 3 failed compilations on a single endpoint (Escalation)
-- Technical blocker (library does not support the feature)
-- Incomplete specification for one endpoint (the rest are covered)
-
-**After the SKILL COMPLETE block, also output (if applicable):**
-
-## 💡 Scenario Source Improvements (Gardener)
-
-`1–3 concrete suggestions on what to change in /api-test-cases to prevent implementation issues
-found during this run (e.g., ambiguous scenario inputs, missing cleanup steps, underdefined BVA
-boundaries, incorrect HTTP codes in Expected column). Omit this section entirely if
-test-scenarios.md was clear and complete.`
+> Full templates: `_shared/api-tests-shared.md` § Completion Contract. Skill name: `/api-tests`, extensions: `.kt`.
