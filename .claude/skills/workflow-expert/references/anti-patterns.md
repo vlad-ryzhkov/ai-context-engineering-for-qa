@@ -1,0 +1,67 @@
+# Anti-Patterns Reference — /workflow-expert
+
+Full catalog of anti-patterns for GitHub Actions workflows. Each entry includes category, severity, explanation, fix, and a detection grep pattern.
+
+---
+
+## Security Anti-Patterns
+
+| #   | Anti-Pattern                                      | Severity | Why Dangerous                                                                           | Fix                                                                       | Detection                                                                             |
+| --- | ------------------------------------------------- | -------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| 1   | **Floating action version tags** (`@v4`, `@main`) | CRITICAL | Mutable tags allow supply-chain attacks — attacker can re-point tag to malicious commit | Pin to full 40-char SHA with version comment                              | `grep -n 'uses:.*@v[0-9]' .github/workflows/*.yml`                                    |
+| 2   | **Direct context interpolation in `run:`**        | CRITICAL | Enables command injection via PR titles, issue bodies, branch names                     | Move to `env:` block, reference as `$VAR` in shell                        | `grep -n '\${{.*github\.event\.' .github/workflows/*.yml`                             |
+| 3   | **`::set-output` / `::save-state`**               | CRITICAL | Deprecated since 2022, vulnerable to log spoofing                                       | Use `>> "$GITHUB_OUTPUT"` / `>> "$GITHUB_STATE"`                          | `grep -rn 'set-output\|save-state' .github/workflows/`                                |
+| 4   | **`pull_request_target` + checkout of PR head**   | CRITICAL | Pwn Request — attacker code runs with base repo secrets and write token                 | Never checkout PR head in `pull_request_target`; split into two workflows | `grep -A5 'pull_request_target' .github/workflows/*.yml \| grep 'head.sha\|head_ref'` |
+| 5   | **Missing `permissions:` block**                  | MAJOR    | GitHub defaults to broad access; token gets unnecessary write permissions               | Add explicit `permissions:` at workflow level with minimal scope          | `grep -L 'permissions:' .github/workflows/*.yml`                                      |
+| 6   | **`secrets: inherit`**                            | MAJOR    | Passes ALL secrets to called workflow — violates least privilege, impossible to audit   | Explicitly pass only required secrets                                     | `grep -n 'secrets: inherit' .github/workflows/*.yml`                                  |
+| 7   | **Hardcoded secrets in YAML**                     | CRITICAL | Credentials stored permanently in Git history, visible to all repo readers              | Use GitHub Secrets or OIDC; if committed, rotate immediately              | `grep -n 'password:\|token:\|api_key:\|secret:' .github/workflows/*.yml`              |
+| 8   | **`add-path` / `set-env` commands**               | CRITICAL | Disabled by GitHub for security — allowed arbitrary environment manipulation            | Use `>> "$GITHUB_ENV"` / `>> "$GITHUB_PATH"`                              | `grep -n 'add-path\|set-env' .github/workflows/*.yml`                                 |
+| 9   | **Secrets in shell concatenation**                | MAJOR    | Secret values may appear in error messages, `set -x` output, or process listings        | Assign to env var, reference indirectly                                   | `grep -n '\${{ secrets\.' .github/workflows/*.yml \| grep 'run:'`                     |
+| 10  | **Artifact execution from untrusted PR**          | CRITICAL | Attacker-controlled artifacts executed in privileged context                            | Verify artifact hash, never execute PR artifacts in release workflows     | Manual review of `workflow_run` + `download-artifact` patterns                        |
+
+---
+
+## Performance Anti-Patterns
+
+| #   | Anti-Pattern                           | Severity | Why Dangerous                                                                             | Fix                                                                      | Detection                                                            |
+| --- | -------------------------------------- | -------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| 11  | **No dependency caching**              | MAJOR    | Full download of npm/Maven/Gradle dependencies on every run; wastes minutes and bandwidth | Add `actions/cache` or use built-in cache in setup actions               | `grep -L 'cache' .github/workflows/*.yml`                            |
+| 12  | **No concurrency control**             | MAJOR    | Multiple redundant runs for same branch/PR; wastes runner minutes                         | Add `concurrency: { group, cancel-in-progress: true }`                   | `grep -L 'concurrency' .github/workflows/*.yml`                      |
+| 13  | **Static matrix in monorepo**          | MAJOR    | Runs all services/configs even when only one changed; matrix explosion                    | Use dynamic matrix with `fromJson()` and path filtering                  | `grep -A10 'matrix:' .github/workflows/*.yml \| grep -v 'fromJson'`  |
+| 14  | **No fail-fast architecture**          | MINOR    | Slow linters block fast feedback; all checks run serially                                 | Split into fast (lint, typecheck) and slow (integration, E2E) job groups | Review job dependency graph                                          |
+| 15  | **Docker build without layer caching** | MAJOR    | Full rebuild on every push; slow for large images                                         | Use `docker/build-push-action` with `cache-from` / `cache-to`            | `grep -B5 'docker build' .github/workflows/*.yml \| grep -v 'cache'` |
+
+---
+
+## Architecture Anti-Patterns
+
+| #   | Anti-Pattern                          | Severity | Why Dangerous                                                                   | Fix                                                               | Detection                                                                          |
+| --- | ------------------------------------- | -------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| 16  | **Copy-paste workflows across repos** | MAJOR    | Drift between copies; impossible to enforce org-wide policy updates             | Centralize in shared repo with `workflow_call` reusable workflows | Compare workflow files across repos (manual)                                       |
+| 17  | **Monolithic workflow file**          | MAJOR    | Single 500+ line file; hard to maintain, review, and debug                      | Split into reusable workflows by concern (build, test, deploy)    | `wc -l .github/workflows/*.yml`                                                    |
+| 18  | **Hardcoded environment values**      | MAJOR    | Environment names, URLs, regions embedded in workflow; breaks portability       | Use `inputs`, `vars`, or environment-level variables              | `grep -n 'environment:.*production\|us-east-1\|eu-west-1' .github/workflows/*.yml` |
+| 19  | **Missing timeout-minutes**           | MINOR    | Stuck jobs run until GitHub's 6-hour default timeout; wastes runner minutes     | Set explicit `timeout-minutes` per job                            | `grep -L 'timeout-minutes' .github/workflows/*.yml`                                |
+| 20  | **Workflow triggered on all paths**   | MAJOR    | `on: push` without `paths:` filter runs on every commit regardless of relevance | Add `paths:` or `paths-ignore:` filters                           | `grep -A3 'on:' .github/workflows/*.yml \| grep -v 'paths'`                        |
+
+---
+
+## AI-Hallucination Anti-Patterns
+
+| #   | Anti-Pattern                               | Severity | Why Dangerous                                                                                                           | Fix                                                                                                        | Detection                                                              |
+| --- | ------------------------------------------ | -------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| 21  | **Invented action parameters**             | MAJOR    | AI generates plausible but non-existent `with:` keys; silently ignored or causes runtime error                          | Verify every parameter against action's `action.yml`                                                       | Manual review; cross-reference with action docs                        |
+| 22  | **Deprecated syntax generation**           | CRITICAL | AI trained on pre-2023 data generates `::set-output`, `::save-state`                                                    | Hard rule: always use `$GITHUB_OUTPUT` / `$GITHUB_ENV`                                                     | `grep -n 'set-output\|save-state' .github/workflows/`                  |
+| 23  | **Defensive band-aid code**                | MAJOR    | AI adds `if [ -z "$VAR" ]; then default` instead of fixing missing variable source                                      | Trace root cause; fix upstream secret/variable passing                                                     | Review `run:` blocks for excessive null checks                         |
+| 24  | **Wrong action version in SHA comment**    | MINOR    | AI pins SHA but writes wrong version in comment (e.g., SHA for v4.1.0 but comment says v4.2.2)                          | Verify SHA matches stated version via `git ls-remote`                                                      | `grep -n '# v[0-9]' .github/workflows/*.yml` — spot-check              |
+| 25  | **Mixing incompatible action versions**    | MAJOR    | AI uses `actions/cache@v4` features with `actions/cache@v3` SHA                                                         | Ensure all action references use consistent, current versions                                              | Review all `uses:` directives for version consistency                  |
+| 26  | **Blind retries**                          | MAJOR    | AI wraps flaky steps in `continue-on-error: true` or retry loops instead of fixing root cause; masks real failures      | Fix the flaky step root cause; use `nick-fields/retry` only for genuinely non-deterministic external calls | `grep -n 'continue-on-error: true' .github/workflows/*.yml`            |
+| 27  | **Context confusion (`env` at job level)** | MAJOR    | AI writes `if: ${{ env.MY_VAR == 'true' }}` at job level — `env` context is unavailable there, condition silently fails | Use `needs.<job>.outputs.<var>` or workflow-level `env`                                                    | `grep -n 'if:.*env\.' .github/workflows/*.yml` (check if at job level) |
+
+---
+
+## Human-Factor Anti-Patterns
+
+| #   | Anti-Pattern              | Severity | Why Dangerous                                                                                            | Fix                                                                                  | Detection                                                                          |
+| --- | ------------------------- | -------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| 28  | **Rate limiting suicide** | MAJOR    | `for` loops calling `gh api` / `curl` to GitHub API without pause; triggers 403 rate limits mid-workflow | Use GraphQL batch queries or add `sleep 1` between calls; prefer `gh api --paginate` | `grep -B5 'gh api\|curl.*api.github' .github/workflows/*.yml \| grep 'for\|while'` |
+| 29  | **Artifact hoarding**     | MAJOR    | `upload-artifact` without `retention-days`; default 90 days exhausts org storage quota silently          | Always set `retention-days: 7` (or appropriate value); audit with storage API        | `grep -A5 'upload-artifact' .github/workflows/*.yml \| grep -L 'retention-days'`   |
