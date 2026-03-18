@@ -443,8 +443,8 @@ Before finalizing, verify internally:
 - [ ] Fix/Modify/Improve changes propagated through the full call graph
 - [ ] No `run:` blocks exceed 15 lines (extract to script files)
 
-**Gardener Protocol**: Call `.claude/protocols/gardener.md`. If you identified
-missing rules or inefficiencies during this run, output a brief proposal table.
+**Gardener Protocol**: If you identified missing rules or inefficiencies
+during this run, output a brief proposal table with columns: Rule | Why | Suggested Location.
 Otherwise: `Gardener: No updates needed.`
 
 ---
