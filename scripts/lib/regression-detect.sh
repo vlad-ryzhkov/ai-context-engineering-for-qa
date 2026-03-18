@@ -38,31 +38,16 @@ echo -e "${CYAN}═══ Regression Detector ═══${NC}\n"
 
 # Get list of skills from baseline
 baseline_skills() {
-  python3 -c "
-import json
-d = json.load(open('$BASELINE_FILE'))
-for s in sorted(d.get('skills', {}).keys()):
-    print(s)
-" 2>/dev/null
+  jq -r '.skills | keys[]' "$BASELINE_FILE" 2>/dev/null | sort
 }
 
 # Get baseline value for a skill field
 baseline_val() {
   local skill="$1" field="$2"
-  python3 -c "
-import json
-d = json.load(open('$BASELINE_FILE'))
-v = d.get('skills',{}).get('$skill',{})
-# Navigate nested fields with dot notation
-parts = '$field'.split('.')
-for p in parts:
-    if isinstance(v, dict):
-        v = v.get(p, '')
-    else:
-        v = ''
-        break
-print(v)
-" 2>/dev/null || echo ""
+  # Convert dot notation to jq path: "sections.quality_gate" → ".sections.quality_gate"
+  local jq_path
+  jq_path=$(echo "$field" | sed 's/\././g; s/^/./')
+  jq -r --arg skill "$skill" ".skills[\$skill]${jq_path} // empty" "$BASELINE_FILE" 2>/dev/null || echo ""
 }
 
 check_skill_regression() {

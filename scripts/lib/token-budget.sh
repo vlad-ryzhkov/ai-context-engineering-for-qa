@@ -123,7 +123,7 @@ generate_snapshot() {
   done
 
   json+='}}'
-  echo "$json" | python3 -m json.tool 2>/dev/null || echo "$json"
+  echo "$json" | jq . 2>/dev/null || echo "$json"
 }
 
 # Report mode
@@ -200,15 +200,7 @@ diff_report() {
 
     # Read baseline value
     local base_t=0
-    if command -v python3 >/dev/null 2>&1; then
-      base_t=$(python3 -c "
-import json, sys
-try:
-    d = json.load(open('$BASELINE_FILE'))
-    print(d.get('skills',{}).get('$name',{}).get('total_tokens',0))
-except: print(0)
-" 2>/dev/null || echo 0)
-    fi
+    base_t=$(jq -r --arg name "$name" '.skills[$name].total_tokens // 0' "$BASELINE_FILE" 2>/dev/null || echo 0)
     baseline_total=$((baseline_total + base_t))
 
     local delta=$((current_t - base_t))

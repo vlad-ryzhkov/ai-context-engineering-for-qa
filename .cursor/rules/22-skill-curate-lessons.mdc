@@ -1,0 +1,17 @@
+---
+description: "SKILL: Curate Pending Lessons (use for /curate-lessons)"
+globs: ".ai-lessons/**"
+alwaysApply: false
+---
+# SKILL: CURATE LESSONS
+
+## TRIGGER
+User explicitly types `/curate-lessons` or asks to curate pending lessons from `.ai-lessons/pending.md`.
+
+## EXECUTION INSTRUCTIONS
+DO NOT guess the procedure and DO NOT output anything yet.
+To perform this skill, you MUST dynamically read the instructions using your file-reading capabilities.
+
+1. First, read the core agent context: `.claude/qa_agent.md`
+2. Second, read the specific skill protocol: `.claude/skills/curate-lessons/SKILL.md`
+3. Execute based STRICTLY on the logic and output format defined in those files.

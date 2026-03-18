@@ -5,7 +5,7 @@
 
 ## What are "AI context files" and why do they matter?
 
-Modern AI coding assistants (Claude Code, Cursor, Copilot, Codex) read special markdown files from your repository to understand your project rules, coding standards, and workflows. Without these files the AI starts from zero every conversation — with them, it already knows your tech stack, test patterns, and naming conventions.
+Modern AI coding assistants (Claude Code, Cursor, Copilot, Codex, JetBrains AI, Gemini Code Assist) read special markdown files from your repository to understand your project rules, coding standards, and workflows. Without these files the AI starts from zero every conversation — with them, it already knows your tech stack, test patterns, and naming conventions.
 
 This project stores its AI context in several folders, each targeting a specific IDE:
 
@@ -14,7 +14,9 @@ This project stores its AI context in several folders, each targeting a specific
 | `.claude/`                        | Claude Code, OpenCode         | Skills, agents, anti-patterns, protocols, hooks |
 | `.cursor/rules/*.mdc`             | Cursor                        | Wrapper rules referencing `.claude/` files      |
 | `.agents/skills/`                 | OpenAI Codex                  | Wrapper skills referencing `.claude/` files     |
+| `.junie/guidelines.md`            | JetBrains AI (Junie)          | Bridge file referencing `CLAUDE.md` + skills    |
 | `CLAUDE.md`                       | Claude Code, OpenCode, Cursor | Project-level instructions (always loaded)      |
+| `GEMINI.md`                       | Gemini Code Assist            | Symlink → `CLAUDE.md`                           |
 | `AGENTS.md`                       | OpenAI Codex                  | Project-level instructions for Codex            |
 | `.github/copilot-instructions.md` | VS Code / IntelliJ Copilot    | Project-level instructions for Copilot          |
 
@@ -50,6 +52,7 @@ Three layers, loaded on demand (not all at once):
 ```text
 .
 ├── CLAUDE.md                        # Project instructions — always loaded by AI
+├── GEMINI.md                        # Symlink → CLAUDE.md (Gemini Code Assist)
 ├── AGENTS.md                        # Same role, for OpenAI Codex
 ├── .mcp.json                        # MCP servers: context7, sequential-thinking
 ├── .markdownlint.yaml               # Markdown linting rules
@@ -81,7 +84,7 @@ Three layers, loaded on demand (not all at once):
 │   │   ├── platform/               # 6 patterns
 │   │   │   └── java/                # 2 Java-specific patterns
 │   │   └── security/               # 3 patterns
-│   └── skills/                      # Skills (21 total)
+│   └── skills/                      # Skills (22 total)
 │       ├── agents-checker/          # /agents-checker — agent compliance check
 │       ├── api-isolated-tests/      # /api-isolated-tests — test case generation
 │       ├── api-mocks/               # /api-mocks — HTTP mock server generation
@@ -93,6 +96,7 @@ Three layers, loaded on demand (not all at once):
 │       ├── init-agent/              # /init-agent — qa_agent.md generation
 │       ├── init-project/            # /init-project — CLAUDE.md generation
 │       ├── init-skill/              # /init-skill — new skill generation
+│       ├── load-tests/              # /load-tests — JMeter DSL load tests (Kotlin)
 │       ├── output-review/           # /output-review — skill output audit
 │       ├── pr/                      # /pr — pull request creation
 │       ├── qa-translate/            # /qa-translate — technical translation RU→EN
@@ -108,6 +112,8 @@ Three layers, loaded on demand (not all at once):
 │   ├── graduated.md
 │   └── gardener-log.jsonl           # Machine-parseable Gardener observations
 │
+├── .junie/                          # JetBrains AI (Junie) configuration
+│   └── guidelines.md               #   Bridge file → CLAUDE.md + skills
 ├── .cursor/rules/                   # Cursor wrappers → reference .claude/ files
 ├── .agents/skills/                  # Codex wrappers → reference .claude/ files
 ├── .github/
@@ -177,6 +183,7 @@ Three layers, loaded on demand (not all at once):
 | `/init-agent`         | `.claude/skills/init-agent/SKILL.md`         |   203 | Meta       | qa_agent.md generation                   |
 | `/init-project`       | `.claude/skills/init-project/SKILL.md`       |   178 | Meta       | CLAUDE.md generation                     |
 | `/init-skill`         | `.claude/skills/init-skill/SKILL.md`         |   283 | Meta       | New skill generation                     |
+| `/load-tests`         | `.claude/skills/load-tests/SKILL.md`         |   ~90 | Generation | JMeter DSL load test scenarios (Kotlin)  |
 | `/output-review`      | `.claude/skills/output-review/SKILL.md`      |   291 | Analysis   | Skill output audit                       |
 | `/pr`                 | `.claude/skills/pr/SKILL.md`                 |    78 | Meta       | Pull request creation                    |
 | `/qa-translate`       | `.claude/skills/qa-translate/SKILL.md`       |   282 | Meta       | Technical translation RU to EN           |
@@ -265,10 +272,11 @@ Supporting data for skills — templates, examples, glossaries:
 
 ### Agents
 
-| File    | Path                        | Lines | Role                     |
-| ------- | --------------------------- | ----: | ------------------------ |
-| auditor | `.claude/agents/auditor.md` |   169 | Planning + quality audit |
-| sdet    | `.claude/agents/sdet.md`    |   201 | Test code generation     |
+| File          | Path                              | Lines | Role                                   |
+| ------------- | --------------------------------- | ----: | -------------------------------------- |
+| auditor       | `.claude/agents/auditor.md`       |   169 | Planning + quality audit               |
+| perf-engineer | `.claude/agents/perf-engineer.md` |   109 | Load test scenario generation (Kotlin) |
+| sdet          | `.claude/agents/sdet.md`          |   201 | Test code generation                   |
 
 ### Hooks and Scripts
 

@@ -5,6 +5,7 @@
 **YOU MUST READ AND FOLLOW `CLAUDE.md` AT THE ROOT OF THIS PROJECT.**
 
 `CLAUDE.md` is the **Single Source of Truth** for:
+
 1. **Tech Stack:** Kotlin, JUnit 5, Allure, ktlint — LOCKED.
 2. **Safety Protocols:** No destructive commands, no .env leaks.
 3. **Code Style:** Formatting, naming conventions, assertion rules.
@@ -15,6 +16,7 @@
 **YOU MUST ALSO READ:** `.claude/qa_agent.md`
 
 `qa_agent.md` defines:
+
 - QA Lead philosophy and mindset
 - Anti-patterns to avoid
 - Workflow protocols (Fail Fast, Compilation Gate)
@@ -29,21 +31,29 @@
 
 Invoke with `$skill-name` or via the skill selector:
 
-| Skill               | Purpose                                      |
-|---------------------|----------------------------------------------|
-| `$repo-scout`       | Repository scanning                          |
-| `$spec-audit`       | QA audit of requirements                     |
-| `$api-isolated-tests`       | Test cases from specification                |
-| `$api-tests`        | API automated tests (Kotlin)                 |
-| `$screenshot-analyze` | Screenshot analysis for L10N defects       |
-| `$doc-lint`         | Documentation audit                          |
-| `$skill-audit`      | SKILL.md files audit                         |
-| `$init-skill`       | New skill creation                           |
-| `$init-agent`       | qa_agent.md creation                         |
-| `$init-project`     | CLAUDE.md project initialization             |
-| `$update-ai-setup`  | AI setup registry update                     |
-| `$output-review`    | Independent skill output audit               |
-| `$agents-checker`   | Agent setup validation                       |
-| `$qa-translate`     | Technical translation RU→EN                  |
+| Skill                 | Purpose                                 |
+| --------------------- | --------------------------------------- |
+| `$repo-scout`         | Repository scanning                     |
+| `$spec-audit`         | QA audit of requirements                |
+| `$api-isolated-tests` | Test cases from specification           |
+| `$api-test-cases`     | Bulk test cases for entire API          |
+| `$api-tests`          | API automated tests (Kotlin)            |
+| `$api-tests-java`     | API automated tests (Java 17+)          |
+| `$api-test-review`    | Deep code review of generated API tests |
+| `$api-mocks`          | HTTP mock server generation             |
+| `$load-tests`         | JMeter DSL load test scenarios          |
+| `$screenshot-analyze` | Screenshot analysis for L10N defects    |
+| `$doc-lint`           | Documentation audit                     |
+| `$skill-audit`        | SKILL.md files audit                    |
+| `$init-skill`         | New skill creation                      |
+| `$init-agent`         | qa_agent.md creation                    |
+| `$init-project`       | CLAUDE.md project initialization        |
+| `$update-ai-setup`    | AI setup registry update                |
+| `$output-review`      | Independent skill output audit          |
+| `$agents-checker`     | Agent setup validation                  |
+| `$qa-translate`       | Technical translation RU→EN             |
+| `$fix-markdown`       | Fix markdownlint errors                 |
+| `$pr`                 | Pull request creation                   |
+| `$curate-lessons`     | Lesson curation from pending.md         |
 
 **Recommended Workflow:** `$repo-scout` → `$api-test-cases` → `$api-tests` → `$api-test-review`

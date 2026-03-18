@@ -8,7 +8,7 @@ and **2 specialized agents** (AI roles — one writes test code, one reviews it)
 Copy the `.claude/` folder into your project, and your AI assistant immediately knows how to audit specs,
 generate test cases, write API tests (Kotlin/Java), and check its own output.
 
-Works with Claude Code, OpenCode, Cursor, VS Code Copilot, and Codex.
+Works with Claude Code, OpenCode, Cursor, VS Code Copilot, Codex, JetBrains AI, and Gemini Code Assist.
 
 <p align="center">
   <img src="presentation/context-pyramid.png" alt="Context Pyramid" width="300"/>
@@ -59,13 +59,13 @@ The main pipeline — choose your starting point based on scope:
 (backend repo)       (test scenarios)       (QA test repo)     (code review)
 ```
 
-| Skill             | Input                 | Output                             | What you get                                         |
-|-------------------|-----------------------|------------------------------------|------------------------------------------------------|
-| `/repo-scout`     | Backend repository    | API surface map, coverage gaps     | Catalog of endpoints, infrastructure, entry points   |
-| `/api-test-cases` | Specification + audit | Test scenario matrix (Markdown)    | Exhaustive test cases for all endpoints, by priority |
-| `/api-tests`      | Test scenarios + spec | Kotlin test code (JUnit 5, Allure) | Production-ready tests, run with `./gradlew test`    |
-| `/api-tests-java` | Test scenarios + spec | Java 17+ test code (JUnit 5, Allure, AssertJ) | Same as above, Java teams opt-in |
-| `/api-test-review` | Test code + spec | Review report (Markdown) | Deep code review: security, architecture, quality |
+| Skill              | Input                 | Output                                        | What you get                                         |
+| ------------------ | --------------------- | --------------------------------------------- | ---------------------------------------------------- |
+| `/repo-scout`      | Backend repository    | API surface map, coverage gaps                | Catalog of endpoints, infrastructure, entry points   |
+| `/api-test-cases`  | Specification + audit | Test scenario matrix (Markdown)               | Exhaustive test cases for all endpoints, by priority |
+| `/api-tests`       | Test scenarios + spec | Kotlin test code (JUnit 5, Allure)            | Production-ready tests, run with `./gradlew test`    |
+| `/api-tests-java`  | Test scenarios + spec | Java 17+ test code (JUnit 5, Allure, AssertJ) | Same as above, Java teams opt-in                     |
+| `/api-test-review` | Test code + spec      | Review report (Markdown)                      | Deep code review: security, architecture, quality    |
 
 > While `/api-tests` provides good coverage out of the box, it is designed to be adapted to your team's architectural guidelines.
 >
@@ -133,6 +133,7 @@ When a test suite already exists, skip generation and focus on auditing and reme
 ```
 
 Key differences from the greenfield flow:
+
 - Skip `/api-tests` generate — tests already exist
 - `/api-test-review` reads API contracts (Swagger/OpenAPI/Protobuf/GraphQL) from the repo and validates test DTOs against the actual spec
 - `/api-tests fix` automatically fixes common issues (Thread.sleep, runBlocking, missing timeouts) without rewriting test logic
@@ -140,7 +141,7 @@ Key differences from the greenfield flow:
 ### Utility Skills
 
 | Skill            | Purpose                                                                     |
-|------------------|-----------------------------------------------------------------------------|
+| ---------------- | --------------------------------------------------------------------------- |
 | `/skill-audit`   | Audit SKILL.md files for bloat, duplication, and harmful patterns           |
 | `/output-review` | Independent AI audit of any skill's output against its own checklist        |
 | `/doc-lint`      | Documentation quality audit — structure issues, duplicates, SSOT violations |
@@ -180,13 +181,13 @@ This library is a starting point. To make it yours:
 <details>
 <summary><strong>Compatibility matrix — click to expand</strong></summary>
 
-| Capability    | Claude Code | OpenCode   | Cursor                  | VS Code Copilot             | IntelliJ Copilot            | Codex               | Generic Chat |
-|---------------|-------------|------------|-------------------------|-----------------------------|-----------------------------|---------------------|--------------|
-| `CLAUDE.md`   | **Native**  | **Native** | **Native**              | → `copilot-instructions.md` | → `copilot-instructions.md` | → `AGENTS.md`       | Copy-paste   |
-| `qa_agent.md` | **Native**  | **Native** | → `.cursor/rules/*.mdc` | → `copilot-instructions.md` | → `copilot-instructions.md` | → `AGENTS.md`       | Copy-paste   |
-| `skills/*.md` | **Native**  | **Native** | → `.cursor/rules/*.mdc` | **Native**                  | Open in editor              | → `.agents/skills/` | Copy-paste   |
-| Plugins       | Yes         | No         | No                      | No                          | No                          | Yes                 | No           |
-| Anti-patterns | Yes         | Yes        | Yes                     | Yes                         | Yes                         | Yes                 | Copy-paste   |
+| Capability    | Claude Code | OpenCode   | Cursor                  | VS Code Copilot             | IntelliJ Copilot            | Codex               | JetBrains AI             | Gemini Code Assist      | Generic Chat |
+| ------------- | ----------- | ---------- | ----------------------- | --------------------------- | --------------------------- | ------------------- | ------------------------ | ----------------------- | ------------ |
+| `CLAUDE.md`   | **Native**  | **Native** | **Native**              | → `copilot-instructions.md` | → `copilot-instructions.md` | → `AGENTS.md`       | → `.junie/guidelines.md` | → `GEMINI.md` (symlink) | Copy-paste   |
+| `qa_agent.md` | **Native**  | **Native** | → `.cursor/rules/*.mdc` | → `copilot-instructions.md` | → `copilot-instructions.md` | → `AGENTS.md`       | → `.junie/guidelines.md` | Manual read             | Copy-paste   |
+| `skills/*.md` | **Native**  | **Native** | → `.cursor/rules/*.mdc` | **Native**                  | Open in editor              | → `.agents/skills/` | Read `.claude/skills/`   | Manual read             | Copy-paste   |
+| Plugins       | Yes         | No         | No                      | No                          | No                          | Yes                 | No                       | No                      | No           |
+| Anti-patterns | Yes         | Yes        | Yes                     | Yes                         | Yes                         | Yes                 | Yes                      | Yes                     | Copy-paste   |
 
 > **Disclaimer:** Non-Claude tools may consume higher token usage — check token usage for any skill.
 > If significant, use the native file structure per official documentation.
@@ -215,7 +216,7 @@ This library is a starting point. To make it yours:
 **Kotlin (default — `/api-tests`):**
 
 | Component      | Technology             |
-|----------------|------------------------|
+| -------------- | ---------------------- |
 | Language       | Kotlin                 |
 | Test Framework | JUnit 5                |
 | HTTP Client    | ktor-client (CIO)      |
@@ -226,7 +227,7 @@ This library is a starting point. To make it yours:
 **Java 17+ (opt-in — `/api-tests-java`):**
 
 | Component      | Technology                          |
-|----------------|-------------------------------------|
+| -------------- | ----------------------------------- |
 | Language       | Java 17+                            |
 | Test Framework | JUnit 5                             |
 | HTTP Client    | `java.net.http.HttpClient` (JDK 17) |

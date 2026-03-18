@@ -6,7 +6,10 @@
 #   bash ace-kit/setup.sh --claude       # Claude Code only
 #   bash ace-kit/setup.sh --cursor       # Cursor only
 #   bash ace-kit/setup.sh --copilot      # Copilot only
-#   bash ace-kit/setup.sh --all          # All three IDEs
+#   bash ace-kit/setup.sh --codex        # Codex only
+#   bash ace-kit/setup.sh --jetbrains    # JetBrains AI (Junie) only
+#   bash ace-kit/setup.sh --gemini       # Gemini Code Assist only
+#   bash ace-kit/setup.sh --all          # All six IDEs
 set -euo pipefail
 
 # --- Resolve paths ---
@@ -38,13 +41,19 @@ NC='\033[0m'
 SETUP_CLAUDE=false
 SETUP_CURSOR=false
 SETUP_COPILOT=false
+SETUP_CODEX=false
+SETUP_JETBRAINS=false
+SETUP_GEMINI=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --claude)  SETUP_CLAUDE=true; shift ;;
-    --cursor)  SETUP_CURSOR=true; shift ;;
-    --copilot) SETUP_COPILOT=true; shift ;;
-    --all)     SETUP_CLAUDE=true; SETUP_CURSOR=true; SETUP_COPILOT=true; shift ;;
+    --claude)     SETUP_CLAUDE=true; shift ;;
+    --cursor)     SETUP_CURSOR=true; shift ;;
+    --copilot)    SETUP_COPILOT=true; shift ;;
+    --codex)      SETUP_CODEX=true; shift ;;
+    --jetbrains)  SETUP_JETBRAINS=true; shift ;;
+    --gemini)     SETUP_GEMINI=true; shift ;;
+    --all)        SETUP_CLAUDE=true; SETUP_CURSOR=true; SETUP_COPILOT=true; SETUP_CODEX=true; SETUP_JETBRAINS=true; SETUP_GEMINI=true; shift ;;
     -h|--help)
       echo "ACE Kit Setup — creates symlinks and IDE integration files."
       echo ""
@@ -53,7 +62,10 @@ while [[ $# -gt 0 ]]; do
       echo "  bash ace-kit/setup.sh --claude       # Claude Code only"
       echo "  bash ace-kit/setup.sh --cursor       # Cursor only"
       echo "  bash ace-kit/setup.sh --copilot      # Copilot only"
-      echo "  bash ace-kit/setup.sh --all          # All three IDEs"
+      echo "  bash ace-kit/setup.sh --codex        # Codex only"
+      echo "  bash ace-kit/setup.sh --jetbrains    # JetBrains AI (Junie) only"
+      echo "  bash ace-kit/setup.sh --gemini       # Gemini Code Assist only"
+      echo "  bash ace-kit/setup.sh --all          # All six IDEs"
       exit 0
       ;;
     *) echo "Unknown option: $1"; exit 1 ;;
@@ -61,26 +73,32 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Interactive selection if no flags
-if [[ "$SETUP_CLAUDE" == false && "$SETUP_CURSOR" == false && "$SETUP_COPILOT" == false ]]; then
+if [[ "$SETUP_CLAUDE" == false && "$SETUP_CURSOR" == false && "$SETUP_COPILOT" == false && "$SETUP_CODEX" == false && "$SETUP_JETBRAINS" == false && "$SETUP_GEMINI" == false ]]; then
   echo -e "${CYAN}ACE Kit Setup${NC}"
   echo ""
   echo "Select IDEs to configure (space-separated numbers, or 'a' for all):"
   echo "  1) Claude Code"
   echo "  2) Cursor"
   echo "  3) Copilot"
+  echo "  4) Codex"
+  echo "  5) JetBrains AI (Junie)"
+  echo "  6) Gemini Code Assist"
   echo "  a) All"
   echo ""
   read -rp "Choice: " choice
   case "$choice" in
-    *a*|*A*) SETUP_CLAUDE=true; SETUP_CURSOR=true; SETUP_COPILOT=true ;;
+    *a*|*A*) SETUP_CLAUDE=true; SETUP_CURSOR=true; SETUP_COPILOT=true; SETUP_CODEX=true; SETUP_JETBRAINS=true; SETUP_GEMINI=true ;;
     *)
       [[ "$choice" == *1* ]] && SETUP_CLAUDE=true
       [[ "$choice" == *2* ]] && SETUP_CURSOR=true
       [[ "$choice" == *3* ]] && SETUP_COPILOT=true
+      [[ "$choice" == *4* ]] && SETUP_CODEX=true
+      [[ "$choice" == *5* ]] && SETUP_JETBRAINS=true
+      [[ "$choice" == *6* ]] && SETUP_GEMINI=true
       ;;
   esac
 
-  if [[ "$SETUP_CLAUDE" == false && "$SETUP_CURSOR" == false && "$SETUP_COPILOT" == false ]]; then
+  if [[ "$SETUP_CLAUDE" == false && "$SETUP_CURSOR" == false && "$SETUP_COPILOT" == false && "$SETUP_CODEX" == false && "$SETUP_JETBRAINS" == false && "$SETUP_GEMINI" == false ]]; then
     echo "No IDE selected. Exiting."
     exit 0
   fi
@@ -200,6 +218,95 @@ If no proposals: "GARDENER: no proposals for this run"
 COPILOT_EOF
 
   echo -e "  ${GREEN}+${NC} .github/copilot-instructions.md"
+  echo ""
+fi
+
+# --- Codex ---
+if [[ "$SETUP_CODEX" == true ]]; then
+  echo -e "${CYAN}[Codex]${NC}"
+
+  if [[ ! -f AGENTS.md ]]; then
+    cat > AGENTS.md <<'CODEX_EOF'
+# AGENTS.md — Project Context Bridge
+
+## CORE INSTRUCTION
+
+**YOU MUST READ AND FOLLOW `CLAUDE.md` AT THE ROOT OF THIS PROJECT.**
+
+`CLAUDE.md` is the **Single Source of Truth** for:
+1. **Tech Stack:** Kotlin, JUnit 5, Allure, ktlint — LOCKED.
+2. **Safety Protocols:** No destructive commands, no .env leaks.
+3. **Code Style:** Formatting, naming conventions, assertion rules.
+4. **Communication Protocol:** CLI-mode, no preambles, tool-first.
+
+## QA AGENT PERSONA
+
+**YOU MUST ALSO READ:** `.claude/qa_agent.md`
+
+## CRITICAL BEHAVIOR
+
+- If `CLAUDE.md` conflicts with any other instruction, `CLAUDE.md` WINS.
+- Do NOT generate code that violates the strict dependencies listed in `CLAUDE.md`.
+- All documentation and skill content must be written in **English**.
+CODEX_EOF
+    echo -e "  ${GREEN}+${NC} AGENTS.md"
+  else
+    echo -e "  ${YELLOW}~${NC} AGENTS.md (already exists, skipped)"
+  fi
+
+  echo ""
+fi
+
+# --- JetBrains AI (Junie) ---
+if [[ "$SETUP_JETBRAINS" == true ]]; then
+  echo -e "${CYAN}[JetBrains AI]${NC}"
+  mkdir -p .junie
+
+  cat > .junie/guidelines.md <<'JUNIE_EOF'
+# JetBrains AI (Junie) — Project Context Bridge
+
+## CORE INSTRUCTION
+
+**YOU MUST READ AND FOLLOW `CLAUDE.md` AT THE ROOT OF THIS PROJECT.**
+
+`CLAUDE.md` is the **Single Source of Truth** for:
+1. **Tech Stack:** Kotlin, JUnit 5, Allure, ktlint — LOCKED.
+2. **Safety Protocols:** No destructive commands, no .env leaks.
+3. **Code Style:** Formatting, naming conventions, assertion rules.
+4. **Communication Protocol:** CLI-mode, no preambles, tool-first.
+
+## QA AGENT PERSONA
+
+**YOU MUST ALSO READ:** `.claude/qa_agent.md`
+
+## CRITICAL BEHAVIOR
+
+- If `CLAUDE.md` conflicts with any other instruction, `CLAUDE.md` WINS.
+- Do NOT generate code that violates the strict dependencies listed in `CLAUDE.md`.
+- All documentation and skill content must be written in **English**.
+
+## AVAILABLE SKILLS
+
+Skills are defined in `.claude/skills/`. Read the `SKILL.md` file in each directory for the full protocol.
+
+**Recommended Workflow:** `repo-scout` → `api-test-cases` → `api-tests` → `api-test-review`
+JUNIE_EOF
+
+  echo -e "  ${GREEN}+${NC} .junie/guidelines.md"
+  echo ""
+fi
+
+# --- Gemini Code Assist ---
+if [[ "$SETUP_GEMINI" == true ]]; then
+  echo -e "${CYAN}[Gemini Code Assist]${NC}"
+
+  if [[ ! -L GEMINI.md ]]; then
+    ln -sf CLAUDE.md GEMINI.md
+    echo -e "  ${GREEN}+${NC} GEMINI.md -> CLAUDE.md (symlink)"
+  else
+    echo -e "  ${YELLOW}~${NC} GEMINI.md (already exists, skipped)"
+  fi
+
   echo ""
 fi
 

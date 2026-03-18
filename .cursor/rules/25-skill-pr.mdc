@@ -1,0 +1,17 @@
+---
+description: "SKILL: Create Pull Request (use for /pr)"
+globs: ".github/**"
+alwaysApply: false
+---
+# SKILL: PR
+
+## TRIGGER
+User explicitly types `/pr` or asks to create a pull request.
+
+## EXECUTION INSTRUCTIONS
+DO NOT guess the procedure and DO NOT output anything yet.
+To perform this skill, you MUST dynamically read the instructions using your file-reading capabilities.
+
+1. First, read the core agent context: `.claude/qa_agent.md`
+2. Second, read the specific skill protocol: `.claude/skills/pr/SKILL.md`
+3. Execute based STRICTLY on the logic and output format defined in those files.

@@ -2,11 +2,19 @@
 # Main entrypoint for the Skill Quality Pipeline.
 # Orchestrates agnix (generic AI config lint) + custom repo-specific checks.
 #
+# Layer 1 (Skill Definition Linting): structure, budget, regression, density, compliance
+# Layer 2 (Skill Output Linting): contract, golden, compliance --output-dir
+#
 # Usage:
 #   bash scripts/skill-quality.sh                    # Full: agnix + structure + budget
 #   bash scripts/skill-quality.sh --check structure   # Tier 1 Baseline only
 #   bash scripts/skill-quality.sh --check budget      # Token budget report only
 #   bash scripts/skill-quality.sh --check regression  # Regression detection only
+#   bash scripts/skill-quality.sh --check contract    # SKILL COMPLETE + cross-skill contracts
+#   bash scripts/skill-quality.sh --check compliance  # Definition compliance (BANNED/REQUIRED)
+#   bash scripts/skill-quality.sh --check density     # Context density (SLKD)
+#   bash scripts/skill-quality.sh --check golden      # Golden file structural tests (T1)
+#   bash scripts/skill-quality.sh --check reflector   # Reflector Layer 1 detection
 #   bash scripts/skill-quality.sh --snapshot          # Update baseline snapshot
 #   bash scripts/skill-quality.sh --diff              # Compare vs baseline
 #   bash scripts/skill-quality.sh --ci                # CI mode: agnix + structure + diff (fail on ERROR)
@@ -40,6 +48,11 @@ while [[ $# -gt 0 ]]; do
       echo "  --check structure   Tier 1 Baseline checks only"
       echo "  --check budget      Token budget report only"
       echo "  --check regression  Regression detection only"
+      echo "  --check contract    SKILL COMPLETE + cross-skill contracts"
+      echo "  --check compliance  Definition compliance (BANNED/REQUIRED extraction)"
+      echo "  --check density     Context density (SLKD signal-to-noise)"
+      echo "  --check golden      Golden file structural tests (T1)"
+      echo "  --check reflector   Reflector Layer 1 detection (recurring patterns)"
       echo "  --snapshot          Save current state as baseline"
       echo "  --diff              Compare current vs baseline"
       echo "  --ci                CI mode (agnix + structure + regression, fail on ERROR)"
@@ -82,6 +95,42 @@ run_regression() {
   bash "${LIB_DIR}/regression-detect.sh" $SKILL_ARG || EXIT_CODE=1
 }
 
+run_contract() {
+  echo ""
+  # shellcheck disable=SC2086
+  bash "${LIB_DIR}/contract-validator.sh" $SKILL_ARG || EXIT_CODE=1
+}
+
+run_compliance() {
+  echo ""
+  if [[ -n "$SKILL_ARG" ]]; then
+    local skill_name
+    skill_name=$(echo "$SKILL_ARG" | sed 's/--skill //')
+    bash "${LIB_DIR}/compliance-checker.sh" --skill "$skill_name" --rules-only || EXIT_CODE=1
+  else
+    echo -e "${CYAN}═══ Compliance Check ═══${NC}"
+    echo -e "Requires --skill <name>. Run: bash scripts/skill-quality.sh --check compliance --skill <name>"
+  fi
+}
+
+run_density() {
+  echo ""
+  # shellcheck disable=SC2086
+  bash "${LIB_DIR}/skill-structure.sh" --density $SKILL_ARG || EXIT_CODE=1
+}
+
+run_golden() {
+  echo ""
+  # shellcheck disable=SC2086
+  bash "${SCRIPT_DIR}/golden-test.sh" $SKILL_ARG || EXIT_CODE=1
+}
+
+run_reflector() {
+  echo ""
+  # shellcheck disable=SC2086
+  bash "${LIB_DIR}/reflector.sh" $SKILL_ARG || EXIT_CODE=1
+}
+
 run_snapshot() {
   # shellcheck disable=SC2086
   bash "${LIB_DIR}/token-budget.sh" --snapshot $SKILL_ARG
@@ -99,6 +148,11 @@ case "$MODE" in
         structure) run_structure ;;
         budget) run_budget ;;
         regression) run_regression ;;
+        contract) run_contract ;;
+        compliance) run_compliance ;;
+        density) run_density ;;
+        golden) run_golden ;;
+        reflector) run_reflector ;;
         *) echo "Unknown check: $CHECK"; exit 1 ;;
       esac
     else

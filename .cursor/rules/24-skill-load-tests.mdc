@@ -1,0 +1,17 @@
+---
+description: "SKILL: Generate JMeter DSL Load Tests (use for /load-tests)"
+globs: "src/test/java/scenarios/**"
+alwaysApply: false
+---
+# SKILL: LOAD TESTS
+
+## TRIGGER
+User explicitly types `/load-tests` or asks to generate load test scenarios in JMeter DSL (Kotlin).
+
+## EXECUTION INSTRUCTIONS
+DO NOT guess the procedure and DO NOT output anything yet.
+To perform this skill, you MUST dynamically read the instructions using your file-reading capabilities.
+
+1. First, read the core agent context: `.claude/qa_agent.md`
+2. Second, read the specific skill protocol: `.claude/skills/load-tests/SKILL.md`
+3. Execute based STRICTLY on the logic and output format defined in those files.

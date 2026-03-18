@@ -8,6 +8,9 @@ on:
       - 'AGENTS.md'
       - 'scripts/lib/**'
       - 'scripts/skill-quality.sh'
+      - 'scripts/golden-test.sh'
+      - 'tests/golden/**'
+      - 'cross-skill-contracts.yaml'
 
 jobs:
   quality:
@@ -25,6 +28,15 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: tools/go.mod
+
+      - name: Build Go tools
+        run: bash scripts/build-tools.sh
+
       - name: Install dependencies
         run: npm ci
 
@@ -38,6 +50,11 @@ jobs:
         run: bash scripts/skill-quality.sh --ci
         continue-on-error: true
 
+      - name: Run contract validator
+        id: contract
+        run: bash scripts/lib/contract-validator.sh
+        continue-on-error: true
+
       - name: Post PR comment
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
@@ -45,6 +62,7 @@ jobs:
           script: |
             const agnixResult = '${{ steps.agnix.outcome }}';
             const customResult = '${{ steps.custom.outcome }}';
+            const contractResult = '${{ steps.contract.outcome }}';
             const passed = agnixResult === 'success' && customResult === 'success';
 
             const body = [
@@ -54,6 +72,7 @@ jobs:
               `|-------|--------|`,
               `| agnix lint (230+ rules) | ${agnixResult === 'success' ? '✅ Pass' : '❌ Fail'} |`,
               `| Tier 1 Baseline + Regression | ${customResult === 'success' ? '✅ Pass' : '❌ Fail'} |`,
+              `| Contract Validator (K1-K4, X1-X2) | ${contractResult === 'success' ? '✅ Pass' : '⚠️ Warn'} |`,
               '',
               passed ? '✅ All checks passed' : '❌ Quality checks failed — see job logs for details',
               '',
@@ -92,3 +111,36 @@ jobs:
         run: |
           echo "Quality checks failed"
           exit 1
+
+  golden:
+    name: Golden Tests (T1 Structural)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true  # Shadow mode — warnings only until Phase 3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: tools/go.mod
+
+      - name: Build Go tools
+        run: bash scripts/build-tools.sh
+
+      - name: Run golden tests
+        id: golden
+        run: |
+          if [[ -f ./scripts/golden-test.sh ]]; then
+            bash ./scripts/golden-test.sh
+          else
+            echo "No golden-test.sh found — skipping"
+          fi
+        continue-on-error: true
+
+      - name: Golden test status
+        if: steps.golden.outcome == 'failure'
+        run: echo "⚠️ Golden tests have failures (shadow mode — not blocking)"
