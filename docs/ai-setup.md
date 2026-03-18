@@ -10,7 +10,7 @@ Modern AI coding assistants (Claude Code, Cursor, Copilot, Codex) read special m
 This project stores its AI context in several folders, each targeting a specific IDE:
 
 | Folder / File                     | IDE                           | What's inside                                   |
-|-----------------------------------|-------------------------------|-------------------------------------------------|
+| --------------------------------- | ----------------------------- | ----------------------------------------------- |
 | `.claude/`                        | Claude Code, OpenCode         | Skills, agents, anti-patterns, protocols, hooks |
 | `.cursor/rules/*.mdc`             | Cursor                        | Wrapper rules referencing `.claude/` files      |
 | `.agents/skills/`                 | OpenAI Codex                  | Wrapper skills referencing `.claude/` files     |
@@ -64,7 +64,8 @@ Three layers, loaded on demand (not all at once):
 │   │
 │   ├── protocols/                   # Agent behavior protocols
 │   │   ├── gardener.md              # "Suggest improvements" protocol
-│   │   └── reflection.md            # Failure analysis → pending lessons
+│   │   ├── reflection.md            # Failure analysis → pending lessons
+│   │   └── reflector.md             # Proactive pattern detection (Layer 2: LLM)
 │   ├── settings.json                # Plugins, permissions, hooks
 │   ├── agents/                      # Role-specific agents
 │   │   ├── sdet.md                  #   Test code generation
@@ -104,7 +105,8 @@ Three layers, loaded on demand (not all at once):
 │
 ├── .ai-lessons/                     # Pending + graduated lessons (ACE)
 │   ├── pending.md
-│   └── graduated.md
+│   ├── graduated.md
+│   └── gardener-log.jsonl           # Machine-parseable Gardener observations
 │
 ├── .cursor/rules/                   # Cursor wrappers → reference .claude/ files
 ├── .agents/skills/                  # Codex wrappers → reference .claude/ files
@@ -115,15 +117,26 @@ Three layers, loaded on demand (not all at once):
 │
 ├── docs/
 │   ├── ai-setup.md                  # This file
-│   ├── api-isolated-tests/                  # Manual test scenarios
+│   ├── ace/                         # ACE architecture documentation
+│   │   ├── ace-pipeline.md          # ACE pipeline overview
+│   │   ├── context-evolution.md     # Context rot analysis
+│   │   └── pipeline-inventory.md    # All ACE pipeline files
+│   ├── api-isolated-tests/          # Manual test scenarios
 │   └── workshop-commands.md         # Workshop commands per IDE
 │
 ├── scripts/
 │   ├── skill-quality.sh             # Quality pipeline orchestrator
+│   ├── hooks/
+│   │   └── telemetry-hook.sh        # Telemetry event collector
 │   └── lib/
 │       ├── skill-structure.sh       # Tier 1 Baseline checks
 │       ├── token-budget.sh          # Token counting + snapshots
-│       └── regression-detect.sh     # Section removal detection
+│       ├── regression-detect.sh     # Section removal detection
+│       └── reflector.sh             # Reflector Layer 1: detection engine
+│
+├── tests/
+│   ├── telemetry/                   # Telemetry data (gitignored: events.jsonl, reflector-report.json)
+│   │   └── .gitkeep
 │
 ├── specifications/                  # API specifications for analysis
 │
@@ -137,150 +150,156 @@ Three layers, loaded on demand (not all at once):
 
 ### Root Configuration Files
 
-| File              | Path                            | Lines | Purpose                                               |
-|-------------------|---------------------------------|------:|-------------------------------------------------------|
-| CLAUDE.md         | `CLAUDE.md`                     |   129 | Main onboarding: stack, safety, conventions           |
-| QA Agent          | `.claude/qa_agent.md`           |   188 | Mindset, anti-patterns, Cross-Skill Protocol          |
-| Gardener Protocol | `.claude/protocols/gardener.md` |    55 | "Suggest improvements" protocol injected at runtime   |
-| Reflection Protocol | `.claude/protocols/reflection.md` |    36 | Failure analysis → pending lessons                  |
-| Settings          | `.claude/settings.json`         |    50 | Plugins, permissions, hooks                           |
-| MCP Servers       | `.mcp.json`                     |    12 | context7 + sequential-thinking                        |
-| Markdownlint      | `.markdownlint.yaml`            |    38 | Markdown linting rules                                |
+| File                | Path                              | Lines | Purpose                                         |
+| ------------------- | --------------------------------- | ----: | ----------------------------------------------- |
+| CLAUDE.md           | `CLAUDE.md`                       |   129 | Main onboarding: stack, safety, conventions     |
+| QA Agent            | `.claude/qa_agent.md`             |   188 | Mindset, anti-patterns, Cross-Skill Protocol    |
+| Gardener Protocol   | `.claude/protocols/gardener.md`   |    73 | "Suggest improvements" protocol + JSONL logging |
+| Reflection Protocol | `.claude/protocols/reflection.md` |    36 | Failure analysis → pending lessons              |
+| Reflector Protocol  | `.claude/protocols/reflector.md`  |    82 | Proactive pattern detection (Layer 2: LLM)      |
+| Settings            | `.claude/settings.json`           |    50 | Plugins, permissions, hooks                     |
+| MCP Servers         | `.mcp.json`                       |    12 | context7 + sequential-thinking                  |
+| Markdownlint        | `.markdownlint.yaml`              |    38 | Markdown linting rules                          |
 
 ### Skills
 
-| Skill                 | Path                                         | Lines | Category   | What it does                               |
-|-----------------------|----------------------------------------------|------:|------------|--------------------------------------------|
-| `/agents-checker`     | `.claude/skills/agents-checker/SKILL.md`     |   192 | Analysis   | Agent compliance verification              |
-| `/api-isolated-tests` | `.claude/skills/api-isolated-tests/SKILL.md` |   300 | Generation | Test case generation from specification    |
-| `/api-mocks`          | `.claude/skills/api-mocks/SKILL.md`          |    70 | Generation | HTTP mock server generation                |
-| `/api-test-cases`     | `.claude/skills/api-test-cases/SKILL.md`     |   335 | Generation | Bulk test cases for entire API             |
-| `/api-test-review`    | `.claude/skills/api-test-review/SKILL.md`    |   ~400 | Analysis   | Deep code review of generated API tests    |
-| `/api-tests`          | `.claude/skills/api-tests/SKILL.md`          |   288 | Generation | API automated tests (Kotlin + JUnit 5)     |
-| `/api-tests-java`     | `.claude/skills/api-tests-java/SKILL.md`     |   220 | Generation | API automated tests (Java 17+ + JUnit 5)   |
-| `/doc-lint`           | `.claude/skills/doc-lint/SKILL.md`           |   248 | Analysis   | Documentation quality audit                |
-| `/fix-markdown`       | `.claude/skills/fix-markdown/SKILL.md`       |    33 | Meta       | Fix markdownlint errors across repo        |
-| `/init-agent`         | `.claude/skills/init-agent/SKILL.md`         |   203 | Meta       | qa_agent.md generation                     |
-| `/init-project`       | `.claude/skills/init-project/SKILL.md`       |   178 | Meta       | CLAUDE.md generation                       |
-| `/init-skill`         | `.claude/skills/init-skill/SKILL.md`         |   283 | Meta       | New skill generation                       |
-| `/output-review`      | `.claude/skills/output-review/SKILL.md`      |   291 | Analysis   | Skill output audit                         |
-| `/pr`                 | `.claude/skills/pr/SKILL.md`                 |    78 | Meta       | Pull request creation                      |
-| `/qa-translate`       | `.claude/skills/qa-translate/SKILL.md`       |   282 | Meta       | Technical translation RU to EN             |
-| `/repo-scout`         | `.claude/skills/repo-scout/SKILL.md`         |   416 | Analysis   | Backend repo reconnaissance                |
-| `/screenshot-analyze` | `.claude/skills/screenshot-analyze/SKILL.md` |   300 | Analysis   | L10N and UI defects                        |
-| `/skill-audit`        | `.claude/skills/skill-audit/SKILL.md`        |   224 | Analysis   | SKILL.md audit                             |
-| `/spec-audit`         | `.claude/skills/spec-audit/SKILL.md`         |   284 | Analysis   | QA audit of requirements                   |
-| `/curate-lessons`     | `.claude/skills/curate-lessons/SKILL.md`     |   163 | Meta       | Lesson curation from pending.md            |
-| `/update-ai-setup`    | `.claude/skills/update-ai-setup/SKILL.md`    |   168 | Meta       | This registry update                       |
+| Skill                 | Path                                         | Lines | Category   | What it does                             |
+| --------------------- | -------------------------------------------- | ----: | ---------- | ---------------------------------------- |
+| `/agents-checker`     | `.claude/skills/agents-checker/SKILL.md`     |   192 | Analysis   | Agent compliance verification            |
+| `/api-isolated-tests` | `.claude/skills/api-isolated-tests/SKILL.md` |   300 | Generation | Test case generation from specification  |
+| `/api-mocks`          | `.claude/skills/api-mocks/SKILL.md`          |    70 | Generation | HTTP mock server generation              |
+| `/api-test-cases`     | `.claude/skills/api-test-cases/SKILL.md`     |   335 | Generation | Bulk test cases for entire API           |
+| `/api-test-review`    | `.claude/skills/api-test-review/SKILL.md`    |  ~400 | Analysis   | Deep code review of generated API tests  |
+| `/api-tests`          | `.claude/skills/api-tests/SKILL.md`          |   288 | Generation | API automated tests (Kotlin + JUnit 5)   |
+| `/api-tests-java`     | `.claude/skills/api-tests-java/SKILL.md`     |   220 | Generation | API automated tests (Java 17+ + JUnit 5) |
+| `/doc-lint`           | `.claude/skills/doc-lint/SKILL.md`           |   248 | Analysis   | Documentation quality audit              |
+| `/fix-markdown`       | `.claude/skills/fix-markdown/SKILL.md`       |    33 | Meta       | Fix markdownlint errors across repo      |
+| `/init-agent`         | `.claude/skills/init-agent/SKILL.md`         |   203 | Meta       | qa_agent.md generation                   |
+| `/init-project`       | `.claude/skills/init-project/SKILL.md`       |   178 | Meta       | CLAUDE.md generation                     |
+| `/init-skill`         | `.claude/skills/init-skill/SKILL.md`         |   283 | Meta       | New skill generation                     |
+| `/output-review`      | `.claude/skills/output-review/SKILL.md`      |   291 | Analysis   | Skill output audit                       |
+| `/pr`                 | `.claude/skills/pr/SKILL.md`                 |    78 | Meta       | Pull request creation                    |
+| `/qa-translate`       | `.claude/skills/qa-translate/SKILL.md`       |   282 | Meta       | Technical translation RU to EN           |
+| `/repo-scout`         | `.claude/skills/repo-scout/SKILL.md`         |   416 | Analysis   | Backend repo reconnaissance              |
+| `/screenshot-analyze` | `.claude/skills/screenshot-analyze/SKILL.md` |   300 | Analysis   | L10N and UI defects                      |
+| `/skill-audit`        | `.claude/skills/skill-audit/SKILL.md`        |   224 | Analysis   | SKILL.md audit                           |
+| `/spec-audit`         | `.claude/skills/spec-audit/SKILL.md`         |   284 | Analysis   | QA audit of requirements                 |
+| `/curate-lessons`     | `.claude/skills/curate-lessons/SKILL.md`     |   163 | Meta       | Lesson curation from pending.md          |
+| `/update-ai-setup`    | `.claude/skills/update-ai-setup/SKILL.md`    |   168 | Meta       | This registry update                     |
 
 ### Anti-Patterns
 
 31 files the AI checks generated code against. Organized by category:
 
-| File                             | Path                                                                | Lines | Category |
-|----------------------------------|---------------------------------------------------------------------|------:|----------|
-| _index                           | `.claude/qa-antipatterns/_index.md`                                 |    78 | Index    |
-| batch-partial-failure            | `.claude/qa-antipatterns/api/batch-partial-failure.md`              |    96 | api      |
-| configure-http-client            | `.claude/qa-antipatterns/api/configure-http-client.md`              |    53 | api      |
-| dry-api-client                   | `.claude/qa-antipatterns/api/dry-api-client.md`                     |    77 | api      |
-| eventual-consistency-writes      | `.claude/qa-antipatterns/api/eventual-consistency-writes.md`        |    70 | api      |
-| inline-http-calls                | `.claude/qa-antipatterns/api/inline-http-calls.md`                  |    52 | api      |
-| inline-http-calls (java)         | `.claude/qa-antipatterns/api/java/inline-http-calls.md`             |    52 | api/java |
-| map-instead-of-dto (java)        | `.claude/qa-antipatterns/api/java/map-instead-of-dto.md`            |    55 | api/java |
-| ktor-body-extraction             | `.claude/qa-antipatterns/api/ktor-body-extraction.md`               |    54 | api      |
-| map-instead-of-dto               | `.claude/qa-antipatterns/api/map-instead-of-dto.md`                 |    66 | api      |
-| missing-business-error-assertion | `.claude/qa-antipatterns/api/missing-business-error-assertion.md`   |    50 | api      |
-| missing-content-type-validation  | `.claude/qa-antipatterns/api/missing-content-type-validation.md`    |    61 | api      |
-| missing-security-headers         | `.claude/qa-antipatterns/api/missing-security-headers.md`           |    56 | api      |
-| silent-catch                     | `.claude/qa-antipatterns/api/silent-catch.md`                       |    59 | api      |
-| wrap-infrastructure-errors       | `.claude/qa-antipatterns/api/wrap-infrastructure-errors.md`         |    60 | api      |
-| assertion-without-message        | `.claude/qa-antipatterns/common/assertion-without-message.md`       |    80 | common   |
-| hardcoded-test-data              | `.claude/qa-antipatterns/common/hardcoded-test-data.md`             |    64 | common   |
-| no-abstraction-layer             | `.claude/qa-antipatterns/common/no-abstraction-layer.md`            |    70 | common   |
-| no-cleanup-pattern               | `.claude/qa-antipatterns/common/no-cleanup-pattern.md`              |   123 | common   |
-| no-order-dependent-tests         | `.claude/qa-antipatterns/common/no-order-dependent-tests.md`        |    70 | common   |
-| static-object-mother             | `.claude/qa-antipatterns/common/static-object-mother.md`            |    90 | common   |
-| controlled-retries               | `.claude/qa-antipatterns/platform/controlled-retries.md`            |    57 | platform |
-| completablefuture-no-timeout     | `.claude/qa-antipatterns/platform/java/completablefuture-no-timeout.md` | 50 | platform/java |
-| flaky-sleep-tests (java)         | `.claude/qa-antipatterns/platform/java/flaky-sleep-tests.md`        |    58 | platform/java |
-| coroutine-test-return-type       | `.claude/qa-antipatterns/platform/coroutine-test-return-type.md`    |    79 | platform |
-| flaky-sleep-tests                | `.claude/qa-antipatterns/platform/flaky-sleep-tests.md`             |    62 | platform |
-| junit-test-initialization        | `.claude/qa-antipatterns/platform/junit-test-initialization.md`     |    57 | platform |
-| no-hardcoded-timeouts            | `.claude/qa-antipatterns/platform/no-hardcoded-timeouts.md`         |    48 | platform |
-| no-shared-mutable-state          | `.claude/qa-antipatterns/platform/no-shared-mutable-state.md`       |    76 | platform |
-| information-leakage-in-errors    | `.claude/qa-antipatterns/security/information-leakage-in-errors.md` |    91 | security |
-| no-sensitive-data-logging        | `.claude/qa-antipatterns/security/no-sensitive-data-logging.md`     |    53 | security |
-| pii-combined                     | `.claude/qa-antipatterns/security/pii-combined.md`                  |    81 | security |
+| File                             | Path                                                                    | Lines | Category      |
+| -------------------------------- | ----------------------------------------------------------------------- | ----: | ------------- |
+| \_index                          | `.claude/qa-antipatterns/_index.md`                                     |    78 | Index         |
+| batch-partial-failure            | `.claude/qa-antipatterns/api/batch-partial-failure.md`                  |    96 | api           |
+| configure-http-client            | `.claude/qa-antipatterns/api/configure-http-client.md`                  |    53 | api           |
+| dry-api-client                   | `.claude/qa-antipatterns/api/dry-api-client.md`                         |    77 | api           |
+| eventual-consistency-writes      | `.claude/qa-antipatterns/api/eventual-consistency-writes.md`            |    70 | api           |
+| inline-http-calls                | `.claude/qa-antipatterns/api/inline-http-calls.md`                      |    52 | api           |
+| inline-http-calls (java)         | `.claude/qa-antipatterns/api/java/inline-http-calls.md`                 |    52 | api/java      |
+| map-instead-of-dto (java)        | `.claude/qa-antipatterns/api/java/map-instead-of-dto.md`                |    55 | api/java      |
+| ktor-body-extraction             | `.claude/qa-antipatterns/api/ktor-body-extraction.md`                   |    54 | api           |
+| map-instead-of-dto               | `.claude/qa-antipatterns/api/map-instead-of-dto.md`                     |    66 | api           |
+| missing-business-error-assertion | `.claude/qa-antipatterns/api/missing-business-error-assertion.md`       |    50 | api           |
+| missing-content-type-validation  | `.claude/qa-antipatterns/api/missing-content-type-validation.md`        |    61 | api           |
+| missing-security-headers         | `.claude/qa-antipatterns/api/missing-security-headers.md`               |    56 | api           |
+| silent-catch                     | `.claude/qa-antipatterns/api/silent-catch.md`                           |    59 | api           |
+| wrap-infrastructure-errors       | `.claude/qa-antipatterns/api/wrap-infrastructure-errors.md`             |    60 | api           |
+| assertion-without-message        | `.claude/qa-antipatterns/common/assertion-without-message.md`           |    80 | common        |
+| hardcoded-test-data              | `.claude/qa-antipatterns/common/hardcoded-test-data.md`                 |    64 | common        |
+| no-abstraction-layer             | `.claude/qa-antipatterns/common/no-abstraction-layer.md`                |    70 | common        |
+| no-cleanup-pattern               | `.claude/qa-antipatterns/common/no-cleanup-pattern.md`                  |   123 | common        |
+| no-order-dependent-tests         | `.claude/qa-antipatterns/common/no-order-dependent-tests.md`            |    70 | common        |
+| static-object-mother             | `.claude/qa-antipatterns/common/static-object-mother.md`                |    90 | common        |
+| controlled-retries               | `.claude/qa-antipatterns/platform/controlled-retries.md`                |    57 | platform      |
+| completablefuture-no-timeout     | `.claude/qa-antipatterns/platform/java/completablefuture-no-timeout.md` |    50 | platform/java |
+| flaky-sleep-tests (java)         | `.claude/qa-antipatterns/platform/java/flaky-sleep-tests.md`            |    58 | platform/java |
+| coroutine-test-return-type       | `.claude/qa-antipatterns/platform/coroutine-test-return-type.md`        |    79 | platform      |
+| flaky-sleep-tests                | `.claude/qa-antipatterns/platform/flaky-sleep-tests.md`                 |    62 | platform      |
+| junit-test-initialization        | `.claude/qa-antipatterns/platform/junit-test-initialization.md`         |    57 | platform      |
+| no-hardcoded-timeouts            | `.claude/qa-antipatterns/platform/no-hardcoded-timeouts.md`             |    48 | platform      |
+| no-shared-mutable-state          | `.claude/qa-antipatterns/platform/no-shared-mutable-state.md`           |    76 | platform      |
+| information-leakage-in-errors    | `.claude/qa-antipatterns/security/information-leakage-in-errors.md`     |    91 | security      |
+| no-sensitive-data-logging        | `.claude/qa-antipatterns/security/no-sensitive-data-logging.md`         |    53 | security      |
+| pii-combined                     | `.claude/qa-antipatterns/security/pii-combined.md`                      |    81 | security      |
 
 ### Reference Files
 
 Supporting data for skills — templates, examples, glossaries:
 
-| File                | Path                                                                | Lines | Purpose                                       |
-|---------------------|---------------------------------------------------------------------|------:|-----------------------------------------------|
-| coverage-matrix     | `.claude/skills/api-test-cases/references/coverage-matrix.md`       |   221 | Coverage matrix for /api-test-cases           |
-| output-template     | `.claude/skills/api-test-cases/references/output-template.md`       |   195 | Output template for /api-test-cases           |
-| quality-gates       | `.claude/skills/api-test-cases/references/quality-gates.md`         |   142 | Quality gates for /api-test-cases             |
-| api-patterns        | `.claude/skills/api-tests/references/api-patterns.md`               |    77 | Patterns for API tests (Kotlin)               |
-| api-patterns-java   | `.claude/skills/api-tests-java/references/java/api-patterns.md`     |    95 | Patterns for API tests (Java 17+)             |
-| examples            | `.claude/skills/api-tests/references/examples.md`                   |   172 | Code examples for /api-tests                  |
-| best-practices      | `.claude/skills/doc-lint/references/best-practices.md`              |    82 | Corporate documentation practices             |
-| check-rules         | `.claude/skills/doc-lint/references/check-rules.md`                 |   110 | Thresholds, duplicate signatures, SSOT matrix |
-| phases              | `.claude/skills/doc-lint/references/phases.md`                      |   215 | Phases and algorithm for /doc-lint            |
-| qa-agent-template   | `.claude/skills/init-agent/references/qa-agent-template.md`         |   107 | qa_agent.md template                          |
-| qa-profiles         | `.claude/skills/init-agent/references/qa-profiles.md`               |   128 | QA agent profiles                             |
-| claude-md-template  | `.claude/skills/init-project/references/claude-md-template.md`      |   152 | CLAUDE.md template                            |
-| interaction-guide   | `.claude/skills/init-skill/references/interaction-guide.md`         |    95 | Interactive workflow guide for /init-skill    |
-| skill-template      | `.claude/skills/init-skill/references/skill-template.md`            |   143 | SKILL.md template                             |
-| validation-checklist | `.claude/skills/init-skill/references/validation-checklist.md`      |    39 | Validation checklist for /init-skill          |
-| yaml-reference      | `.claude/skills/init-skill/references/yaml-reference.md`            |    99 | Skill YAML specification                      |
-| glossary            | `.claude/skills/qa-translate/references/glossary.md`                |   182 | Translation glossary RU to EN                 |
-| examples            | `.claude/skills/qa-translate/references/examples.md`                |   148 | Translation examples                          |
-| formatting-rules    | `.claude/skills/qa-translate/references/formatting-rules.md`        |   268 | Formatting rules for translation              |
-| lang-patterns       | `.claude/skills/repo-scout/references/lang-patterns.md`             |   275 | Language patterns index (detection + cross-language) |
-| lang-go             | `.claude/skills/repo-scout/references/lang-go.md`                   |   200 | Go-specific patterns for /repo-scout          |
-| lang-python         | `.claude/skills/repo-scout/references/lang-python.md`               |    93 | Python-specific patterns for /repo-scout      |
-| lang-nodejs         | `.claude/skills/repo-scout/references/lang-nodejs.md`               |    93 | Node.js/TS-specific patterns for /repo-scout  |
-| lang-jvm            | `.claude/skills/repo-scout/references/lang-jvm.md`                  |    86 | Java/Kotlin-specific patterns for /repo-scout |
-| report-template     | `.claude/skills/repo-scout/references/report-template.md`           |   299 | Report template for /repo-scout               |
-| checklists          | `.claude/skills/screenshot-analyze/references/checklists.md`        |   113 | L10N check checklists                         |
-| cldr-tables         | `.claude/skills/screenshot-analyze/references/cldr-tables.md`       |   151 | CLDR reference tables                         |
-| html-template       | `.claude/skills/screenshot-analyze/references/html-template.md`     |   160 | HTML report template                          |
-| l10n-domain-rules   | `.claude/skills/screenshot-analyze/references/l10n-domain-rules.md` |    41 | Localization domain rules                     |
-| lqa-rules           | `.claude/skills/screenshot-analyze/references/lqa-rules.md`         |    42 | LQA check rules for /screenshot-analyze       |
+| File                 | Path                                                                | Lines | Purpose                                              |
+| -------------------- | ------------------------------------------------------------------- | ----: | ---------------------------------------------------- |
+| coverage-matrix      | `.claude/skills/api-test-cases/references/coverage-matrix.md`       |   221 | Coverage matrix for /api-test-cases                  |
+| output-template      | `.claude/skills/api-test-cases/references/output-template.md`       |   195 | Output template for /api-test-cases                  |
+| quality-gates        | `.claude/skills/api-test-cases/references/quality-gates.md`         |   142 | Quality gates for /api-test-cases                    |
+| api-patterns         | `.claude/skills/api-tests/references/api-patterns.md`               |    77 | Patterns for API tests (Kotlin)                      |
+| api-patterns-java    | `.claude/skills/api-tests-java/references/java/api-patterns.md`     |    95 | Patterns for API tests (Java 17+)                    |
+| examples             | `.claude/skills/api-tests/references/examples.md`                   |   172 | Code examples for /api-tests                         |
+| best-practices       | `.claude/skills/doc-lint/references/best-practices.md`              |    82 | Corporate documentation practices                    |
+| check-rules          | `.claude/skills/doc-lint/references/check-rules.md`                 |   110 | Thresholds, duplicate signatures, SSOT matrix        |
+| phases               | `.claude/skills/doc-lint/references/phases.md`                      |   215 | Phases and algorithm for /doc-lint                   |
+| qa-agent-template    | `.claude/skills/init-agent/references/qa-agent-template.md`         |   107 | qa_agent.md template                                 |
+| qa-profiles          | `.claude/skills/init-agent/references/qa-profiles.md`               |   128 | QA agent profiles                                    |
+| claude-md-template   | `.claude/skills/init-project/references/claude-md-template.md`      |   152 | CLAUDE.md template                                   |
+| interaction-guide    | `.claude/skills/init-skill/references/interaction-guide.md`         |    95 | Interactive workflow guide for /init-skill           |
+| skill-template       | `.claude/skills/init-skill/references/skill-template.md`            |   143 | SKILL.md template                                    |
+| validation-checklist | `.claude/skills/init-skill/references/validation-checklist.md`      |    39 | Validation checklist for /init-skill                 |
+| yaml-reference       | `.claude/skills/init-skill/references/yaml-reference.md`            |    99 | Skill YAML specification                             |
+| glossary             | `.claude/skills/qa-translate/references/glossary.md`                |   182 | Translation glossary RU to EN                        |
+| examples             | `.claude/skills/qa-translate/references/examples.md`                |   148 | Translation examples                                 |
+| formatting-rules     | `.claude/skills/qa-translate/references/formatting-rules.md`        |   268 | Formatting rules for translation                     |
+| lang-patterns        | `.claude/skills/repo-scout/references/lang-patterns.md`             |   275 | Language patterns index (detection + cross-language) |
+| lang-go              | `.claude/skills/repo-scout/references/lang-go.md`                   |   200 | Go-specific patterns for /repo-scout                 |
+| lang-python          | `.claude/skills/repo-scout/references/lang-python.md`               |    93 | Python-specific patterns for /repo-scout             |
+| lang-nodejs          | `.claude/skills/repo-scout/references/lang-nodejs.md`               |    93 | Node.js/TS-specific patterns for /repo-scout         |
+| lang-jvm             | `.claude/skills/repo-scout/references/lang-jvm.md`                  |    86 | Java/Kotlin-specific patterns for /repo-scout        |
+| report-template      | `.claude/skills/repo-scout/references/report-template.md`           |   299 | Report template for /repo-scout                      |
+| checklists           | `.claude/skills/screenshot-analyze/references/checklists.md`        |   113 | L10N check checklists                                |
+| cldr-tables          | `.claude/skills/screenshot-analyze/references/cldr-tables.md`       |   151 | CLDR reference tables                                |
+| html-template        | `.claude/skills/screenshot-analyze/references/html-template.md`     |   160 | HTML report template                                 |
+| l10n-domain-rules    | `.claude/skills/screenshot-analyze/references/l10n-domain-rules.md` |    41 | Localization domain rules                            |
+| lqa-rules            | `.claude/skills/screenshot-analyze/references/lqa-rules.md`         |    42 | LQA check rules for /screenshot-analyze              |
 
 ### Agents
 
 | File    | Path                        | Lines | Role                     |
-|---------|-----------------------------|------:|--------------------------|
+| ------- | --------------------------- | ----: | ------------------------ |
 | auditor | `.claude/agents/auditor.md` |   169 | Planning + quality audit |
 | sdet    | `.claude/agents/sdet.md`    |   201 | Test code generation     |
 
 ### Hooks and Scripts
 
-| File             | Path                            | Lines | Trigger / Usage          | Purpose                        |
-|------------------|---------------------------------|------:|--------------------------|--------------------------------|
-| skill-lint.sh    | `.claude/hooks/skill-lint.sh`   |    46 | PostToolUse (Write/Edit) | SKILL.md validation on edit    |
-| delta-guard.sh   | `.claude/hooks/delta-guard.sh`  |    38 | PostToolUse (Write)      | Warns Write on governed files  |
-| pre-commit.sh    | `scripts/pre-commit.sh`        |     — | git pre-commit           | Blocks secrets from commit     |
-| pre-push.sh      | `scripts/pre-push.sh`          |     — | git pre-push             | Blocks secrets from push       |
-| setup-hooks.sh   | `scripts/setup-hooks.sh`       |     — | manual                   | Installs git hooks             |
+| File              | Path                              | Lines | Trigger / Usage          | Purpose                       |
+| ----------------- | --------------------------------- | ----: | ------------------------ | ----------------------------- |
+| skill-lint.sh     | `.claude/hooks/skill-lint.sh`     |    46 | PostToolUse (Write/Edit) | SKILL.md validation on edit   |
+| delta-guard.sh    | `.claude/hooks/delta-guard.sh`    |    40 | PostToolUse (Write)      | Warns Write on governed files |
+| telemetry-hook.sh | `scripts/hooks/telemetry-hook.sh` |    60 | Gardener Protocol        | Appends event to events.jsonl |
+| pre-commit.sh     | `scripts/pre-commit.sh`           |     — | git pre-commit           | Blocks secrets from commit    |
+| pre-push.sh       | `scripts/pre-push.sh`             |     — | git pre-push             | Blocks secrets from push      |
+| setup-hooks.sh    | `scripts/setup-hooks.sh`          |     — | manual                   | Installs git hooks            |
 
 ### Quality Scripts
 
-| Script                | Path                               | Purpose                               |
-|-----------------------|------------------------------------|---------------------------------------|
-| skill-quality.sh      | `scripts/skill-quality.sh`         | Pipeline orchestrator (agnix + checks)|
-| skill-structure.sh    | `scripts/lib/skill-structure.sh`   | Tier 1 Baseline (S8–S17)             |
-| token-budget.sh       | `scripts/lib/token-budget.sh`      | Token counting + snapshots            |
-| regression-detect.sh  | `scripts/lib/regression-detect.sh` | Section removal detection             |
+| Script               | Path                               | Purpose                                |
+| -------------------- | ---------------------------------- | -------------------------------------- |
+| skill-quality.sh     | `scripts/skill-quality.sh`         | Pipeline orchestrator (agnix + checks) |
+| skill-structure.sh   | `scripts/lib/skill-structure.sh`   | Tier 1 Baseline (S8–S17)               |
+| token-budget.sh      | `scripts/lib/token-budget.sh`      | Token counting + snapshots             |
+| regression-detect.sh | `scripts/lib/regression-detect.sh` | Section removal detection              |
+| reflector.sh         | `scripts/lib/reflector.sh`         | Reflector Layer 1: detection engine    |
 
 ### Documentation
 
-| File                 | Path                        | Lines | Purpose                   |
-|----------------------|-----------------------------|------:|---------------------------|
-| AI Setup (this file) | `docs/ai-setup.md`          |     — | AI configuration registry |
-| Workshop Commands    | `docs/workshop-commands.md` |   237 | Workshop commands per IDE |
+| File                 | Path                             | Lines | Purpose                               |
+| -------------------- | -------------------------------- | ----: | ------------------------------------- |
+| AI Setup (this file) | `docs/ai-setup.md`               |     — | AI configuration registry             |
+| ACE Pipeline         | `docs/ace/ace-pipeline.md`       |   286 | ACE architecture, 3 roles, full cycle |
+| Context Evolution    | `docs/ace/context-evolution.md`  |   125 | Context rot analysis, ACE as solution |
+| Pipeline Inventory   | `docs/ace/pipeline-inventory.md` |   ~90 | All ACE pipeline participant files    |
+| Workshop Commands    | `docs/workshop-commands.md`      |   237 | Workshop commands per IDE             |
 
 ---
 
@@ -387,6 +406,8 @@ Automatic markdown quality checking via `.markdownlint.yaml`.
 **Problem:** AI completes the task but doesn't notice improvements it could suggest.
 **Solution:** Agents inject `gardener.md` protocol at runtime — AI suggests knowledge base improvements without blocking the main flow.
 
+> **Cursor note (March 2026):** Cursor does not support shared protocol injection. Inline the Gardener block into each `.cursor/rules/*.mdc` wrapper individually.
+
 ### 22. Agent Compliance Check
 
 `/agents-checker` verifies agent files match init-agent standards.
@@ -406,8 +427,22 @@ How the system improves over time:
        ▲                                     │
        │            ┌──────────────────────┐ │
        │            │  Gardener Protocol   │ │
-       └────────────│  error → rule →      │◀┘
-                    │  prevention          │
+       │            │  error → rule →      │◀┘
+       │            │  prevention          │
+       │            └──────────┬───────────┘
+       │                       │ observations
+       │                       ▼
+       │            ┌──────────────────────┐
+       │            │  Reflector (batch)   │
+       │            │  Layer 1: bash detect│
+       │            │  Layer 2: LLM dedup  │
+       │            │  → pending.md        │
+       │            └──────────┬───────────┘
+       │                       │ curate
+       │                       ▼
+       │            ┌──────────────────────┐
+       └────────────│  /curate-lessons     │
+                    │  dedup → promote     │
                     └──────────┬───────────┘
                                │ updates
                                ▼
@@ -421,10 +456,10 @@ How the system improves over time:
 
 ### Quality Gates
 
-| Transition       | What is checked                                         | Blocker                                  |
-|------------------|---------------------------------------------------------|------------------------------------------|
-| Plan → Execution | Endpoint coverage, priorities, gaps in specifications   | Missing Critical endpoints               |
-| Execution → Done | Compilation, `@Link` to specification, coverage vs plan | `compileTestKotlin` fail (max 3 retry)   |
+| Transition       | What is checked                                         | Blocker                                |
+| ---------------- | ------------------------------------------------------- | -------------------------------------- |
+| Plan → Execution | Endpoint coverage, priorities, gaps in specifications   | Missing Critical endpoints             |
+| Execution → Done | Compilation, `@Link` to specification, coverage vs plan | `compileTestKotlin` fail (max 3 retry) |
 
 ### Quality Pipeline
 
@@ -435,7 +470,8 @@ skill-quality.sh (orchestrator)
 ├── npx agnix                          # 230+ generic AI config rules
 ├── scripts/lib/skill-structure.sh     # Tier 1 Baseline (S8-S17)
 ├── scripts/lib/token-budget.sh        # Token counting + snapshots
-└── scripts/lib/regression-detect.sh   # Section removal detection
+├── scripts/lib/regression-detect.sh   # Section removal detection
+└── scripts/lib/reflector.sh           # Reflector Layer 1 detection
 ```
 
 Baseline: `.claude/baselines/skill-snapshot.json` — tracks 21 skills (tokens, lines, section compliance).
@@ -443,15 +479,15 @@ Baseline: `.claude/baselines/skill-snapshot.json` — tracks 21 skills (tokens, 
 <details>
 <summary>Pipeline modes and CI integration</summary>
 
-| Command | What it does |
-|---------|-------------|
-| `bash scripts/skill-quality.sh` | Full: agnix + structure + budget |
-| `--check structure` | Tier 1 Baseline only |
-| `--check budget` | Token budget report |
-| `--check regression` | Detect removed sections vs baseline |
-| `--snapshot` | Save current state as baseline |
-| `--diff` | Compare current vs baseline |
-| `--ci` | CI mode: agnix + structure + regression + diff |
+| Command                         | What it does                                   |
+| ------------------------------- | ---------------------------------------------- |
+| `bash scripts/skill-quality.sh` | Full: agnix + structure + budget               |
+| `--check structure`             | Tier 1 Baseline only                           |
+| `--check budget`                | Token budget report                            |
+| `--check regression`            | Detect removed sections vs baseline            |
+| `--snapshot`                    | Save current state as baseline                 |
+| `--diff`                        | Compare current vs baseline                    |
+| `--ci`                          | CI mode: agnix + structure + regression + diff |
 
 CI: `.github/workflows/skill-quality.yml` runs on PRs touching `.claude/`.
 
@@ -461,24 +497,35 @@ CI: `.github/workflows/skill-quality.yml` runs on PRs touching `.claude/`.
 
 Adopted from [ACE paper (arXiv:2510.04618)](https://arxiv.org/abs/2510.04618).
 
-| ACE Concept | Implementation | Files |
-|-------------|----------------|-------|
-| **Delta Updates** | Surgical `Edit`, never full `Write`. `delta-guard.sh` warns. | `CLAUDE.md`, `.claude/hooks/delta-guard.sh` |
-| **Rule Annotations** | `Freq` column in antipattern index (`high`/`med`/`low`). | `.claude/qa-antipatterns/_index.md` |
-| **Reflection** | Failure analysis → 1 rule → `.ai-lessons/pending.md` | `.claude/protocols/reflection.md` |
-| **Lesson Curation** | `/curate-lessons` deduplicates + graduates rules | `.claude/skills/curate-lessons/SKILL.md` |
+| ACE Concept          | Implementation                                               | Files                                                               |
+| -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------- |
+| **Delta Updates**    | Surgical `Edit`, never full `Write`. `delta-guard.sh` warns. | `CLAUDE.md`, `.claude/hooks/delta-guard.sh`                         |
+| **Rule Annotations** | `Freq` column in antipattern index (`high`/`med`/`low`).     | `.claude/qa-antipatterns/_index.md`                                 |
+| **Reflection**       | Failure analysis → 1 rule → `.ai-lessons/pending.md`         | `.claude/protocols/reflection.md`                                   |
+| **Reflector**        | Two-layer proactive pattern detection (bash + LLM)           | `scripts/lib/reflector.sh`, `.claude/protocols/reflector.md`        |
+| **Telemetry**        | Structured event/observation collection for Reflector        | `scripts/hooks/telemetry-hook.sh`, `.ai-lessons/gardener-log.jsonl` |
+| **Lesson Curation**  | `/curate-lessons` deduplicates + graduates rules             | `.claude/skills/curate-lessons/SKILL.md`                            |
 
 <details>
 <summary>Learning loop diagram</summary>
 
 ```text
+Skill run (any outcome)
+  → Gardener Protocol (observations → gardener-log.jsonl + pending.md)
+  → Telemetry hook (events.jsonl)
+
 Skill failure (PARTIAL / LOOP_GUARD)
-  → Reflection Protocol
-    → Append to .ai-lessons/pending.md
-      → ≥ 3 lessons → /curate-lessons
-        → Dedup against CLAUDE.md, qa-antipatterns/, SKILL.md
-          → Graduate → target files (Delta Update)
-            → Archive → .ai-lessons/graduated.md
+  → Reflection Protocol (1 rule → pending.md)
+
+Batch analysis (manual / CI, when events ≥ 10)
+  → Reflector Layer 1: bash detection (→ reflector-report.json)
+  → Reflector Layer 2: LLM formulation (semantic dedup → [REFLECTOR] rules → pending.md)
+
+Curation (when pending.md ≥ 3 entries)
+  → /curate-lessons
+    → Dedup against CLAUDE.md, qa-antipatterns/, SKILL.md
+      → Graduate → target files (Delta Update)
+        → Archive → .ai-lessons/graduated.md
 ```
 
 Gardener Protocol also feeds `pending.md` for cross-cutting rules.
@@ -488,12 +535,12 @@ Gardener Protocol also feeds `pending.md` for cross-cutting rules.
 <details>
 <summary>Skipped ACE concepts (and why)</summary>
 
-| Concept | Reason |
-|---------|--------|
+| Concept                       | Reason                                                |
+| ----------------------------- | ----------------------------------------------------- |
 | Auto helpful/harmful counters | No persistent state. Manual `Freq` column substitutes |
-| Embedding dedup | Keyword-grep sufficient for ~31 patterns |
-| Autonomous curation | Auto-mutating context is risky. User-triggered safer |
-| Playbook ID system | File-path referencing serves as ID |
+| Embedding dedup               | Keyword-grep sufficient for ~31 patterns              |
+| Autonomous curation           | Auto-mutating context is risky. User-triggered safer  |
+| Playbook ID system            | File-path referencing serves as ID                    |
 
 </details>
 
@@ -503,21 +550,21 @@ Gardener Protocol also feeds `pending.md` for cross-cutting rules.
 
 ### Tech Stack (LOCKED)
 
-| Component      | Technology                                     | BANNED                               |
-|----------------|------------------------------------------------|--------------------------------------|
-| HTTP Client    | ktor-client (CIO) + ktor-serialization-jackson | Custom HTTP wrappers, retrofit       |
-| Serialization  | Jackson (SNAKE_CASE) + jackson-module-kotlin   | Gson, Moshi                          |
-| Assertions     | Kotest assertions-core                         | Assertions without message           |
-| Async          | kotlinx-coroutines-test                        | `Thread.sleep()`, `delay()` in tests |
-| Test Framework | JUnit 5                                        | TestNG                               |
-| Reporting      | Allure                                         | —                                    |
-| HTTP Client (Java, opt-in) | `java.net.http.HttpClient` (JDK 17) | RestAssured, OkHttp, Retrofit      |
-| Assertions (Java, opt-in) | AssertJ (`assertThat(...).as("msg")`) | Assertions without `.as()` message |
+| Component                  | Technology                                     | BANNED                               |
+| -------------------------- | ---------------------------------------------- | ------------------------------------ |
+| HTTP Client                | ktor-client (CIO) + ktor-serialization-jackson | Custom HTTP wrappers, retrofit       |
+| Serialization              | Jackson (SNAKE_CASE) + jackson-module-kotlin   | Gson, Moshi                          |
+| Assertions                 | Kotest assertions-core                         | Assertions without message           |
+| Async                      | kotlinx-coroutines-test                        | `Thread.sleep()`, `delay()` in tests |
+| Test Framework             | JUnit 5                                        | TestNG                               |
+| Reporting                  | Allure                                         | —                                    |
+| HTTP Client (Java, opt-in) | `java.net.http.HttpClient` (JDK 17)            | RestAssured, OkHttp, Retrofit        |
+| Assertions (Java, opt-in)  | AssertJ (`assertThat(...).as("msg")`)          | Assertions without `.as()` message   |
 
 ### Build
 
 | Component | Version |
-|-----------|---------|
+| --------- | ------- |
 | Kotlin    | 1.9.22  |
 | JVM       | 17      |
 | Gradle    | 9.2.1   |
@@ -525,13 +572,13 @@ Gardener Protocol also feeds `pending.md` for cross-cutting rules.
 ### Plugins
 
 | Plugin     | Package                 | Status  | Purpose                                     |
-|------------|-------------------------|---------|---------------------------------------------|
+| ---------- | ----------------------- | ------- | ------------------------------------------- |
 | kotlin-lsp | claude-plugins-official | Enabled | Kotlin LSP for code navigation and analysis |
 
 ### MCP Servers
 
 | Server              | Package                                          | Purpose                            |
-|---------------------|--------------------------------------------------|------------------------------------|
+| ------------------- | ------------------------------------------------ | ---------------------------------- |
 | context7            | @upstash/context7-mcp@latest                     | Up-to-date library documentation   |
 | sequential-thinking | @modelcontextprotocol/server-sequential-thinking | Step-by-step complex task analysis |
 
@@ -539,13 +586,13 @@ Gardener Protocol also feeds `pending.md` for cross-cutting rules.
 
 ## Security and Governance
 
-| Mechanism        | Description                                                          | Defined in            |
-|------------------|----------------------------------------------------------------------|-----------------------|
+| Mechanism        | Description                                                         | Defined in            |
+| ---------------- | ------------------------------------------------------------------- | --------------------- |
 | FORBIDDEN        | `git reset --hard`, `git clean -fd`, branch deletion, `rm -rf .git` | `CLAUDE.md:34`        |
-| DESTROY          | Override for destructive operations — requires keyword from user     | `CLAUDE.md:36`        |
+| DESTROY          | Override for destructive operations — requires keyword from user    | `CLAUDE.md:36`        |
 | Token Economy    | PAUSE > 20K tokens, FULL_SCAN for full scanning                     | `CLAUDE.md:38-40`     |
 | Planning First   | Tasks > 3 files → Analysis → Plan → Execute                         | `CLAUDE.md:42`        |
-| Git Workflow     | Branch confirmation before push                                      | `CLAUDE.md:44-46`     |
+| Git Workflow     | Branch confirmation before push                                     | `CLAUDE.md:44-46`     |
 | Compilation Gate | `./gradlew compileTestKotlin` before commit, max 3 attempts         | `qa_agent.md:183-193` |
 | Fail Fast        | BLOCKER on untestable/contradictory requirements                    | `qa_agent.md:15-34`   |
 
@@ -556,13 +603,13 @@ Gardener Protocol also feeds `pending.md` for cross-cutting rules.
 Official alternative: [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator)
 
 |                          | /init-skill (this repo)                     | skill-creator (official)                      |
-|--------------------------|---------------------------------------------|-----------------------------------------------|
+| ------------------------ | ------------------------------------------- | --------------------------------------------- |
 | Infrastructure           | Zero — bash + filesystem                    | Python 3 + `claude -p` CLI                    |
 | Verbosity                | Strict protocol, 6 checkpoints              | Conversational, flexible                      |
 | Validation               | Static checklist + bash                     | Live A/B evals + grading.json                 |
-| Improve existing skill   | ✅ Phase 0 mode                              | ✅ Core feature                                |
-| Description optimization | ❌                                           | ✅ run_loop.py                                 |
-| HTML review viewer       | ❌                                           | ✅ generate_review.py                          |
+| Improve existing skill   | ✅ Phase 0 mode                             | ✅ Core feature                               |
+| Description optimization | ❌                                          | ✅ run_loop.py                                |
+| HTML review viewer       | ❌                                          | ✅ generate_review.py                         |
 | Best for                 | QA skills, any routine task, fast iteration | High-reuse skills, eval-driven quality, scale |
 
 ---
@@ -570,20 +617,21 @@ Official alternative: [skill-creator](https://github.com/anthropics/skills/tree/
 <details>
 <summary>Known Limitations and Design Tradeoffs</summary>
 
-| Item | Status | Why |
-|------|--------|-----|
-| `api-test-review` 564 lines, no quality_gate | Known | 8-phase pipeline needs density; splitting breaks phase flow |
-| `spec-audit` no quality_gate | Known | Audit output IS the quality gate |
-| `fix-markdown` / `pr` lite (35/89 lines) | By design | Utility skills; full Tier 1 overhead exceeds logic |
+| Item                                         | Status             | Why                                                                                                   |
+| -------------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------- |
+| `api-test-review` 564 lines, no quality_gate | Known              | 8-phase pipeline needs density; splitting breaks phase flow                                           |
+| `spec-audit` no quality_gate                 | Known              | Audit output IS the quality gate                                                                      |
+| `fix-markdown` / `pr` lite (35/89 lines)     | By design          | Utility skills; full Tier 1 overhead exceeds logic                                                    |
+| Cursor: no Gardener injection                | Known (March 2026) | Cursor lacks shared protocol injection — inline `gardener.md` into each `.cursor/rules/*.mdc` wrapper |
 
 </details>
 
 ## Changelog
 
-| Date       | Description                                                                                                                                                                                       |
-|------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 2026-03-09 | ACE adoption (delta-guard hook, reflection protocol, lesson curation). +1 skill (`/curate-lessons`), +1 protocol (`reflection.md`), +1 hook (`delta-guard.sh`). Quality pipeline documented. Antipattern index enhanced with grep signatures + freq. Total: 21 skills, 31 anti-patterns |
-| 2026-03-01 | Added `/api-test-review` skill (deep code review of generated API tests). Updated main pipeline. Total: 20 skills, 31 anti-patterns |
+| Date       | Description                                                                                                                                                                                                                                                                                                                                                     |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-03-09 | ACE adoption (delta-guard hook, reflection protocol, lesson curation). +1 skill (`/curate-lessons`), +1 protocol (`reflection.md`), +1 hook (`delta-guard.sh`). Quality pipeline documented. Antipattern index enhanced with grep signatures + freq. Total: 21 skills, 31 anti-patterns                                                                         |
+| 2026-03-01 | Added `/api-test-review` skill (deep code review of generated API tests). Updated main pipeline. Total: 20 skills, 31 anti-patterns                                                                                                                                                                                                                             |
 | 2026-02-28 | Added `/api-tests-java` skill (Java 17+ test generation), 4 Java-specific anti-patterns (api/java/inline-http-calls, api/java/map-instead-of-dto, platform/java/completablefuture-no-timeout, platform/java/flaky-sleep-tests), 1 reference (api-patterns-java). Updated sdet.md with Java Compilation Rules. Total: 19 skills, 31 anti-patterns, 26 references |
-| 2026-02-28 | Added 4 skills (api-mocks, api-test-cases, fix-markdown, pr), 2 anti-patterns (batch-partial-failure, eventual-consistency-writes), 3 reference files (api-test-cases refs). Updated all line counts. Total: 18 skills, 27 anti-patterns, 25 references |
-| 2026-02-21 | Rewrote intro and pattern catalog for clarity. Added 3 skills (agents-checker, qa-translate, output-review), expanded anti-patterns to 22 files, updated line counts, synced tech stack with CLAUDE.md |
+| 2026-02-28 | Added 4 skills (api-mocks, api-test-cases, fix-markdown, pr), 2 anti-patterns (batch-partial-failure, eventual-consistency-writes), 3 reference files (api-test-cases refs). Updated all line counts. Total: 18 skills, 27 anti-patterns, 25 references                                                                                                         |
+| 2026-02-21 | Rewrote intro and pattern catalog for clarity. Added 3 skills (agents-checker, qa-translate, output-review), expanded anti-patterns to 22 files, updated line counts, synced tech stack with CLAUDE.md                                                                                                                                                          |

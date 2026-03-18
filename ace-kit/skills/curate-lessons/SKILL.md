@@ -11,14 +11,14 @@ confirmed patterns into target context files.
 
 ## When to Use
 
-Run when `.ai-lessons/pending.md` has ≥ 3 entries.
+Run when `.ai-lessons/pending.md` has >= 3 entries.
 
 ---
 
 ## Phase Checkpoints
 
 **STOP if:**
-- `.ai-lessons/pending.md` does not exist → output `⚠️ curate-lessons: .ai-lessons/pending.md not found. Create it first.` and STOP
+- `.ai-lessons/pending.md` does not exist → output `curate-lessons: .ai-lessons/pending.md not found. Create it first.` and STOP
 - Fewer than 3 entries in `pending.md` → output count warning and STOP
 
 **WARN if:**
@@ -39,10 +39,12 @@ Output only phase transitions and the final SKILL COMPLETE block. No intermediat
 
 Read `.ai-lessons/pending.md`. Extract all `RULE:` entries with source and date metadata.
 
+Entries may have a `[REFLECTOR]` prefix — these come from the Reflector protocol (proactive pattern detection). Preserve the pattern metadata (`Pattern: {detector}, {count}x across {skills}`) in the curation report for traceability. `[REFLECTOR]` entries have already been semantically deduped by the Reflector protocol, but Phase 2 still runs its own dedup pass (defense in depth).
+
 If file is empty or has < 3 entries → output:
 
 ```text
-⚠️ curate-lessons: only {N} pending entries — minimum 3 required. Run again when more lessons accumulate.
+curate-lessons: only {N} pending entries — minimum 3 required. Run again when more lessons accumulate.
 ```
 
 and STOP.
@@ -51,7 +53,7 @@ and STOP.
 
 ## Phase 2: 2-Pass Hybrid Dedup
 
-**Pass 1 — Grep Narrowing:** For each pending rule, extract 2–3 keywords. Run Grep across dedup targets:
+**Pass 1 — Grep Narrowing:** For each pending rule, extract 2-3 keywords. Run Grep across dedup targets:
 1. `CLAUDE.md`
 2. `.claude/qa-antipatterns/**/*.md`
 3. `.claude/skills/*/SKILL.md`
@@ -87,7 +89,7 @@ Generate and show the curation table to the user:
 Output:
 
 ```text
-📋 Curation Report above. Approve to promote {N} rules (Y/n)?
+Curation Report above. Approve to promote {N} rules (Y/n)?
 ```
 
 Do not proceed to Phase 4 until user confirms.
@@ -155,9 +157,9 @@ Check if `.claude/qa-antipatterns/_index.md` has a `Freq` column.
 ## Completion
 
 ```text
-✅ SKILL COMPLETE: /curate-lessons
-├─ Artifacts: .ai-lessons/graduated.md (updated)
-├─ Compilation: N/A
-├─ Upstream: .ai-lessons/pending.md
-└─ Coverage: {promoted}/{total} rules promoted, {N} duplicates skipped
+SKILL COMPLETE: /curate-lessons
+|- Artifacts: .ai-lessons/graduated.md (updated)
+|- Compilation: N/A
+|- Upstream: .ai-lessons/pending.md
+|- Coverage: {promoted}/{total} rules promoted, {N} duplicates skipped
 ```

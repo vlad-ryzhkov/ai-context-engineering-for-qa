@@ -1,6 +1,7 @@
 # Execution Flow: 8-Phase Review (Phase 0-0.5 Internal, Phase 1-8 Reported)
 
 **CRITICAL UPDATE (2026-03-02):**
+
 - **Confidence Score Threshold:** Only report issues with Score ≥ 80 (80–89 = MAJOR, 90–100 = CRITICAL)
 - **Output Discipline:** Never output PASS blocks, verbose success messages, or 🟡 MINOR issues in final report
 - **Action-First Structure:** CRITICAL + MAJOR violations first, then passing categories (1 line each), then summary (1-2 lines)
@@ -103,6 +104,7 @@ Actual user-facing report uses Action-First format from `references/output-templ
 Scan for hardcoded secrets, PII, unsafe data patterns, and auth management:
 
 **BANNED PATTERNS:**
+
 - Hardcoded JWT tokens, API keys, passwords
 - Hardcoded environment-specific URLs (production, staging)
 - Real PII in test data (names, emails, SSNs)
@@ -110,6 +112,7 @@ Scan for hardcoded secrets, PII, unsafe data patterns, and auth management:
 - Auth exhaustion: Blindly requesting new tokens from external providers (Auth0, Keycloak) before every single test
 
 **CHECK RULES:**
+
 - ✅ All secrets use `System.getenv()` or config providers
 - ✅ Test data generated with DataFaker or placeholders
 - ✅ No real user data in fixtures or test files
@@ -117,6 +120,7 @@ Scan for hardcoded secrets, PII, unsafe data patterns, and auth management:
 - ✅ **Auth Token Efficiency:** If tests require authentication, verify tokens are cached or reused efficiently (e.g., cached in `@BeforeAll`, lazily initialized per suite, or using in-memory mock providers). DO NOT request new tokens from external providers before every test — this causes Rate Limit blocking on Auth servers and test suite failure.
 
 **Output Format (Phase 2):**
+
 ```text
 🔐 Security Audit
 ├─ Hardcoded Secrets: [file:line] [CRITICAL/PASS]
@@ -132,6 +136,7 @@ Scan for hardcoded secrets, PII, unsafe data patterns, and auth management:
 **RULE:** All DTOs must be in dedicated packages, never declared inside test classes.
 
 **CHECK:**
+
 ```kotlin
 // ✅ CORRECT: src/test/kotlin/domain/models/requests/UserRequest.kt
 package domain.models.requests
@@ -145,6 +150,7 @@ class UserTests {
 ```
 
 **Output Format:**
+
 - List all DTOs found inline in test classes → 🟠 MAJOR
 - Verify all DTOs use `@JsonNaming(SnakeCaseStrategy::class)` → 🟡 MINOR if missing
 - Check structure: `src/test/kotlin/domain/models/requests/`, `models/responses/` → 🟡 MINOR if misplaced
@@ -154,6 +160,7 @@ class UserTests {
 **RULE:** Encourage Builder or DSL patterns. Avoid inline HTTP calls in tests.
 
 **CHECK:**
+
 - Dedicated HTTP client class with suspend functions
 - Builder/DSL pattern (Ktor Client, Retrofit)
 - Base URL injection (not hardcoded)
@@ -164,11 +171,13 @@ class UserTests {
 **RULE:** Validate against OpenAPI specification. Use strict serialization.
 
 **CHECK (Annotation-based — always performed):**
+
 - ✅ Jackson configured with `@JsonNaming(SnakeCaseStrategy::class)`
 - ✅ No `ignoreUnknownKeys = true` (unless explicitly required)
 - ✅ DTO fields match API specification exactly
 
 **CHECK (Specification-driven mode — when contractContext loaded from Phase 0.3):**
+
 - For each DTO in the reviewed tests:
   - Verify field names match contract schema (e.g., `user_id` not `userId` if contract specifies snake_case)
   - Verify nullable fields in DTO match `required:` / `optional` in contract
@@ -177,11 +186,28 @@ class UserTests {
 - For each HTTP assertion:
   - Verify asserted status codes match those defined in contract responses section
 
+### 3C-DRIFT. Schema Fidelity (Drift Detection)
+
+**RULE:** Detect when test code fails to exercise drift-prone API behavior documented in the contract. Specification-driven only — requires `contractContext` from Phase 0.3. If no contract found, skip silently.
+
+**Scope boundary:** These checks evaluate whether the **test suite exercises drift-prone API behavior** (what tests send and assert). DTO/serialization correctness is already covered by 3C above — 3C-DRIFT does NOT duplicate that.
+
+**CHECK (Specification-driven mode only — when contractContext loaded from Phase 0.3):**
+
+| #   | Check                                                                                                                                                                                                                                                                      | Severity | Specmatic Pattern                                                               |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------- |
+| 1   | **Optionality drift:** For each field marked `required: false` / not in `required` array in the contract, verify at least one negative test omits this field from the request body and asserts the API still returns a success status                                      | MAJOR    | Optionality drift — server may reject requests missing "optional" fields        |
+| 2   | **Constraint boundary:** For each field with `minimum`, `maximum`, `minLength`, `maxLength`, `pattern`, or `enum` constraints in the contract, verify at least one test sends a boundary/invalid value and asserts the expected error response                             | MAJOR    | Constraint ambiguity — prose descriptions may not match schema keywords         |
+| 3   | **Response type assertion:** For each response field in the contract with a defined type, verify test assertions check beyond presence/non-null — at least one assertion validates type, value range, or format (e.g., `shouldBe<String>()`, regex match, enum membership) | MAJOR    | Type coercion drift — server may return string `"123"` instead of integer `123` |
+
+**Grouping rule:** If >5 similar drift findings exist, report the top 5 most impactful + a grouped summary line (same as existing grouping rule).
+
 ### 3D. Package Organization (No Junk Drawers)
 
 **RULE:** Helper and utility classes must be domain-specific, never generic "garbage disposal" packages.
 
 **BANNED:**
+
 ```kotlin
 // ❌ BANNED: Generic "dump" classes
 src/test/kotlin/domain/helpers/TestUtils.kt     // Ambiguous, mixes concerns
@@ -190,6 +216,7 @@ src/test/kotlin/domain/helpers/CommonActions.kt // Not domain-specific
 ```
 
 **CORRECT:**
+
 ```kotlin
 // ✅ CORRECT: Domain-specific organization
 src/test/kotlin/domain/helpers/
@@ -201,6 +228,7 @@ src/test/kotlin/domain/helpers/
 ```
 
 **CHECK:**
+
 - Identify classes named `TestUtils`, `Helpers`, `CommonActions`, `Utils`, `Common` → 🟠 MAJOR
 - Verify each helper class has a clear domain purpose (e.g., `UserFixtures`, `AuthSteps`, `DataGenerators`)
 - Ensure no single class contains unrelated helpers (e.g., don't mix user auth, payment, and date generation in one file)
@@ -211,6 +239,7 @@ Generator Rule 2f: exactly ONE JSON framework must be used across the entire cod
 Mixing Jackson and kotlinx.serialization is FORBIDDEN.
 
 **BANNED (mixed serialization):**
+
 ```kotlin
 @JsonNaming(SnakeCaseStrategy::class)         // Jackson annotation
 @Serializable                                  // kotlinx.serialization annotation — CONFLICT
@@ -228,13 +257,16 @@ val mapper = ObjectMapper()  // Jackson parse
 **CORRECT:** Choose one framework and apply it consistently.
 
 **grep patterns to detect mixing:**
+
 - Both `@JsonProperty`/`@JsonNaming` AND `@Serializable`/`@SerialName` in same codebase
 - Both `Json.decodeFromString` (kotlinx) AND `ObjectMapper`/`jacksonObjectMapper()` in same test module
 
 **Findings:**
+
 - Mixed serialization frameworks detected → MAJOR
 
 **Output Format (Phase 3):**
+
 ```text
 🏗️  Architecture Audit
 ├─ DTO Isolation: [PASS / Issues]
@@ -246,6 +278,7 @@ val mapper = ObjectMapper()  // Jackson parse
 │  ├─ DSL/Builder usage: [PASS / inline calls detected]
 │  └─ Base URL injection: [PASS / hardcoded]
 ├─ Contract Compliance: [PASS / Issues]
+│  └─ Schema Fidelity (Drift): [PASS / Issues]
 ├─ Package Organization: [PASS / Issues]
 │  ├─ Junk drawer packages: [count] (TestUtils, Helpers, etc.) → MAJOR
 │  └─ Domain-specific helpers: [PASS / count needs refactoring]
@@ -259,6 +292,7 @@ val mapper = ObjectMapper()  // Jackson parse
 **RULE:** Use `runTest {}` from kotlinx-coroutines-test. NO `Thread.sleep()`.
 
 **BANNED:**
+
 ```kotlin
 // ❌ BANNED
 Thread.sleep(1000)
@@ -267,6 +301,7 @@ delay(500)  // in non-test context
 ```
 
 **CORRECT:**
+
 ```kotlin
 // ✅ CORRECT
 @Test
@@ -286,6 +321,7 @@ awaitility.await()
 **RULE:** Replace loops with functional style. Use `apply`, `let`, `also` for object setup.
 
 **BANNED:**
+
 ```kotlin
 // ❌ POOR: Verbose loops
 val users = mutableListOf<User>()
@@ -302,6 +338,7 @@ request.department = "QA"
 ```
 
 **CORRECT:**
+
 ```kotlin
 // ✅ CORRECT: Functional + scope functions
 val users = allUsers
@@ -316,6 +353,7 @@ val request = UserRequest("John", "Doe").apply {
 ```
 
 **Output Format (Phase 4):**
+
 ```text
 📝 Kotlin Idioms & Quality
 ├─ Async/Coroutines: [PASS / Issues]
@@ -336,6 +374,7 @@ val request = UserRequest("John", "Doe").apply {
 **RULE:** Same test logic with multiple datasets → `@ParameterizedTest`.
 
 **BANNED:**
+
 ```kotlin
 // ❌ POOR: Code duplication
 @Test
@@ -347,6 +386,7 @@ fun testStatus401() { /* same test */ }
 ```
 
 **CORRECT:**
+
 ```kotlin
 // ✅ CORRECT: Parameterized (JUnit 5)
 @ParameterizedTest
@@ -381,6 +421,7 @@ class ApiTests : StringSpec({
 **RULE:** 3+ repeated lines → extract to helper or base class.
 
 **CHECK:**
+
 - Identify repeated assertion patterns (3+ occurrences) → suggest extraction
 - Check for common setup logic (3+ tests) → suggest base class helper
 - Duplicated test data creation → suggest factory functions
@@ -390,6 +431,7 @@ class ApiTests : StringSpec({
 **RULE:** Use builders or factory functions for test data, not static objects with mutation.
 
 **BANNED:**
+
 ```kotlin
 // ❌ POOR: Static shared mutable object
 object UserTestData {
@@ -399,6 +441,7 @@ object UserTestData {
 ```
 
 **CORRECT:**
+
 ```kotlin
 // ✅ CORRECT: Builder or factory function
 fun createUserRequest(
@@ -409,6 +452,7 @@ fun createUserRequest(
 ```
 
 **Output Format (Phase 5):**
+
 ```text
 ✨ Test Quality & DRY
 ├─ Parameterization: [count] tests identified for consolidation → [MAJOR/MINOR]
@@ -427,6 +471,7 @@ fun createUserRequest(
 **RULE:** Never use range checks. Validate exact status codes per scenario.
 
 **BANNED:**
+
 ```kotlin
 // ❌ BANNED: Blurry checks
 response.status should { it in 200..299 }  // Misses bugs
@@ -435,6 +480,7 @@ assertThat(response.statusCode()).isBetween(200, 299)
 ```
 
 **CORRECT:**
+
 ```kotlin
 // JUnit 5 (primary — used by /api-tests generator)
 assertEquals(201, response.status.value, "Expected 201 Created")
@@ -452,6 +498,7 @@ response.status.shouldBe(201)
 **RULE:** Always parse and validate body, not just status code.
 
 **BANNED:**
+
 ```kotlin
 // ❌ POOR: Only status, ignore body
 response.status.shouldBe(201)
@@ -459,6 +506,7 @@ response.status.shouldBe(201)
 ```
 
 **CORRECT:**
+
 ```kotlin
 // ✅ CORRECT
 val user: UserResponse = response.body()
@@ -472,6 +520,7 @@ user.createdAt.shouldNotBeNull()
 **RULE:** Negative tests must assert error structure.
 
 **BANNED:**
+
 ```kotlin
 // ❌ POOR: Ignore error structure
 response.status.shouldBe(400)
@@ -479,6 +528,7 @@ response.status.shouldBe(400)
 ```
 
 **CORRECT:**
+
 ```kotlin
 // ✅ CORRECT
 val error: ErrorResponse = response.body()
@@ -492,6 +542,7 @@ error.fields.shouldContain("email")
 **RULE:** Every test must clean up after itself. No order-dependent tests.
 
 **BANNED:**
+
 ```kotlin
 // ❌ POOR: No cleanup, tests depend on execution order
 @Test
@@ -502,6 +553,7 @@ fun test1() {
 ```
 
 **CORRECT:**
+
 ```kotlin
 // ✅ CORRECT: Cleanup in @AfterEach
 @AfterEach
@@ -520,6 +572,7 @@ fun testCreateUser() { /* auto-rollback */ }
 **RULE:** HTTP connections must be explicitly closed or auto-managed. No leaks that exhaust connection pools.
 
 **BANNED (Kotlin/Retrofit):**
+
 ```kotlin
 // ❌ BANNED: Raw ResponseBody not consumed, connection not closed
 val response = httpClient.newCall(request).execute()
@@ -536,6 +589,7 @@ try {
 ```
 
 **CORRECT:**
+
 ```kotlin
 // ✅ CORRECT: Ktor Client auto-manages connections
 val httpClient = HttpClient(CIO)
@@ -555,6 +609,7 @@ suspend fun getUserList(): List<User> {
 ```
 
 **CHECK:**
+
 - If using OkHttp/Retrofit directly (not Ktor): verify `use {}` blocks or try-finally for resource cleanup
 - If using raw `ResponseBody`: ensure it's fully consumed before discarding
 - No bare `.execute()` or `.newCall()` without resource management
@@ -567,6 +622,7 @@ suspend fun getUserList(): List<User> {
 Tests often fail when developers make safe, internal logic changes that don't affect the API contract. This makes tests fragile and blocks safe refactoring. Tests should enforce the contract, not the implementation.
 
 **BANNED (Over-specifying):**
+
 ```kotlin
 // ❌ BANNED: Exact string match for error message (changes frequently)
 response.status.shouldBe(400)
@@ -583,6 +639,7 @@ user.cacheKey.shouldBe("user:123:v2")  // Implementation detail, not contract
 ```
 
 **CORRECT (Contract-focused):**
+
 ```kotlin
 // ✅ CORRECT: Check machine-readable error code, not message
 response.status.shouldBe(400)
@@ -601,6 +658,7 @@ user.createdAt.shouldNotBeNull()  // Only assert what the contract guarantees
 ```
 
 **Output Format:**
+
 - Identify assertions on human-readable messages → Suggest `error.code` check instead
 - Identify hardcoded size checks on dynamic endpoints → Suggest `.shouldNotBeEmpty()` or minimum threshold
 - Identify assertions on implementation-specific fields → Remove or clarify why they are contractual
@@ -612,6 +670,7 @@ user.createdAt.shouldNotBeNull()  // Only assert what the contract guarantees
 **Threat:** IDOR (Insecure Direct Object Reference) — a common API vulnerability where User A can access User B's data by guessing or manipulating IDs.
 
 **BANNED (Missing IDOR tests):**
+
 ```kotlin
 // ❌ POOR: Only positive tests, no IDOR checks
 @Test
@@ -625,6 +684,7 @@ fun testGetUserProfile() {
 ```
 
 **CORRECT (IDOR coverage):**
+
 ```kotlin
 // ✅ CORRECT: Positive + Negative (IDOR prevention)
 @Test
@@ -650,6 +710,7 @@ fun testGetUserProfileUnauthorized() {
 ```
 
 **CHECK (Heuristic mode — when auth matrix unavailable):**
+
 1. For each endpoint that accesses user-owned resources (e.g., `/users/{id}`, `/orders/{id}`, `/documents/{id}`):
    - ✅ Verify positive test: Authenticated user accesses their own resource → 200
    - ✅ Verify negative test: Authenticated user tries to access another user's resource → 403 or 404
@@ -659,6 +720,7 @@ fun testGetUserProfileUnauthorized() {
 3. Count negative IDOR tests vs. total endpoint tests. Low ratio = missing security coverage.
 
 **CHECK (Specification-driven mode — when auth matrix available from Phase 0.5):**
+
 - If `authMatrix` loaded from `repo-scout-report`:
   1. For each authenticated endpoint in test suite:
      - Map endpoint → roles from `authMatrix` (e.g., `/users/{id}` → [Admin, Owner])
@@ -676,6 +738,7 @@ fun testGetUserProfileUnauthorized() {
      ```
 
 **Output Format (Phase 6 — expanded):**
+
 ```text
 🔗 HTTP Validation Rules
 ├─ Strict Status Codes: [PASS / Issues]
@@ -703,6 +766,7 @@ fun testGetUserProfileUnauthorized() {
 **RULE:** API tests must have explicit, configured timeouts to prevent indefinite hangs.
 
 **BANNED:**
+
 ```kotlin
 // ❌ BANNED: No timeout on external API calls
 @Test
@@ -719,6 +783,7 @@ val request = HttpRequestBuilder().apply {
 ```
 
 **CORRECT:**
+
 ```kotlin
 // ✅ CORRECT: Explicit timeout on runTest
 @Test
@@ -744,6 +809,7 @@ val client = OkHttpClient.Builder()
 ```
 
 **CHECK:**
+
 - All `runTest {}` blocks for external APIs have `timeout = X.seconds`
 - HTTP client has configured `requestTimeoutMillis` or equivalent
 - No test depends on external service without timeout protection
@@ -753,6 +819,7 @@ val client = OkHttpClient.Builder()
 **RULE:** API test suites must cover both successful operations (happy path) and expected failure modes (negative scenarios).
 
 **CHECK (Always — Heuristic Coverage):**
+
 1. Identify if the test file ONLY contains successful response tests (e.g., only 200 OK, 201 Created, 204 No Content).
 2. If no negative tests exist (400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found, 422 Unprocessable Entity, 500 Server Error), flag as a missing coverage requirement.
 3. For each endpoint, count:
@@ -761,6 +828,7 @@ val client = OkHttpClient.Builder()
 4. If ratio is heavily skewed toward positive (e.g., 10 positive, 0 negative), recommend balancing.
 
 **CHECK (If scenarios available from Phase 0.5 — Gap Analysis):**
+
 - If `upstreamScenarios` loaded from `audit/test-scenarios.md`:
   1. Extract all scenario IDs planned (e.g., `SCN-USER-001`, `SCN-AUTH-003`)
   2. Search test code for each scenario ID (grep for `SCN-USER-001`, `scnUser001`, etc.)
@@ -771,24 +839,28 @@ val client = OkHttpClient.Builder()
      - **Expected Status:** `201`
      - **Status in Code:** ✅ Implemented / ❌ Missing / ⚠️ Partial
   5. Output format:
+
      ```markdown
      #### Gap Analysis (Planned vs Implemented)
-     | Scenario ID | Type | Expected Status | Implemented | Notes |
-     |---|---|---|---|---|
-     | SCN-USER-001 | Happy Path | 201 | ✅ | test: testCreateUserSuccess |
-     | SCN-USER-002 | NEG | 400 | ❌ | Missing: validate duplicate email |
-     | SCN-AUTH-003 | NEG | 401 | ⚠️ | Partial: only positive auth tested |
-     | SCN-IDOR-001 | IDOR | 403 | ❌ | Missing: cross-user access prevention |
+
+     | Scenario ID  | Type       | Expected Status | Implemented | Notes                                 |
+     | ------------ | ---------- | --------------- | ----------- | ------------------------------------- |
+     | SCN-USER-001 | Happy Path | 201             | ✅          | test: testCreateUserSuccess           |
+     | SCN-USER-002 | NEG        | 400             | ❌          | Missing: validate duplicate email     |
+     | SCN-AUTH-003 | NEG        | 401             | ⚠️          | Partial: only positive auth tested    |
+     | SCN-IDOR-001 | IDOR       | 403             | ❌          | Missing: cross-user access prevention |
 
      **Coverage:** 1/4 (25%) of planned scenarios implemented
      **Verdict:** MAJOR — 3 scenarios missing
      ```
+
   6. Classification:
      - **✅ All planned scenarios implemented** → PASS
      - **⚠️ 50%+ implemented** → MAJOR (missing critical scenarios)
      - **❌ <50% implemented** → CRITICAL (too many gaps for merge)
 
 **BANNED:**
+
 ```kotlin
 // ❌ POOR: Only happy path covered
 @Test
@@ -805,6 +877,7 @@ fun testGetUser() {
 ```
 
 **CORRECT:**
+
 ```kotlin
 // ✅ CORRECT: Mixed happy and negative paths
 @Test
@@ -838,6 +911,7 @@ fun testCreateUserUnauthorized() {
 ```
 
 **Output Format (Phase 6):**
+
 ```text
 🔗 HTTP Validation Rules
 ├─ Strict Status Codes: [PASS / Issues]
@@ -878,11 +952,13 @@ fun testCreateUserUnauthorized() {
 
 Generator Rule 3 requires every positive test for mutating endpoints to assert three security headers.
 Check that each POST/PUT/DELETE test with 2xx response includes ALL of:
+
 - `Content-Type` via `assertEquals` on `response.headers["Content-Type"]`
 - `X-Content-Type-Options` via `assertEquals` on `response.headers["X-Content-Type-Options"]`
 - `Strict-Transport-Security` via `assertEquals` on `response.headers["Strict-Transport-Security"]`
 
 **BANNED (missing headers check):**
+
 ```kotlin
 @Test
 fun testCreateUser() = runTest {
@@ -895,6 +971,7 @@ fun testCreateUser() = runTest {
 ```
 
 **CORRECT:**
+
 ```kotlin
 @Test
 fun testCreateUser() = runTest {
@@ -907,6 +984,7 @@ fun testCreateUser() = runTest {
 ```
 
 **Findings:**
+
 - Missing security header assertions on 2xx POST/PUT/DELETE → MAJOR
 - HSTS only checked via `assertNotNull` (not exact value) → MINOR (value is environment-dependent)
 
@@ -919,6 +997,7 @@ connected to the application under test. A WireMock server that is started but n
 the app is a SILENT TEST BUG — the test passes/fails on real service state, not mock behavior.
 
 **BANNED (disconnected WireMock):**
+
 ```kotlin
 @BeforeEach
 fun setUp() {
@@ -928,6 +1007,7 @@ fun setUp() {
 ```
 
 **CORRECT:**
+
 ```kotlin
 @BeforeEach
 fun setUp() {
@@ -945,6 +1025,7 @@ fun tearDown() {
 **grep for:** `wireMockServer.start()` or `@WireMockTest` without adjacent `System.setProperty` or env var injection.
 
 **Findings:**
+
 - WireMock stub configured but no `System.setProperty` or env override in @BeforeEach → MAJOR
 
 ## Phase 7: Allure Integration & Logging
@@ -954,6 +1035,7 @@ fun tearDown() {
 **RULE:** Every significant action must be wrapped in `@Step` or `step {}`.
 
 **BANNED:**
+
 ```kotlin
 // ❌ POOR: No steps, raw assertion
 @Test
@@ -964,6 +1046,7 @@ fun testUserCreation() {
 ```
 
 **CORRECT:**
+
 ```kotlin
 // ✅ CORRECT: Step-wrapped actions
 @Step("Create user with email {email}")
@@ -991,6 +1074,7 @@ fun testUserCreation() = runTest {
 **RULE:** Use assertion libraries with clear error messages. Never raw `assertTrue`.
 
 **BANNED:**
+
 ```kotlin
 // ❌ POOR: No context
 assert(response.status == 201)           // Fail: "assertion failed"
@@ -999,6 +1083,7 @@ assertEquals(201, response.status)       // Better, but no semantic meaning
 ```
 
 **CORRECT:**
+
 ```kotlin
 // JUnit 5 with message (CORRECT — used by /api-tests generator)
 assertEquals(201, response.status.value, "User creation response should return 201 Created")
@@ -1022,6 +1107,7 @@ assertThat(response.status)
 **RULE:** Capture HTTP calls for debugging. Log to Allure on failure. Ensure sensitive headers (Authorization, Cookies, x-api-key) are masked before writing to Allure reports.
 
 **BANNED:**
+
 ```kotlin
 // ❌ POOR: Silent HTTP calls
 val response = httpClient.post(url)
@@ -1032,6 +1118,7 @@ allureReporter.logRequest(request)  // Exposes Authorization token in plain text
 ```
 
 **CORRECT:**
+
 ```kotlin
 // ✅ CORRECT: Interceptor logs to Allure with masked headers
 class HttpLoggingInterceptor(val allureReporter: AllureReporter) {
@@ -1053,6 +1140,7 @@ class HttpLoggingInterceptor(val allureReporter: AllureReporter) {
 ```
 
 **Output Format (Phase 7):**
+
 ```text
 📊 Allure Integration & Logging
 ├─ @Step Annotations: [PASS / Issues]
@@ -1117,6 +1205,7 @@ class HttpLoggingInterceptor(val allureReporter: AllureReporter) {
 **EXECUTION (before finalizing recommendations):**
 
 For **EACH finding** from phases 2-7, internally score it from **0 to 100** using these criteria:
+
 - **Evidence:** Is there exact file:line reference and a specific rule violation?
 - **Impact:** Does this finding affect test reliability, security, or architecture?
 - **Certainty:** Could this be a false positive or a matter of style?
@@ -1132,6 +1221,7 @@ For **EACH finding** from phases 2-7, internally score it from **0 to 100** usin
 **Filtering Rule:** **ONLY output findings with internal confidence score ≥ 75.**
 
 **Examples:**
+
 - Finding: "Missing `import` statement" → Confidence: **20** → DISCARD (compiler catches this)
 - Finding: "Response body not validated after status 201" → Confidence: **95** → KEEP as 🟠 MAJOR (can hide bugs)
 - Finding: "Thread.sleep(100) in test" → Confidence: **100** → KEEP as 🟠 MAJOR (breaks runTest guarantee)
@@ -1139,6 +1229,7 @@ For **EACH finding** from phases 2-7, internally score it from **0 to 100** usin
 - Finding: "Hardcoded JWT token in test data" → Confidence: **100** → KEEP as 🔴 CRITICAL (security leak)
 
 **Output Format (Phase 8 — Internal only, not in user-facing report):**
+
 ```text
 ✅ Self-Verification Results
 ├─ Completeness: [All files reviewed / Partial coverage]
@@ -1153,6 +1244,7 @@ For **EACH finding** from phases 2-7, internally score it from **0 to 100** usin
 ```
 
 **If any check fails:**
+
 - Do NOT proceed to output the final report
 - Instead, **fix the specific issue** before generating the Completion block
 - Re-verify the fix, then proceed

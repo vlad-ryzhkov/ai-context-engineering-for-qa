@@ -7,6 +7,7 @@
 **Purpose:** Prevent cross-language pattern suggestions. Detect the primary test language and enforce strict language mode.
 
 **Actions:**
+
 1. **Scan input test files for language:**
    - Use `Glob` to identify test file extensions in the input path:
      - If **≥50% files are `.kt`** → activate `LANGUAGE_MODE = KOTLIN`
@@ -39,6 +40,7 @@
 **Purpose:** Load antipatterns from language-specific directories to avoid irrelevant suggestions.
 
 **Actions:**
+
 1. **Determine antipattern directory based on LANGUAGE_MODE:**
    - **IF KOTLIN:** Read antipatterns from `.claude/qa-antipatterns/platform/` (general platform patterns apply to Kotlin)
    - **IF JAVA:** Read antipatterns from `.claude/qa-antipatterns/platform/java/` (Java-specific patterns, with fallback to general patterns)
@@ -59,6 +61,7 @@
 **Purpose:** Locate API contracts in the repository to enable specification-driven validation in Phase 3C. Prevents false positives on DTO fields that are contractually correct.
 
 **Actions:**
+
 1. **Glob for contract files** in the repository root and common directories:
    - OpenAPI/Swagger: `**/*.yaml`, `**/*.yml`, `**/*.json` (filter: must contain `openapi:` or `swagger:` keyword)
    - Protobuf: `**/*.proto`
@@ -66,10 +69,11 @@
    - Also read: `CLAUDE.md`, `README.md` (architecture/stack notes, max 50 lines each)
 2. **Filter by domain** — match contracts to the domain being reviewed (e.g., if reviewing `users/` tests, prefer `users.yaml` or endpoints containing `/users`)
 3. **Extract relevant definitions** (read limit: max 100 lines per contract file):
-   - OpenAPI: endpoint paths, request/response schema field names and types, required/nullable flags
+   - OpenAPI: endpoint paths, request/response schema field names and types, required/nullable flags, constraints (minimum, maximum, minLength, maxLength, pattern, enum, format)
    - Protobuf: message field names, types, field numbers
    - GraphQL: type definitions, query/mutation field names and types
-4. **Store as:** `contractContext = { spec_type, domain, endpoints: [...], schemas: [...] }`
+4. **Store as:** `contractContext = { spec_type, domain, endpoints: [...], schemas: [...], constraints: [...] }`
+   - Each schema field entry includes: `{ name, type, required, nullable, constraints? }` where constraints is optional and contains any of: minimum, maximum, minLength, maxLength, pattern, enum, format
 5. **Log status:**
    ```text
    Phase 0.3 — Contract Discovery:

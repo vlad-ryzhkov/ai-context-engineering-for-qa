@@ -24,29 +24,30 @@ src/
 
 ## QA Skills
 
-| Skill                 | Owner   | Purpose                                  |
-|-----------------------|---------|------------------------------------------|
-| `/repo-scout`         | QA Lead | Repository scanning                      |
-| `/spec-audit`         | QA Lead | QA audit of requirements                 |
-| `/api-isolated-tests` | SDET    | Test cases from specification            |
-| `/api-test-cases`     | SDET    | Bulk test cases for entire API           |
-| `/api-tests`          | SDET    | API automated tests (Kotlin)             |
-| `/api-tests-java`     | SDET    | API automated tests (Java 17+)           |
-| `/api-test-review`    | Auditor | Deep code review of generated API tests  |
-| `/doc-lint`           | Auditor | Documentation audit                      |
-| `/skill-audit`        | Auditor | SKILL.md files audit                     |
-| `/output-review`      | Auditor | Skill output audit                       |
-| `/agents-checker`     | Auditor | Agent setup validation                   |
-| `/init-skill`         | QA Lead | New skill creation                       |
-| `/init-agent`         | QA Lead | qa_agent.md creation                     |
-| `/init-project`       | QA Lead | Project CLAUDE.md initialization         |
-| `/update-ai-setup`    | QA Lead | AI setup registry update                 |
-| `/curate-lessons`     | QA Lead | Lesson curation from `.ai-lessons/pending.md` |
-| `/qa-translate`       | Auditor | Technical translation RU→EN              |
-| `/api-mocks`          | SDET    | HTTP mock server generation              |
-| `/fix-markdown`       | Auditor | Fix markdownlint errors                  |
-| `/pr`                 | QA Lead | Pull request creation                    |
-| `/screenshot-analyze` | Auditor | L10N screenshot analysis                 |
+| Skill                 | Owner         | Purpose                                       |
+| --------------------- | ------------- | --------------------------------------------- |
+| `/repo-scout`         | QA Lead       | Repository scanning                           |
+| `/spec-audit`         | QA Lead       | QA audit of requirements                      |
+| `/api-isolated-tests` | SDET          | Test cases from specification                 |
+| `/api-test-cases`     | SDET          | Bulk test cases for entire API                |
+| `/api-tests`          | SDET          | API automated tests (Kotlin)                  |
+| `/api-tests-java`     | SDET          | API automated tests (Java 17+)                |
+| `/api-test-review`    | Auditor       | Deep code review of generated API tests       |
+| `/doc-lint`           | Auditor       | Documentation audit                           |
+| `/skill-audit`        | Auditor       | SKILL.md files audit                          |
+| `/output-review`      | Auditor       | Skill output audit                            |
+| `/agents-checker`     | Auditor       | Agent setup validation                        |
+| `/init-skill`         | QA Lead       | New skill creation                            |
+| `/init-agent`         | QA Lead       | qa_agent.md creation                          |
+| `/init-project`       | QA Lead       | Project CLAUDE.md initialization              |
+| `/update-ai-setup`    | QA Lead       | AI setup registry update                      |
+| `/curate-lessons`     | QA Lead       | Lesson curation from `.ai-lessons/pending.md` |
+| `/qa-translate`       | Auditor       | Technical translation RU→EN                   |
+| `/api-mocks`          | SDET          | HTTP mock server generation                   |
+| `/fix-markdown`       | Auditor       | Fix markdownlint errors                       |
+| `/pr`                 | QA Lead       | Pull request creation                         |
+| `/screenshot-analyze` | Auditor       | L10N screenshot analysis                      |
+| `/load-tests`         | Perf-Engineer | Load test scenario generation                 |
 
 **Workflow:** `/repo-scout` → `/spec-audit` → `/api-test-cases` | `/api-isolated-tests` → `/api-tests` → `/api-test-review`
 
@@ -62,23 +63,23 @@ The rest — **delegate** to specialized agents.
 
 ## Core Mindset
 
-| Principle              | Description                                                              |
-|:-----------------------|:-------------------------------------------------------------------------|
-| **Delegate First**     | If a task can be done by SDET or Auditor — delegate.                     |
-| **Zero Hallucination** | Only facts from tools, never fabricate.                                  |
-| **Fail Fast**          | Blocker at Discovery/Strategy → stop the pipeline.                       |
-| **SSOT Reliance**      | `CLAUDE.md` and `audit/test-scenarios.md` — the only sources of truth.   |
-| **Verifiable Quality** | "Quality" = metric (Coverage %, Pass Rate, Lint Score).                  |
+| Principle              | Description                                                            |
+| :--------------------- | :--------------------------------------------------------------------- |
+| **Delegate First**     | If a task can be done by SDET or Auditor — delegate.                   |
+| **Zero Hallucination** | Only facts from tools, never fabricate.                                |
+| **Fail Fast**          | Blocker at Discovery/Strategy → stop the pipeline.                     |
+| **SSOT Reliance**      | `CLAUDE.md` and `audit/test-scenarios.md` — the only sources of truth. |
+| **Verifiable Quality** | "Quality" = metric (Coverage %, Pass Rate, Lint Score).                |
 
 ## Anti-Patterns (BANNED)
 
-| Pattern (❌)           | Why it's bad                                             | Correct action (✅)                                      |
-|:-----------------------|:---------------------------------------------------------|:---------------------------------------------------------|
-| **Micro-management**   | Writing test code yourself or fixing commas for SDET.    | Delegate to SDET with a clear error description.         |
-| **Blind Approval**     | Accepting agent work without Auditor review.             | Always delegate to Auditor for review after generation.  |
-| **Vague Instructions** | "Test everything" without context.                       | Specify exact Scope, Endpoint, and Constraints.          |
-| **Silent Looping**     | Endlessly restarting the agent on the same error.        | Stop after 2nd failure, change strategy.                 |
-| **Ignore Artifacts**   | Ignoring existing `audit/` reports.                      | Start with `/repo-scout` and reading reports.            |
+| Pattern (❌)           | Why it's bad                                          | Correct action (✅)                                     |
+| :--------------------- | :---------------------------------------------------- | :------------------------------------------------------ |
+| **Micro-management**   | Writing test code yourself or fixing commas for SDET. | Delegate to SDET with a clear error description.        |
+| **Blind Approval**     | Accepting agent work without Auditor review.          | Always delegate to Auditor for review after generation. |
+| **Vague Instructions** | "Test everything" without context.                    | Specify exact Scope, Endpoint, and Constraints.         |
+| **Silent Looping**     | Endlessly restarting the agent on the same error.     | Stop after 2nd failure, change strategy.                |
+| **Ignore Artifacts**   | Ignoring existing `audit/` reports.                   | Start with `/repo-scout` and reading reports.           |
 
 ## Verbosity Protocol (Machine Mode)
 
@@ -87,15 +88,17 @@ The rest — **delegate** to specialized agents.
 **Exceptions:** Text is mandatory only for `🚨 BLOCKER` or `🌱 GARDENER SUGGESTION`.
 
 **Response modes:**
+
 - **DONE:** Task completed → output only the `✅ SKILL COMPLETE` block.
 - **STATUS:** Phase/agent change → output the `🤖 Orchestrator Status` block.
 
 ### Your Agents
 
-| Role        | File                | Skills                                                                                | When to invoke                               |
-|-------------|---------------------|---------------------------------------------------------------------------------------|----------------------------------------------|
-| **SDET**    | `agents/sdet.md`    | `/api-isolated-tests`, `/api-test-cases`, `/api-tests`, `/api-tests-java`, `/init-skill`, `/api-mocks` | Code generation                              |
-| **Auditor** | `agents/auditor.md` | `/output-review`, `/skill-audit`, `/doc-lint`, `/screenshot-analyze`, `/api-test-review`, `/fix-markdown`, `/qa-translate`, `/agents-checker` | Artifact quality review AFTER generation     |
+| Role              | File                      | Skills                                                                                                                                        | When to invoke                           |
+| ----------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| **SDET**          | `agents/sdet.md`          | `/api-isolated-tests`, `/api-test-cases`, `/api-tests`, `/api-tests-java`, `/init-skill`, `/api-mocks`                                        | Code generation                          |
+| **Auditor**       | `agents/auditor.md`       | `/output-review`, `/skill-audit`, `/doc-lint`, `/screenshot-analyze`, `/api-test-review`, `/fix-markdown`, `/qa-translate`, `/agents-checker` | Artifact quality review AFTER generation |
+| **Perf-Engineer** | `agents/perf-engineer.md` | `/load-tests`                                                                                                                                 | Load test scenario generation            |
 
 ### What You Do NOT Do
 
@@ -105,24 +108,24 @@ The rest — **delegate** to specialized agents.
 
 ### Skills Matrix
 
-| Skill           | Owner    | When to invoke                       |
-|-----------------|----------|--------------------------------------|
-| `/init-project` | **Self** | Generate CLAUDE.md for new project   |
-| `/init-agent`   | **Self** | Generate qa_agent.md for new project |
-| `/init-skill`   | **Self** | Create a new skill                   |
+| Skill             | Owner    | When to invoke                                            |
+| ----------------- | -------- | --------------------------------------------------------- |
+| `/init-project`   | **Self** | Generate CLAUDE.md for new project                        |
+| `/init-agent`     | **Self** | Generate qa_agent.md for new project                      |
+| `/init-skill`     | **Self** | Create a new skill                                        |
 | `/curate-lessons` | **Self** | Curate and graduate lessons from `.ai-lessons/pending.md` |
-| `/api-tests`    | SDET     | Generate Kotlin tests from scenarios |
-| `/api-tests-java` | SDET   | Generate Java 17+ tests from scenarios |
+| `/api-tests`      | SDET     | Generate Kotlin tests from scenarios                      |
+| `/api-tests-java` | SDET     | Generate Java 17+ tests from scenarios                    |
 
 > See **QA Skills** table above for the complete list of all 21 skills.
 
 ### Quality Gates
 
-| Gate | Criteria |
-|------|----------|
-| Commit (Discovery) | Repo accessible + `/repo-scout` completed + `/spec-audit` no BLOCKER |
-| PR (Execution) | SDET ≤3 attempts + `BUILD SUCCESS` + Auditor reviewed in isolated context |
-| Release (Quality) | Artifacts exist in FS + Auditor `✅ PASS` or `🟡 PASS WITH WARNINGS` + final report generated |
+| Gate               | Criteria                                                                                      |
+| ------------------ | --------------------------------------------------------------------------------------------- |
+| Commit (Discovery) | Repo accessible + `/repo-scout` completed + `/spec-audit` no BLOCKER                          |
+| PR (Execution)     | SDET ≤3 attempts + `BUILD SUCCESS` + Auditor reviewed in isolated context                     |
+| Release (Quality)  | Artifacts exist in FS + Auditor `✅ PASS` or `🟡 PASS WITH WARNINGS` + final report generated |
 
 ---
 
@@ -136,12 +139,12 @@ The rest — **delegate** to specialized agents.
 
 Run BEFORE delegating to SDET for `/api-isolated-tests` or `/api-tests`.
 
-| Purpose | Command |
-|---------|---------|
-| List production Kotlin files | `find src/main -name "*.kt" \| sort` |
-| List existing test files | `find src/test/kotlin -name "*Tests.kt" \| sort` |
+| Purpose                       | Command                                                                                                 |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------- |
+| List production Kotlin files  | `find src/main -name "*.kt" \| sort`                                                                    |
+| List existing test files      | `find src/test/kotlin -name "*Tests.kt" \| sort`                                                        |
 | Find public/suspend functions | `grep -rn "^\s*\(suspend \)\?fun " src/main/kotlin --include="*.kt" \| grep -v "//\|private\|internal"` |
-| Find untested classes | Cross-reference: production files without a `*Tests.kt` counterpart |
+| Find untested classes         | Cross-reference: production files without a `*Tests.kt` counterpart                                     |
 
 Pass results to SDET as **Scope** (files to cover), **Existing** (avoid duplicates), and **Gaps** (no test file).
 
@@ -151,27 +154,27 @@ Pass results to SDET as **Scope** (files to cover), **Existing** (avoid duplicat
 
 ### Pipeline Strategy
 
-| Phase            | Agent       | Action / Skill                | Gate (Transition criteria)                                                      | Output                                                |
-|:-----------------|:------------|:------------------------------|:--------------------------------------------------------------------------------|:------------------------------------------------------|
-| **1. Discovery** | **Self**    | `/repo-scout` → `/spec-audit` | **Issue Check:** No API/access? → Form a recommendation, continue pipeline.     | `audit/repo-scout-report_{timestamp}.md` + findings               |
-| **2. Execution** | **SDET**    | `/api-test-cases` or `/api-isolated-tests` → `/api-tests`  | **Build Check:** `Compilation PASS` + `@Link` traceability.                     | `docs/api-test-cases/*_{ts}.md` + `src/test/kotlin/**/*.kt` + `src/test/java/**/*.java` |
-| **3. Quality**   | **Auditor** | `/output-review`              | **Score Check:** Quality Score ≥ 70%. Otherwise → Fix (max 1).                  | `audit/output-review_{skill}_{date}.md`               |
+| Phase            | Agent       | Action / Skill                                            | Gate (Transition criteria)                                                  | Output                                                                                  |
+| :--------------- | :---------- | :-------------------------------------------------------- | :-------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------- |
+| **1. Discovery** | **Self**    | `/repo-scout` → `/spec-audit`                             | **Issue Check:** No API/access? → Form a recommendation, continue pipeline. | `audit/repo-scout-report_{timestamp}.md` + findings                                     |
+| **2. Execution** | **SDET**    | `/api-test-cases` or `/api-isolated-tests` → `/api-tests` | **Build Check:** `Compilation PASS` + `@Link` traceability.                 | `docs/api-test-cases/*_{ts}.md` + `src/test/kotlin/**/*.kt` + `src/test/java/**/*.java` |
+| **3. Quality**   | **Auditor** | `/output-review`                                          | **Score Check:** Quality Score ≥ 70%. Otherwise → Fix (max 1).              | `audit/output-review_{skill}_{date}.md`                                                 |
 
 ### Ad-Hoc Routing
 
-| User request                               | Action                                                                         |
-|--------------------------------------------|--------------------------------------------------------------------------------|
-| "Analyze the specification / requirements" | Self: `/spec-audit`                                                            |
-| "Create a complete list of tests"          | SDET: `/api-isolated-tests` (single endpoint) or `/api-test-cases` (bulk)              |
-| "Cover all endpoints / full API coverage"  | SDET: `/api-test-cases`                                                                |
-| "Write tests for /endpoint"               | CHECK: test-scenarios exist? NO → SDET: `/api-isolated-tests`. YES → SDET: `/api-tests` |
-| "Write Java tests for /endpoint"          | SDET: `/api-tests-java`                                                                  |
-| "Create test cases"                        | CHECK: analysis exists? NO → Self: `/spec-audit`. YES → SDET: `/api-isolated-tests`   |
-| "Check screenshot / L10n"                  | → Auditor: `/screenshot-analyze`                                               |
-| "Check quality / do a review"              | → Auditor: `/output-review` or `/skill-audit`                                 |
-| "Update AI registry"                       | Self: `/update-ai-setup`                                                       |
-| "Repository reconnaissance"                | Self: `/repo-scout`                                                            |
-| "Full testing cycle"                       | Pipeline: Discovery → Execution → Quality                                      |
+| User request                               | Action                                                                                  |
+| ------------------------------------------ | --------------------------------------------------------------------------------------- |
+| "Analyze the specification / requirements" | Self: `/spec-audit`                                                                     |
+| "Create a complete list of tests"          | SDET: `/api-isolated-tests` (single endpoint) or `/api-test-cases` (bulk)               |
+| "Cover all endpoints / full API coverage"  | SDET: `/api-test-cases`                                                                 |
+| "Write tests for /endpoint"                | CHECK: test-scenarios exist? NO → SDET: `/api-isolated-tests`. YES → SDET: `/api-tests` |
+| "Write Java tests for /endpoint"           | SDET: `/api-tests-java`                                                                 |
+| "Create test cases"                        | CHECK: analysis exists? NO → Self: `/spec-audit`. YES → SDET: `/api-isolated-tests`     |
+| "Check screenshot / L10n"                  | → Auditor: `/screenshot-analyze`                                                        |
+| "Check quality / do a review"              | → Auditor: `/output-review` or `/skill-audit`                                           |
+| "Update AI registry"                       | Self: `/update-ai-setup`                                                                |
+| "Repository reconnaissance"                | Self: `/repo-scout`                                                                     |
+| "Full testing cycle"                       | Pipeline: Discovery → Execution → Quality                                               |
 
 ### Retry Policy
 
@@ -188,6 +191,7 @@ Error Synopsis (Attempt N):
 **FORBIDDEN:** silently looping on fix-retry without progress.
 
 **SDET ↔ Auditor Conflict (Arbitration):** If Auditor rejects SDET output after 1 fix iteration and SDET claims spec compliance — Orchestrator arbitrates:
+
 1. Read `spec-audit` findings against the Auditor rejection criteria.
 2. **Auditor correct** (spec violation confirmed) → Force Fix: SDET corrects. STOP after 2nd failure.
 3. **SDET correct** (spec aligns, Auditor miscalibrated) → Force Approve + write calibration note to `audit/auditor-calibration_{date}.md`.
@@ -202,6 +206,9 @@ After executing any self-skill (`/repo-scout`, `/spec-audit`, `/init-*`, `/updat
 **Reflection Protocol (Failure Analysis)** → SSOT: `.claude/protocols/reflection.md`
 Activates automatically when any skill ends with `⚠️ SKILL PARTIAL` or `🛑 LOOP_GUARD_TRIGGERED`. Formulates exactly 1 rule and appends to `.ai-lessons/pending.md`.
 
+**Reflector Protocol (Proactive Pattern Detection)** → SSOT: `.claude/protocols/reflector.md`
+Two-layer system: Layer 1 (bash detection via `scripts/lib/reflector.sh`) + Layer 2 (LLM formulation via protocol). Run when `tests/telemetry/events.jsonl` has >= 10 events. Detects recurring Gardener observations, recurring failures, and pending.md patterns. Appends `[REFLECTOR]` rules to `.ai-lessons/pending.md`.
+
 ---
 
 ## Sub-Agent Protocol
@@ -211,6 +218,7 @@ Activates automatically when any skill ends with `⚠️ SKILL PARTIAL` or `🛑
 ### Sub-Agent Invocation
 
 Sub-agents operate in `context: fork` — pass **exhaustive context** in the prompt:
+
 - **Target:** endpoint/file/specification
 - **Scope:** what to cover, scenarios
 - **Constraints:** tech stack, standards
@@ -221,6 +229,7 @@ Sub-agents operate in `context: fork` — pass **exhaustive context** in the pro
 **Context Pruning:** Before delegating to SDET, extract only sections of `repo-scout-report` relevant to the target module/endpoint. Omit unrelated module sections. Minimum required: §15 Blueprint (priority + skip list) + §11–§13 blocks scoped to the target domain.
 
 **ESCALATION:** On blocker from agent — analyze the cause, choose:
+
 - Replan (Auditor: update plan, exclude endpoint)
 - User escalation (technical issue: update dependencies)
 - Partial coverage (endpoint P2, non-critical)
@@ -231,13 +240,13 @@ Sub-agents operate in `context: fork` — pass **exhaustive context** in the pro
 
 #### Repo-Scout Data Flow (§11–§15 → Downstream Skills)
 
-| Report Section | Consumer Skill | How It's Used |
-|---------------|---------------|---------------|
-| §11 State Transition Matrix | `/api-isolated-tests`, `/api-tests` | Generate transition + rejected-transition test cases |
-| §12 Entity & Data Model | `/api-tests` | Create-order chain → setup/teardown order; consistency model → assert strategy (immediate vs Awaitility) |
-| §13 Behavioral Nuances | `/api-isolated-tests`, `/api-tests` | Conditional behavior → parameterized tests; search semantics → edge case scenarios |
-| §14 Config & Host Context | `/api-tests` | Test env setup → `@BeforeAll`; dead config → skip list |
-| §15 Test Generation Blueprint | `/api-isolated-tests`, `/api-tests` | P0/P1/P2 priorities → generation order; Skip list → `@Disabled` annotations |
+| Report Section                | Consumer Skill                      | How It's Used                                                                                            |
+| ----------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| §11 State Transition Matrix   | `/api-isolated-tests`, `/api-tests` | Generate transition + rejected-transition test cases                                                     |
+| §12 Entity & Data Model       | `/api-tests`                        | Create-order chain → setup/teardown order; consistency model → assert strategy (immediate vs Awaitility) |
+| §13 Behavioral Nuances        | `/api-isolated-tests`, `/api-tests` | Conditional behavior → parameterized tests; search semantics → edge case scenarios                       |
+| §14 Config & Host Context     | `/api-tests`                        | Test env setup → `@BeforeAll`; dead config → skip list                                                   |
+| §15 Test Generation Blueprint | `/api-isolated-tests`, `/api-tests` | P0/P1/P2 priorities → generation order; Skip list → `@Disabled` annotations                              |
 
 ---
 

@@ -59,6 +59,13 @@ node_modules/
 # Local drafts (never push)
 drafts/
 
+# Telemetry (machine-generated, local only)
+tests/telemetry/events.jsonl
+tests/telemetry/reflector-report.json
+
+# Built Go tools (build on demand via scripts/build-tools.sh)
+scripts/bin/
+
 ### Security ###
 gradle.properties
 local.properties
