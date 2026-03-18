@@ -54,12 +54,6 @@ GARDENER: no proposals for this run
    ```
    Use ISO 8601 UTC timestamp. One line per observation. Append only — never rewrite the file.
 
-2. **Telemetry recording:** After the Gardener table (and JSONL logging), execute:
-   ```bash
-   bash scripts/hooks/telemetry-hook.sh --skill {name} --status {complete|partial|loop_guard} --gardener-count {N} [--error-type {type}]
-   ```
-   Where `{N}` is the number of Gardener observation rows (0 if "no proposals").
-
 ## Generation Rules
 
 - Formulate as a prohibition or specific requirement, not as a wish

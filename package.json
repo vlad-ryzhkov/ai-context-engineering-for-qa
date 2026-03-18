@@ -6,10 +6,7 @@
   "scripts": {
     "lint:skills": "agnix --target claude-code .",
     "lint:skills:fix": "agnix --target claude-code --fix .",
-    "lint:skills:strict": "agnix --target claude-code --strict .",
-    "quality": "bash scripts/skill-quality.sh",
-    "quality:ci": "bash scripts/skill-quality.sh --ci",
-    "quality:snapshot": "bash scripts/skill-quality.sh --snapshot"
+    "lint:skills:strict": "agnix --target claude-code --strict ."
   },
   "devDependencies": {
     "agnix": "^0.16.1"

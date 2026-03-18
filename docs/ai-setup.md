@@ -84,7 +84,7 @@ Three layers, loaded on demand (not all at once):
 │   │   ├── platform/               # 6 patterns
 │   │   │   └── java/                # 2 Java-specific patterns
 │   │   └── security/               # 3 patterns
-│   └── skills/                      # Skills (22 total)
+│   └── skills/                      # Skills (21 total)
 │       ├── agents-checker/          # /agents-checker — agent compliance check
 │       ├── api-isolated-tests/      # /api-isolated-tests — test case generation
 │       ├── api-mocks/               # /api-mocks — HTTP mock server generation
@@ -117,9 +117,7 @@ Three layers, loaded on demand (not all at once):
 ├── .cursor/rules/                   # Cursor wrappers → reference .claude/ files
 ├── .agents/skills/                  # Codex wrappers → reference .claude/ files
 ├── .github/
-│   ├── copilot-instructions.md      # Copilot wrapper → key project rules
-│   └── workflows/
-│       └── skill-quality.yml        # CI: skill quality pipeline
+│   └── copilot-instructions.md      # Copilot wrapper → key project rules
 │
 ├── docs/
 │   ├── ai-setup.md                  # This file
@@ -131,13 +129,7 @@ Three layers, loaded on demand (not all at once):
 │   └── workshop-commands.md         # Workshop commands per IDE
 │
 ├── scripts/
-│   ├── skill-quality.sh             # Quality pipeline orchestrator
-│   ├── hooks/
-│   │   └── telemetry-hook.sh        # Telemetry event collector
 │   └── lib/
-│       ├── skill-structure.sh       # Tier 1 Baseline checks
-│       ├── token-budget.sh          # Token counting + snapshots
-│       ├── regression-detect.sh     # Section removal detection
 │       └── reflector.sh             # Reflector Layer 1: detection engine
 │
 ├── tests/
@@ -280,24 +272,13 @@ Supporting data for skills — templates, examples, glossaries:
 
 ### Hooks and Scripts
 
-| File              | Path                              | Lines | Trigger / Usage          | Purpose                       |
-| ----------------- | --------------------------------- | ----: | ------------------------ | ----------------------------- |
-| skill-lint.sh     | `.claude/hooks/skill-lint.sh`     |    46 | PostToolUse (Write/Edit) | SKILL.md validation on edit   |
-| delta-guard.sh    | `.claude/hooks/delta-guard.sh`    |    40 | PostToolUse (Write)      | Warns Write on governed files |
-| telemetry-hook.sh | `scripts/hooks/telemetry-hook.sh` |    60 | Gardener Protocol        | Appends event to events.jsonl |
-| pre-commit.sh     | `scripts/pre-commit.sh`           |     — | git pre-commit           | Blocks secrets from commit    |
-| pre-push.sh       | `scripts/pre-push.sh`             |     — | git pre-push             | Blocks secrets from push      |
-| setup-hooks.sh    | `scripts/setup-hooks.sh`          |     — | manual                   | Installs git hooks            |
-
-### Quality Scripts
-
-| Script               | Path                               | Purpose                                |
-| -------------------- | ---------------------------------- | -------------------------------------- |
-| skill-quality.sh     | `scripts/skill-quality.sh`         | Pipeline orchestrator (agnix + checks) |
-| skill-structure.sh   | `scripts/lib/skill-structure.sh`   | Tier 1 Baseline (S8–S17)               |
-| token-budget.sh      | `scripts/lib/token-budget.sh`      | Token counting + snapshots             |
-| regression-detect.sh | `scripts/lib/regression-detect.sh` | Section removal detection              |
-| reflector.sh         | `scripts/lib/reflector.sh`         | Reflector Layer 1: detection engine    |
+| File           | Path                           | Lines | Trigger / Usage          | Purpose                       |
+| -------------- | ------------------------------ | ----: | ------------------------ | ----------------------------- |
+| skill-lint.sh  | `.claude/hooks/skill-lint.sh`  |    46 | PostToolUse (Write/Edit) | SKILL.md validation on edit   |
+| delta-guard.sh | `.claude/hooks/delta-guard.sh` |    40 | PostToolUse (Write)      | Warns Write on governed files |
+| pre-commit.sh  | `scripts/pre-commit.sh`        |     — | git pre-commit           | Blocks secrets from commit    |
+| pre-push.sh    | `scripts/pre-push.sh`          |     — | git pre-push             | Blocks secrets from push      |
+| setup-hooks.sh | `scripts/setup-hooks.sh`       |     — | manual                   | Installs git hooks            |
 
 ### Documentation
 
@@ -471,48 +452,27 @@ How the system improves over time:
 
 ### Quality Pipeline
 
-Automated enforcement for AI context files: `bash scripts/skill-quality.sh`
+Automated enforcement for AI context files: `npx agnix --target claude-code .`
 
-```text
-skill-quality.sh (orchestrator)
-├── npx agnix                          # 230+ generic AI config rules
-├── scripts/lib/skill-structure.sh     # Tier 1 Baseline (S8-S17)
-├── scripts/lib/token-budget.sh        # Token counting + snapshots
-├── scripts/lib/regression-detect.sh   # Section removal detection
-└── scripts/lib/reflector.sh           # Reflector Layer 1 detection
-```
-
-Baseline: `.claude/baselines/skill-snapshot.json` — tracks 21 skills (tokens, lines, section compliance).
-
-<details>
-<summary>Pipeline modes and CI integration</summary>
-
-| Command                         | What it does                                   |
-| ------------------------------- | ---------------------------------------------- |
-| `bash scripts/skill-quality.sh` | Full: agnix + structure + budget               |
-| `--check structure`             | Tier 1 Baseline only                           |
-| `--check budget`                | Token budget report                            |
-| `--check regression`            | Detect removed sections vs baseline            |
-| `--snapshot`                    | Save current state as baseline                 |
-| `--diff`                        | Compare current vs baseline                    |
-| `--ci`                          | CI mode: agnix + structure + regression + diff |
-
-CI: `.github/workflows/skill-quality.yml` runs on PRs touching `.claude/`.
-
-</details>
+| Command                                     | What it does                    |
+| ------------------------------------------- | ------------------------------- |
+| `npx agnix --target claude-code .`          | Lint all AI config files        |
+| `npx agnix --target claude-code --strict .` | Strict mode (warnings = errors) |
+| `npx agnix --target claude-code --fix .`    | Auto-fix where possible         |
+| `/skill-audit`                              | Deep audit of SKILL.md files    |
 
 ### Adaptive Context Evolution (ACE)
 
 Adopted from [ACE paper (arXiv:2510.04618)](https://arxiv.org/abs/2510.04618).
 
-| ACE Concept          | Implementation                                               | Files                                                               |
-| -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------- |
-| **Delta Updates**    | Surgical `Edit`, never full `Write`. `delta-guard.sh` warns. | `CLAUDE.md`, `.claude/hooks/delta-guard.sh`                         |
-| **Rule Annotations** | `Freq` column in antipattern index (`high`/`med`/`low`).     | `.claude/qa-antipatterns/_index.md`                                 |
-| **Reflection**       | Failure analysis → 1 rule → `.ai-lessons/pending.md`         | `.claude/protocols/reflection.md`                                   |
-| **Reflector**        | Two-layer proactive pattern detection (bash + LLM)           | `scripts/lib/reflector.sh`, `.claude/protocols/reflector.md`        |
-| **Telemetry**        | Structured event/observation collection for Reflector        | `scripts/hooks/telemetry-hook.sh`, `.ai-lessons/gardener-log.jsonl` |
-| **Lesson Curation**  | `/curate-lessons` deduplicates + graduates rules             | `.claude/skills/curate-lessons/SKILL.md`                            |
+| ACE Concept          | Implementation                                               | Files                                                        |
+| -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| **Delta Updates**    | Surgical `Edit`, never full `Write`. `delta-guard.sh` warns. | `CLAUDE.md`, `.claude/hooks/delta-guard.sh`                  |
+| **Rule Annotations** | `Freq` column in antipattern index (`high`/`med`/`low`).     | `.claude/qa-antipatterns/_index.md`                          |
+| **Reflection**       | Failure analysis → 1 rule → `.ai-lessons/pending.md`         | `.claude/protocols/reflection.md`                            |
+| **Reflector**        | Two-layer proactive pattern detection (bash + LLM)           | `scripts/lib/reflector.sh`, `.claude/protocols/reflector.md` |
+| **Telemetry**        | Structured observation collection for Reflector              | `.ai-lessons/gardener-log.jsonl`                             |
+| **Lesson Curation**  | `/curate-lessons` deduplicates + graduates rules             | `.claude/skills/curate-lessons/SKILL.md`                     |
 
 <details>
 <summary>Learning loop diagram</summary>

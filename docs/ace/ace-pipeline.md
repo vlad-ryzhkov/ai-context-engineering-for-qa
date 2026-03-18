@@ -187,7 +187,7 @@ Context files improved
 | Reflection Protocol              | ✅ Active — triggers on failure                                      | `.claude/protocols/reflection.md`        |
 | Reflector (Layer 1: Detection)   | ✅ Implemented — bash pattern detection                              | `scripts/lib/reflector.sh`               |
 | Reflector (Layer 2: Formulation) | ✅ Implemented — LLM semantic dedup + rule formulation               | `.claude/protocols/reflector.md`         |
-| Telemetry Collection             | ✅ Active — events.jsonl + gardener-log.jsonl                        | `scripts/hooks/telemetry-hook.sh`        |
+| Telemetry Collection             | ✅ Active — events.jsonl + gardener-log.jsonl                        | `.ai-lessons/gardener-log.jsonl`         |
 | pending.md accumulation buffer   | ✅ Active — append-only                                              | `.ai-lessons/pending.md`                 |
 | graduated.md promotion log       | ✅ Active                                                            | `.ai-lessons/graduated.md`               |
 | /curate-lessons skill            | ✅ Active — 5-phase pipeline with human approval gate                | `.claude/skills/curate-lessons/SKILL.md` |

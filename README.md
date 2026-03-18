@@ -4,7 +4,7 @@ Stop writing ad-hoc prompts. Start using engineered AI skills for QA.
 
 This repository is a ready-to-use library of **21 AI skills** (reusable prompts that tell the AI exactly how to perform a QA task),
 **31 anti-pattern quality gates** (rules the AI checks its own output against before finishing),
-and **2 specialized agents** (AI roles — one writes test code, one reviews it) designed specifically for QA workflows.
+and **3 specialized agents** (AI roles — one writes test code, one reviews it, one generates load tests) designed specifically for QA workflows.
 Copy the `.claude/` folder into your project, and your AI assistant immediately knows how to audit specs,
 generate test cases, write API tests (Kotlin/Java), and check its own output.
 
@@ -202,7 +202,7 @@ This library is a starting point. To make it yours:
 
 - **21 skills** in `.claude/skills/` — from repo scanning to test generation to translation
 - **31 anti-pattern quality gates** in `.claude/qa-antipatterns/` — the AI checks generated code against these before finishing
-- **2 specialized agents** in `.claude/agents/` — SDET (writes test code) and Auditor (reviews quality)
+- **3 specialized agents** in `.claude/agents/` — SDET (writes test code), Auditor (reviews quality), and Perf Engineer (generates load tests)
 - **Layered context loading** — the AI reads only what it needs for the current task (`CLAUDE.md` always, agent/skill files on demand), keeping responses fast and focused
 - **Self-improving loop** — the AI suggests improvements to its own knowledge base at the end of each run, so skills get better over time
 - **Chained pipeline** — each skill builds on the previous one's output (`/repo-scout` → `/api-test-cases` → `/api-tests` → `/api-test-review`), so results are consistent and traceable
