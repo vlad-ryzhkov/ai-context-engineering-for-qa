@@ -85,15 +85,5 @@ else
   echo -e "${YELLOW}[pre-push] WARNING: npx not found — markdownlint skipped.${NC}"
 fi
 
-# 6. Regression warning for .claude/ changes (non-blocking)
-CLAUDE_CHANGES=$(echo "$DIFF_FILES" | grep -E '^\.(claude)/' || true)
-if [ -n "$CLAUDE_CHANGES" ]; then
-  if [ -f "scripts/lib/regression-detect.sh" ] && [ -f ".claude/baselines/skill-snapshot.json" ]; then
-    if ! bash scripts/lib/regression-detect.sh >/dev/null 2>&1; then
-      echo -e "${YELLOW}[pre-push] WARNING: Regression detected in .claude/ files. Run 'bash scripts/skill-quality.sh --check regression' for details.${NC}"
-    fi
-  fi
-fi
-
 echo "[pre-push] All checks passed."
 exit 0

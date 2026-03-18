@@ -1,1 +1,0 @@
-../../ace-kit/scripts/hooks/telemetry-hook.sh

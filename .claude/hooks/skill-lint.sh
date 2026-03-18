@@ -1,7 +1,7 @@
 #!/bin/bash
 # Post-edit hook: fast validation of SKILL.md and qa_agent.md
 # Full audit: /skill-audit
-# Full pipeline: bash scripts/skill-quality.sh
+# Full audit: /skill-audit
 
 set -e
 
@@ -62,7 +62,7 @@ fi
 
 if [ -n "$FINDINGS" ]; then
   echo -e "🔍 skill-lint: ${LABEL}${FINDINGS}" >&2
-  echo -e "  💡 Fix issues above. Full audit: /skill-audit | Full pipeline: bash scripts/skill-quality.sh" >&2
+  echo -e "  💡 Fix issues above. Full audit: /skill-audit" >&2
   exit 2
 fi
 

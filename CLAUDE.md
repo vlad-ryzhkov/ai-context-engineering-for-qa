@@ -21,27 +21,26 @@
 
 ## Tech Stack (LOCKED)
 
-| Component        | Technology                                     | BANNED                               |
-|------------------|------------------------------------------------|--------------------------------------|
-| HTTP Client      | ktor-client (CIO) + ktor-serialization-jackson | Custom HTTP wrappers, retrofit       |
-| Serialization    | Jackson (SNAKE_CASE) + jackson-module-kotlin   | Gson, Moshi                          |
-| Assertions       | Kotest assertions-core                         | Assertions without message           |
-| Async/Coroutines | kotlinx-coroutines-test                        | `Thread.sleep()`, `delay()` in tests |
-| Test Framework   | JUnit 5                                        | TestNG                               |
-| Reporting        | Allure                                         | —                                    |
-| Environment / Mocks | Testcontainers (PostgreSQL/Redis) + WireMock | H2 in-memory DB (unless specified)  |
-| HTTP Client (Java, opt-in) | `java.net.http.HttpClient` (JDK 17 built-in) | RestAssured, OkHttp, Retrofit        |
-| Assertions (Java, opt-in) | AssertJ (`assertThat(...).as("msg")`)         | Assertions without `.as()` message   |
+| Component                  | Technology                                     | BANNED                               |
+| -------------------------- | ---------------------------------------------- | ------------------------------------ |
+| HTTP Client                | ktor-client (CIO) + ktor-serialization-jackson | Custom HTTP wrappers, retrofit       |
+| Serialization              | Jackson (SNAKE_CASE) + jackson-module-kotlin   | Gson, Moshi                          |
+| Assertions                 | Kotest assertions-core                         | Assertions without message           |
+| Async/Coroutines           | kotlinx-coroutines-test                        | `Thread.sleep()`, `delay()` in tests |
+| Test Framework             | JUnit 5                                        | TestNG                               |
+| Reporting                  | Allure                                         | —                                    |
+| Environment / Mocks        | Testcontainers (PostgreSQL/Redis) + WireMock   | H2 in-memory DB (unless specified)   |
+| HTTP Client (Java, opt-in) | `java.net.http.HttpClient` (JDK 17 built-in)   | RestAssured, OkHttp, Retrofit        |
+| Assertions (Java, opt-in)  | AssertJ (`assertThat(...).as("msg")`)          | Assertions without `.as()` message   |
 
 ## Commands
 
 | Action      | Command                                  |
-|-------------|------------------------------------------|
+| ----------- | ---------------------------------------- |
 | Build       | `./gradlew build`                        |
 | Test        | `./gradlew test`                         |
 | Single test | `./gradlew test --tests "FullClassName"` |
 | Clean       | `./gradlew clean`                        |
-| Skill quality | `bash scripts/skill-quality.sh`        |
 
 ## Secrets — Never Commit
 

@@ -69,16 +69,6 @@ if [ -n "$STAGED_SKILLS" ]; then
       echo -e "${YELLOW}[pre-commit] WARNING: agnix found issues in .claude/ — run 'npx agnix --target claude-code .' for details.${NC}"
     fi
   fi
-
-  # Tier 1 Baseline structure check for each staged skill
-  for skill_file in $STAGED_SKILLS; do
-    skill_name=$(echo "$skill_file" | sed 's|.*skills/\([^/]*\)/.*|\1|')
-    if [ -f "scripts/lib/skill-structure.sh" ]; then
-      if ! bash scripts/lib/skill-structure.sh --skill "$skill_name" >/dev/null 2>&1; then
-        echo -e "${YELLOW}[pre-commit] WARNING: Tier 1 Baseline issues in ${skill_name} — run 'bash scripts/skill-quality.sh --skill ${skill_name}' for details.${NC}"
-      fi
-    fi
-  done
 fi
 
 exit 0
