@@ -71,16 +71,30 @@ run: echo "version=1.0.0" >> "$GITHUB_OUTPUT"
 run: echo "key=value" >> "$GITHUB_ENV"
 ```
 
-### 2. No Floating Version Tags
+### 2. Version Pinning Policy (Threat-Model Tiered)
 
 ```yaml
-# BANNED — mutable, supply-chain risk
-uses: actions/checkout@v4
-uses: actions/setup-node@main
+# BANNED EVERYWHERE — mutable branch refs, extreme supply-chain risk
+uses: actions/checkout@main
+uses: some-org/action@master
 
-# REQUIRED — immutable SHA pinning
-uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+# OFFICIAL GitHub actions (actions/*, github/*):
+#   - Internal repos: tag @vN acceptable (Dependabot-friendly)
+#   - Open-source repos: SHA-pin recommended (MAJOR if missing)
+uses: actions/checkout@v4           # ✅ OK for internal repos
+uses: actions/setup-node@v4         # ✅ OK for internal repos
+
+# THIRD-PARTY / community actions — SHA-pin REQUIRED everywhere
+uses: docker/build-push-action@4f58ea79222b3b9dc585bc55e37e801ffc82f4a2 # v5.9.0
+uses: slackapi/slack-github-action@37ebaef184d7626c5f9dc5cce4e1af44b9261092  # v2.0.0
 ```
+
+**Classification:**
+
+| Action source                                 | `@main`/`@master` | `@vN` tag (internal repo) | `@vN` tag (open-source repo) | `@<SHA>` |
+| --------------------------------------------- | ----------------- | ------------------------- | ---------------------------- | -------- |
+| **Official GitHub** (`actions/*`, `github/*`) | CRITICAL          | Acceptable                | MAJOR                        | PASS     |
+| **Third-party / community**                   | CRITICAL          | MAJOR                     | CRITICAL                     | PASS     |
 
 ### 3. No Direct Context Interpolation in `run:`
 
@@ -219,11 +233,13 @@ L2 (Nested)   → triggered by workflow_call from L1
 
 ### 0.3 Dependency Inventory
 
-For every `uses:` directive across all workflows:
+For every `uses:` directive across all workflows, classify by source and ref type:
 
 - **SHA-pinned**: `uses: action@<40-char-hex>` — PASS
-- **Floating tag**: `uses: action@v4` or `uses: action@main` — CRITICAL
-- Count: `N/M actions SHA-pinned (X%)`
+- **`@main`/`@master`** (any action): CRITICAL — always banned
+- **`@vN` on third-party/community action**: MAJOR (should be SHA-pinned)
+- **`@vN` on official GitHub action** (`actions/*`, `github/*`): INFO for internal repos, MAJOR for open-source
+- Count: `N/M actions pinned (X%)` — separate official vs third-party
 
 ### 0.4 Permissions Baseline
 
@@ -276,20 +292,20 @@ Full security, performance, and architecture audit.
 
 ### Security Audit Checklist (12 Items)
 
-| #   | Check                                                 | Severity | Details                                     |
-| --- | ----------------------------------------------------- | -------- | ------------------------------------------- |
-| S1  | All `uses:` SHA-pinned                                | CRITICAL | `references/security-rules.md` §SHA Pinning |
-| S2  | No `::set-output` / `::save-state`                    | CRITICAL | Deprecated, log spoofing risk               |
-| S3  | No direct context interpolation in `run:`             | CRITICAL | Command injection vector                    |
-| S4  | `permissions:` explicitly set per workflow            | MAJOR    | Defaults are too broad                      |
-| S5  | No `secrets: inherit` in reusable workflows           | MAJOR    | Violates least privilege                    |
-| S6  | `pull_request_target` used safely                     | CRITICAL | Pwn Request vulnerability                   |
-| S7  | OIDC used instead of long-lived cloud keys            | MAJOR    | `references/security-rules.md` §OIDC        |
-| S8  | `GITHUB_TOKEN` scoped minimally                       | MAJOR    | Per-job, read-only default                  |
-| S9  | Artifacts from PRs not executed in privileged context | CRITICAL | Artifact poisoning                          |
-| S10 | No secrets concatenated in shell scripts              | MAJOR    | Mask bypass risk                            |
-| S11 | Environment protection rules for production           | MAJOR    | Required reviewers, wait timers             |
-| S12 | No `add-path` / `set-env` commands                    | CRITICAL | Disabled for security                       |
+| #   | Check                                                 | Severity | Details                                                                                                                                                                         |
+| --- | ----------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| S1  | All `uses:` version-pinned (see tiered policy)        | MAJOR\*  | _CRITICAL for third-party actions; tag refs to official GitHub actions (`actions/_`, `github/\*`) acceptable in internal repos. See `references/security-rules.md` §SHA Pinning |
+| S2  | No `::set-output` / `::save-state`                    | CRITICAL | Deprecated, log spoofing risk                                                                                                                                                   |
+| S3  | No direct context interpolation in `run:`             | CRITICAL | Command injection vector                                                                                                                                                        |
+| S4  | `permissions:` explicitly set per workflow            | MAJOR    | Defaults are too broad                                                                                                                                                          |
+| S5  | No `secrets: inherit` in reusable workflows           | MAJOR    | Violates least privilege                                                                                                                                                        |
+| S6  | `pull_request_target` used safely                     | CRITICAL | Pwn Request vulnerability                                                                                                                                                       |
+| S7  | OIDC used instead of long-lived cloud keys            | MAJOR    | `references/security-rules.md` §OIDC                                                                                                                                            |
+| S8  | `GITHUB_TOKEN` scoped minimally                       | MAJOR    | Per-job, read-only default                                                                                                                                                      |
+| S9  | Artifacts from PRs not executed in privileged context | CRITICAL | Artifact poisoning                                                                                                                                                              |
+| S10 | No secrets concatenated in shell scripts              | MAJOR    | Mask bypass risk                                                                                                                                                                |
+| S11 | Environment protection rules for production           | MAJOR    | Required reviewers, wait timers                                                                                                                                                 |
+| S12 | No `add-path` / `set-env` commands                    | CRITICAL | Disabled for security                                                                                                                                                           |
 
 ---
 
@@ -366,7 +382,7 @@ Performance, cost, and architecture optimization with rationale.
 
 | #   | Anti-Pattern                                | Category     | Severity |
 | --- | ------------------------------------------- | ------------ | -------- |
-| 1   | Floating action version tags                | Security     | CRITICAL |
+| 1   | Unpinned action versions (tiered policy)    | Security     | MAJOR\*  |
 | 2   | Direct context interpolation in `run:`      | Security     | CRITICAL |
 | 3   | `::set-output` / `::save-state` usage       | Security     | CRITICAL |
 | 4   | Missing workflow-level `permissions:`       | Security     | MAJOR    |
@@ -436,7 +452,7 @@ Before finalizing, verify internally:
 - [ ] Phase 0 completed — all substeps executed, call graph built
 - [ ] All workflow files discovered and scanned (not just the first one)
 - [ ] No NEVER rule violations in generated code
-- [ ] All `uses:` directives in generated code are SHA-pinned with version comment
+- [ ] Third-party `uses:` directives are SHA-pinned; official GitHub actions use stable version tags
 - [ ] No hardcoded runner pools, project-specific paths, or capacity tables
 - [ ] Every finding has file:line reference and confidence >= 80
 - [ ] Output follows Action-First format (CRITICAL first, then MAJOR, then passing)

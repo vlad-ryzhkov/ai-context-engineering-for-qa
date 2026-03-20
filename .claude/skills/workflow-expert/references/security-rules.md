@@ -183,6 +183,23 @@ jobs:
 
 ## SHA Pinning Procedure
 
+### When to Apply
+
+SHA-pinning provides immutable version control, but the threat model varies by repo type and action source:
+
+| Action source                                 | Internal repos                                               | Open-source repos                      |
+| --------------------------------------------- | ------------------------------------------------------------ | -------------------------------------- |
+| **Official GitHub** (`actions/*`, `github/*`) | Tag `@vN` acceptable — signed by GitHub, Dependabot-friendly | SHA-pin recommended (MAJOR if missing) |
+| **Third-party / community**                   | SHA-pin required (MAJOR)                                     | SHA-pin required (CRITICAL)            |
+| **Any action `@main`/`@master`**              | CRITICAL — always banned                                     | CRITICAL — always banned               |
+
+**Why the distinction:**
+
+- Official GitHub actions (`actions/checkout`, `actions/setup-node`, etc.) are signed and maintained by GitHub. Tag re-pointing attacks are extremely unlikely.
+- For internal repos, SHA-pins break Dependabot auto-updates and create maintenance overhead that outweighs the marginal security benefit for official actions.
+- Third-party actions have a materially different trust boundary — maintainer accounts can be compromised, and tag re-pointing is a documented attack vector.
+- Branch refs (`@main`, `@master`) track HEAD and are always dangerous regardless of source.
+
 ### Finding the SHA for an Action
 
 ```bash

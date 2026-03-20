@@ -50,14 +50,14 @@ zizmor --format sarif .github/workflows/ > results.sarif
 
 ### Key Rules Detected
 
-| Rule                     | Severity | Description                                       |
-| ------------------------ | -------- | ------------------------------------------------- |
-| `template-injection`     | CRITICAL | Context variables interpolated in `run:` blocks   |
-| `excessive-permissions`  | MAJOR    | `GITHUB_TOKEN` with unnecessary write scopes      |
-| `unpinned-uses`          | CRITICAL | Actions referenced by mutable tag instead of SHA  |
-| `credential-persistence` | MAJOR    | Credentials stored in insecure locations          |
-| `impostor-commit`        | CRITICAL | Tag references that may point to impostor commits |
-| `dangerous-triggers`     | MAJOR    | `pull_request_target` or `workflow_run` misuse    |
+| Rule                     | Severity | Description                                                                                                                                                                 |
+| ------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `template-injection`     | CRITICAL | Context variables interpolated in `run:` blocks                                                                                                                             |
+| `excessive-permissions`  | MAJOR    | `GITHUB_TOKEN` with unnecessary write scopes                                                                                                                                |
+| `unpinned-uses`          | MAJOR\*  | Actions referenced by mutable tag instead of SHA. _CRITICAL for third-party actions; official GitHub actions (`actions/_`) with `@vN` tags are acceptable in internal repos |
+| `credential-persistence` | MAJOR    | Credentials stored in insecure locations                                                                                                                                    |
+| `impostor-commit`        | CRITICAL | Tag references that may point to impostor commits                                                                                                                           |
+| `dangerous-triggers`     | MAJOR    | `pull_request_target` or `workflow_run` misuse                                                                                                                              |
 
 ---
 
