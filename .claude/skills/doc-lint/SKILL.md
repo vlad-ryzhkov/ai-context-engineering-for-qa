@@ -25,23 +25,25 @@ Read `.claude/qa_agent.md` and `.claude/agents/auditor.md`.
 
 ## Input
 
-| Parameter | Required | Description |
-|-----------|:--------:|-------------|
-| Scope | Optional | Specific files/directories. Default — entire project |
-| Focus | Optional | Specific phases only (size, structure, duplicates) |
+| Parameter | Required | Description                                          |
+| --------- | :------: | ---------------------------------------------------- |
+| Scope     | Optional | Specific files/directories. Default — entire project |
+| Focus     | Optional | Specific phases only (size, structure, duplicates)   |
 
 ---
 
-## Algorithm (6 Phases)
+## Algorithm (7 Phases)
 
 ## Verbosity Protocol (STRICT)
 
 **SILENT MODE ENFORCED:**
+
 1. **NO CHAT TABLES:** Never output tables (Inventory, Findings, Stats) to chat. Only to the report file.
 2. **NO LISTS:** Do not list checked files in chat.
 3. **ONLY STATUS:** Output to chat **only** the final `SKILL COMPLETE` block and the report path.
 
 **Example of the only acceptable chat output:**
+
 > 📝 Audit Complete.
 > 📊 Report: `audit/doc-lint-report_{YYYYMMDD_HHMMSS}.md`
 > 📉 Health Score: 78/100
@@ -49,17 +51,17 @@ Read `.claude/qa_agent.md` and `.claude/agents/auditor.md`.
 
 ### Phases 1-7: Detailed Algorithm
 
-Full description of all phases (Discovery, Size Analysis, Structure Analysis, Cross-File Duplicate Detection, Content Hygiene, Report Generation, Safe-Fix Script) — in `references/phases.md`.
+Full description of all phases (Discovery, Size Analysis, Structure Analysis, Cross-File Duplicate Detection, **Consistency & Conciseness Analysis**, Content Hygiene, Report Generation, Safe-Fix Script) — in `references/phases.md`.
 
 ---
 
 ## Severity Model
 
-| Severity | Criteria |
-|----------|----------|
-| **CRITICAL** | Actual limit exceeded (>700 generic, >500 SKILL); Broken links (file not found) |
-| **WARNING** | Approaching limit (90% of threshold); Duplicates >10 lines; Wall-of-text >30 lines |
-| **INFO** | TODO markers; Minor duplicates (3-5 lines); Stale dates; Formatting issues |
+| Severity     | Criteria                                                                                                                                                                                                  |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CRITICAL** | Actual limit exceeded (>700 generic, >500 SKILL); Broken links (file not found); Enumeration mismatch (CON-1); Aspirational-as-factual (CON-4)                                                            |
+| **WARNING**  | Approaching limit (90% of threshold); Duplicates >10 lines; Wall-of-text >30 lines; Synonym drift (CON-2); Scattered instructions (BRV-4); Overlapping checklists (BRV-5); Missing decision rules (BRV-9) |
+| **INFO**     | TODO markers; Minor duplicates (3-5 lines); Stale dates; Formatting issues; Single-row tables (BRV-1); Algorithm restated in checklist (BRV-6)                                                            |
 
 ---
 
@@ -68,22 +70,24 @@ Full description of all phases (Discovery, Size Analysis, Structure Analysis, Cr
 Start Score: 100.
 
 **Deductions:**
+
 - CRITICAL: -15 points (per finding)
 - WARNING: -5 points
 - INFO: -0.5 points (reduced weight for noise)
 
 **Formula:** `MAX(0, 100 - (Count_Crit * 15) - (Count_Warn * 5) - (Count_Info * 0.5))`
 
-*No bonus points for "good behavior".*
+_No bonus points for "good behavior"._
 
-| Range | Rating | Interpretation |
-|-------|--------|----------------|
-| 90-100 | Excellent | Documentation is in excellent condition |
-| 70-89 | Good | Minor issues present |
-| 50-69 | Needs attention | Refactoring required |
-| <50 | Refactoring needed | Urgent documentation refactoring |
+| Range  | Rating             | Interpretation                          |
+| ------ | ------------------ | --------------------------------------- |
+| 90-100 | Excellent          | Documentation is in excellent condition |
+| 70-89  | Good               | Minor issues present                    |
+| 50-69  | Needs attention    | Refactoring required                    |
+| <50    | Refactoring needed | Urgent documentation refactoring        |
 
 **Formula MUST be shown with substituted values:**
+
 ```text
 Score = 100 - (2 × 15) - (5 × 5) - (8 × 0.5) = 100 - 30 - 25 - 4 = 41/100
 ```
@@ -105,39 +109,40 @@ Obtain timestamp via `date +%Y%m%d_%H%M%S` before writing.
 
 ## Summary
 
-| Metric | Value |
-|--------|-------|
-| Files scanned | N |
-| CRITICAL | N |
-| WARNING | N |
-| INFO | N |
-| Health Score | N/100 |
-| Duplicate clusters | N |
+| Metric             | Value |
+| ------------------ | ----- |
+| Files scanned      | N     |
+| CRITICAL           | N     |
+| WARNING            | N     |
+| INFO               | N     |
+| Health Score       | N/100 |
+| Duplicate clusters | N     |
 
 ## File Inventory
 
-| # | File | Lines | Type | Size Status |
-|---|------|------:|------|-------------|
-| 1 | ... | ... | ... | OK/WARNING/CRITICAL |
+| #   | File | Lines | Type | Size Status         |
+| --- | ---- | ----: | ---- | ------------------- |
+| 1   | ...  |   ... | ...  | OK/WARNING/CRITICAL |
 
 ## CRITICAL Findings
 
-| # | File | Phase | Description | Recommendation |
-|---|------|-------|-------------|----------------|
+| #   | File | Phase | Description | Recommendation |
+| --- | ---- | ----- | ----------- | -------------- |
 
 ## WARNING Findings
 
-| # | File | Phase | Description | Recommendation |
-|---|------|-------|-------------|----------------|
+| #   | File | Phase | Description | Recommendation |
+| --- | ---- | ----- | ----------- | -------------- |
 
 ## INFO Findings
 
-| # | File | Phase | Description | Recommendation |
-|---|------|-------|-------------|----------------|
+| #   | File | Phase | Description | Recommendation |
+| --- | ---- | ----- | ----------- | -------------- |
 
 ## Duplicate Map
 
 ### Cluster D-1: {pattern name}
+
 - **Type:** Exact / Near-duplicate / Conceptual
 - **SSOT Owner:** {file}
 - **Found in:** {list of files with line numbers}
@@ -147,9 +152,9 @@ Obtain timestamp via `date +%Y%m%d_%H%M%S` before writing.
 
 ## SSOT Refactoring Plan
 
-| # | Action | File | What to do |
-|---|--------|------|------------|
-| 1 | REMOVE | file.md:10-25 | Remove Tech Stack copy, add link |
+| #   | Action | File          | What to do                       |
+| --- | ------ | ------------- | -------------------------------- |
+| 1   | REMOVE | file.md:10-25 | Remove Tech Stack copy, add link |
 
 ## Statistics
 
@@ -168,15 +173,15 @@ Post-Check format — same as `/spec-audit` (see qa_agent.md § Skill Completion
 ```markdown
 ## Scorecard
 
-| Criterion | Result |
-|-----------|--------|
-| All files scanned | X/Y = NN% |
-| Line counts verified | ✅/❌ |
-| Cross-file detection completed | ✅/❌ |
+| Criterion                                   | Result    |
+| ------------------------------------------- | --------- |
+| All files scanned                           | X/Y = NN% |
+| Line counts verified                        | ✅/❌     |
+| Cross-file detection completed              | ✅/❌     |
 | Every finding has severity + recommendation | X/Y = NN% |
-| No placeholder {xxx} | ✅/❌ |
-| SSOT owner assigned for every cluster | X/Y = NN% |
-| Formulas with numerator/denominator | ✅/❌ |
+| No placeholder {xxx}                        | ✅/❌     |
+| SSOT owner assigned for every cluster       | X/Y = NN% |
+| Formulas with numerator/denominator         | ✅/❌     |
 
 ### Final Score: NN%
 ```
@@ -226,6 +231,13 @@ Post-Check format — same as `/spec-audit` (see qa_agent.md § Skill Completion
 ✅ Distinguish full copying from references and brief mentions
 ```
 
+### Flagging Design Tensions as Contradictions
+
+```text
+❌ "Rule A says X, Rule B says Y — contradiction!" when A and B govern different scopes
+✅ A contradiction is when two rules are mutually exclusive in the SAME scope
+```
+
 ---
 
 ## Quality Gate (Self-Review)
@@ -248,10 +260,11 @@ or inefficiencies during this run, output a brief proposal table. Otherwise: `�
 
 ## Related Files
 
-| File | Content |
-|------|---------|
-| `references/check-rules.md` | Size thresholds, duplicate signatures, SSOT matrix, Diataxis markers |
-| `references/best-practices.md` | Industry practices: Google, Amazon, Diataxis, Microsoft, GitLab, Stripe |
+| File                                  | Content                                                                                                                                                                      |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `references/check-rules.md`           | Size thresholds, duplicate signatures, SSOT matrix, Diataxis markers, consistency rules, conciseness rules                                                                   |
+| `references/optimization-patterns.md` | Full catalog of document optimization patterns (A-H categories): duplication, contradictions, conciseness, terminology, LLM-friendliness, architecture, cross-file integrity |
+| `references/best-practices.md`        | Industry practices: Google, Amazon, Diataxis, Microsoft, GitLab, Stripe                                                                                                      |
 
 ---
 

@@ -22,9 +22,9 @@
 5. Build the inventory table:
 
 ```markdown
-| # | File | Lines | Type | Status |
-|---|------|------:|------|--------|
-| 1 | CLAUDE.md | 107 | CLAUDE.md | — |
+| #   | File      | Lines | Type      | Status |
+| --- | --------- | ----: | --------- | ------ |
+| 1   | CLAUDE.md |   107 | CLAUDE.md | —      |
 ```
 
 **Checkpoint:** All files in scope found, line counts verified.
@@ -43,6 +43,7 @@
 3. Update the Status column in the inventory
 
 **Formula:**
+
 ```text
 If lines > CRITICAL threshold → CRITICAL
 If lines > WARNING threshold → WARNING
@@ -58,21 +59,26 @@ Otherwise → OK
 For each .md file:
 
 **3.1 Heading Hierarchy**
+
 - Extract all headings (`# `, `## `, `### `, ...)
 - Check for skipped levels: H1→H3 (skipping H2) → **CRITICAL**
 - Check depth: >H4 → **INFO** "Consider restructuring"
 
 **3.2 Section Balance**
+
 - Count lines between headings
 - If one section > 40% of the entire file → **WARNING**
 
 **3.3 Empty Sections**
+
 - Header → next header with no content (only whitespace) → **WARNING**
 
 **3.4 TOC Check**
+
 - File >200 lines without `## Table of Contents`, `## Содержание`, `## TOC` → **INFO**
 
 **3.5 Readability**
+
 - Wall-of-text: >20 consecutive lines without headers/lists/blank lines/code blocks → **WARNING**
 - Lines >200 characters → **INFO**
 
@@ -85,8 +91,9 @@ For each .md file:
 ### 4.1 Block Extraction
 
 For each file extract semantic blocks:
+
 - Tables (from `|` to end of table)
-- Code blocks (from ``` to ```)
+- Code blocks (from `to`)
 - Lists (consecutive lines with `- `, `* `, `1. `)
 - Paragraphs (>3 consecutive lines)
 
@@ -104,11 +111,13 @@ For each pattern KP-1..KP-5:
 **IMPORTANT:** Compare content ONLY for files that fell into the same cluster in step 4.2 (Grep match). Do not perform full pairwise comparison of the entire project (risk of combinatorial token explosion).
 
 For tables (within cluster):
+
 1. Compare header rows (lines with `|`)
 2. If headers match >70% → compare content
 3. Content matches >70% → **WARNING** near-duplicate
 
 For code blocks and lists (within cluster):
+
 1. Normalize per rules from `references/check-rules.md` § 5
 2. Exact match ≥5 lines → **CRITICAL**
 3. Exact match 3-5 lines → **WARNING**
@@ -116,6 +125,7 @@ For code blocks and lists (within cluster):
 ### 4.4 Intra-file Duplicates
 
 Within a single file:
+
 - Repeating sections (identical headings + similar content)
 - Repeating tables
 - Copy-paste paragraphs
@@ -123,9 +133,42 @@ Within a single file:
 ### 4.5 SSOT Owner Assignment
 
 For each duplicate cluster:
+
 1. Determine content category per `references/check-rules.md` § 3
 2. Assign SSOT Owner
 3. Formulate recommendation: "Keep in {Owner}, replace with link in the rest"
+
+---
+
+## Phase 4b: Consistency & Conciseness Analysis
+
+**Goal:** Detect logical contradictions, terminology drift, and conciseness anti-patterns. Rules in `references/check-rules.md` §7-§8, full pattern catalog in `references/optimization-patterns.md`.
+
+### 4b.1 Terminology Scan
+
+1. Extract key terms from each file (terms used ≥3 times).
+2. Cross-compare: same concept referred to by different words → **CON-2** (WARNING).
+3. Check first-use definitions: notation/jargon used before being defined → **CON-3** (WARNING).
+
+### 4b.2 Contradiction Detection
+
+1. Find exhaustive claims ("N kinds only", "exactly N", "two types") → verify actual count across all project files → mismatch = **CON-1** (CRITICAL).
+2. Find status labels ("Active", "Done", "Implemented") → if codebase verification is possible, check existence → mismatch = **CON-4** (CRITICAL).
+3. Find multi-step processes → check for continuation policy ("always complete all N" or "stop on blocker") → missing = **CON-6** (WARNING).
+
+### 4b.3 Conciseness Scan
+
+For each file:
+
+1. **Single-row tables** → **BRV-1** (INFO).
+2. **Deferred items** with >3 lines of description → **BRV-2** (WARNING).
+3. **Point-in-time snapshots** (lists of "current X") → **BRV-3** (WARNING).
+4. Count sections per topic — same topic in ≥3 non-adjacent sections → **BRV-4** (WARNING).
+5. Count checklists — ≥2 checklists with >50% overlapping items → **BRV-5** (WARNING).
+6. Check quality gates — items that verbatim repeat algorithm steps → **BRV-6** (INFO).
+7. Decision points with options but no selection criteria → **BRV-9** (WARNING).
+
+**Checkpoint:** All CON and BRV findings recorded with evidence (file, line, excerpt).
 
 ---
 
@@ -134,17 +177,21 @@ For each duplicate cluster:
 **Goal:** Find content issues.
 
 **5.1 Markers**
+
 - `TODO`, `FIXME`, `HACK`, `XXX`, `TEMP` → **INFO**
 
 **5.2 Broken Internal Links**
+
 - Find all `[text](path)` where path is a relative path
 - Check file existence → not found → **CRITICAL**
 - Empty links `[text]()` or `[](path)` → **WARNING**
 
 **5.3 Stale Dates**
+
 - Dates in YYYY-MM-DD format older than 6 months from the current date → **INFO** "Potentially stale"
 
 **5.4 Diataxis Type Mix**
+
 - Load markers from `references/check-rules.md` § 4
 - If file contains markers of ≥2 types → **INFO**
 
@@ -159,22 +206,26 @@ For each duplicate cluster:
 Generate a Bash script `audit/safe-fix.sh` with safe automatic fixes.
 
 **Safe (automatic):**
+
 - Adding `## Table of Contents` (if missing and file >200 lines)
 - Creating empty stub files for broken links (marked with `# TODO: Content needed`)
 - Removing trailing spaces
 
 **Manual (require human):**
+
 - Removing duplicates (risk of losing context)
 - Splitting files into parts
 - Content refactoring
 
 The script MUST contain:
+
 1. Shebang `#!/usr/bin/env bash`
 2. Safety header with warning
 3. Dry-run mode by default (`--apply` flag to execute)
 4. Each action with a comment and echo before execution
 
 **Example structure:**
+
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
@@ -204,7 +255,7 @@ fi
    - Check if the utility `.claude/scripts/generate-toc.sh` exists.
    - If the utility exists: add a command to the script to invoke it for all files where Warning "No TOC" was found.
      Example: `.claude/scripts/generate-toc.sh "$file" || echo "⚠️  Failed to generate TOC for $file"`
-   - If the utility DOES NOT exist: add a command to insert *only* a placeholder using simple `sed`.
+   - If the utility DOES NOT exist: add a command to insert _only_ a placeholder using simple `sed`.
      Example: insert `## Table of Contents\n\n*TODO: Auto-generate TOC*\n` after the H1 heading.
 3. **Broken links logic:**
    - If broken links were found (CRITICAL), add commands `mkdir -p $(dirname path/to/missing.md) && touch path/to/missing/file.md` and `echo "# TODO: Created by doc-lint" > ...`.
