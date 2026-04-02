@@ -81,6 +81,11 @@ For each script, use `Grep` to scan for pattern signatures:
 | `set -.*u` with arrays        | `set\s+-.*u`                          | Robustness  |
 | `pipefail` with grep          | `pipefail`                            | Robustness  |
 | Tool usage without guard      | `jq\|yq\|shellcheck\|docker\|kubectl` | Robustness  |
+| Inverted return codes         | `return 0.*fail\|return 0.*error`     | Robustness  |
+| `set -e` in WARN-only script  | `set -.*e.*pipefail`                  | Robustness  |
+| Variable as regex in grep     | `grep ".*\$\w\|grep \$\{`             | Security    |
+| Relative symlink in hooks     | `ln -s .*\.\./`                       | Robustness  |
+| sed for YAML/JSON parsing     | `sed.*---.*---\|sed.*^[a-z]*:`        | Robustness  |
 
 ### Step 3: Read References
 
@@ -99,6 +104,11 @@ For each detected anti-pattern, **READ** the corresponding reference file:
 | Robustness  | Missing prerequisite checks            | [prerequisite-checks.md](references/prerequisite-checks.md)           |
 | Robustness  | set -euo edge cases                    | [set-euo-pitfalls.md](references/set-euo-pitfalls.md)                 |
 | Robustness  | grep in pipeline under pipefail        | [set-euo-pitfalls.md](references/set-euo-pitfalls.md)                 |
+| Robustness  | Inverted return codes (0=fail)         | [return-code-convention.md](references/return-code-convention.md)     |
+| Robustness  | set -e in informational scripts        | [return-code-convention.md](references/return-code-convention.md)     |
+| Security    | Variable content used as regex         | [variable-as-regex.md](references/variable-as-regex.md)               |
+| Robustness  | Relative symlinks in git hooks         | [variable-as-regex.md](references/variable-as-regex.md)               |
+| Robustness  | sed for YAML/JSON parsing              | [variable-as-regex.md](references/variable-as-regex.md)               |
 
 ### Step 4: Classify and Report
 
