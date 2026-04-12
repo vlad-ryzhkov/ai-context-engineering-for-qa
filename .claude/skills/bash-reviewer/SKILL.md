@@ -48,6 +48,7 @@ Produces a structured report with fixes sourced from reference documentation.
 - Security: eval injection, unvalidated command expansion
 - Portability: sed -i, grep -P, readarray/mapfile, find -o precedence
 - Robustness: division by zero, wc in arithmetic, missing prerequisite checks, set -euo pitfalls
+- DRY: repeated check/counter blocks, duplicated scan loops, shared constants across files
 
 **DON'T review:**
 
@@ -86,29 +87,40 @@ For each script, use `Grep` to scan for pattern signatures:
 | Variable as regex in grep     | `grep ".*\$\w\|grep \$\{`             | Security    |
 | Relative symlink in hooks     | `ln -s .*\.\./`                       | Robustness  |
 | sed for YAML/JSON parsing     | `sed.*---.*---\|sed.*^[a-z]*:`        | Robustness  |
+| Repeated check+counter block  | `check_result=\$\?`                   | DRY         |
+| Repeated scan/grep loop       | `while.*read.*grep.*done`             | DRY         |
+| Repeated format+counter       | `\(\(.*\+\+\)\).*\|\| true`           | DRY         |
+| Duplicated constants/utils    | `RED=.*033` in multiple files         | DRY         |
+| Missing shellcheck source     | `source.*\.sh`                        | Robustness  |
 
 ### Step 3: Read References
 
 For each detected anti-pattern, **READ** the corresponding reference file:
 
-| Category    | Anti-Pattern                           | Reference                                                             |
-| ----------- | -------------------------------------- | --------------------------------------------------------------------- |
-| Security    | eval with untrusted input              | [eval-injection.md](references/eval-injection.md)                     |
-| Security    | Unvalidated command expansion          | [eval-injection.md](references/eval-injection.md)                     |
-| Portability | Platform-specific sed flags            | [portable-sed-and-tools.md](references/portable-sed-and-tools.md)     |
-| Portability | grep -P (Perl regex)                   | [portable-sed-and-tools.md](references/portable-sed-and-tools.md)     |
-| Portability | readarray/mapfile without bash 4 check | [portable-sed-and-tools.md](references/portable-sed-and-tools.md)     |
-| Portability | find -o without grouping               | [find-operator-precedence.md](references/find-operator-precedence.md) |
-| Robustness  | Division without zero check            | [arithmetic-guards.md](references/arithmetic-guards.md)               |
-| Robustness  | wc output in arithmetic                | [arithmetic-guards.md](references/arithmetic-guards.md)               |
-| Robustness  | Missing prerequisite checks            | [prerequisite-checks.md](references/prerequisite-checks.md)           |
-| Robustness  | set -euo edge cases                    | [set-euo-pitfalls.md](references/set-euo-pitfalls.md)                 |
-| Robustness  | grep in pipeline under pipefail        | [set-euo-pitfalls.md](references/set-euo-pitfalls.md)                 |
-| Robustness  | Inverted return codes (0=fail)         | [return-code-convention.md](references/return-code-convention.md)     |
-| Robustness  | set -e in informational scripts        | [return-code-convention.md](references/return-code-convention.md)     |
-| Security    | Variable content used as regex         | [variable-as-regex.md](references/variable-as-regex.md)               |
-| Robustness  | Relative symlinks in git hooks         | [variable-as-regex.md](references/variable-as-regex.md)               |
-| Robustness  | sed for YAML/JSON parsing              | [variable-as-regex.md](references/variable-as-regex.md)               |
+| Category    | Anti-Pattern                           | Reference                                                               |
+| ----------- | -------------------------------------- | ----------------------------------------------------------------------- |
+| Security    | eval with untrusted input              | [eval-injection.md](references/eval-injection.md)                       |
+| Security    | Unvalidated command expansion          | [eval-injection.md](references/eval-injection.md)                       |
+| Portability | Platform-specific sed flags            | [portable-sed-and-tools.md](references/portable-sed-and-tools.md)       |
+| Portability | grep -P (Perl regex)                   | [portable-sed-and-tools.md](references/portable-sed-and-tools.md)       |
+| Portability | readarray/mapfile without bash 4 check | [portable-sed-and-tools.md](references/portable-sed-and-tools.md)       |
+| Portability | find -o without grouping               | [find-operator-precedence.md](references/find-operator-precedence.md)   |
+| Robustness  | Division without zero check            | [arithmetic-guards.md](references/arithmetic-guards.md)                 |
+| Robustness  | wc output in arithmetic                | [arithmetic-guards.md](references/arithmetic-guards.md)                 |
+| Robustness  | Missing prerequisite checks            | [prerequisite-checks.md](references/prerequisite-checks.md)             |
+| Robustness  | set -euo edge cases                    | [set-euo-pitfalls.md](references/set-euo-pitfalls.md)                   |
+| Robustness  | grep in pipeline under pipefail        | [set-euo-pitfalls.md](references/set-euo-pitfalls.md)                   |
+| Robustness  | Inverted return codes (0=fail)         | [return-code-convention.md](references/return-code-convention.md)       |
+| Robustness  | set -e in informational scripts        | [return-code-convention.md](references/return-code-convention.md)       |
+| Security    | Variable content used as regex         | [variable-as-regex.md](references/variable-as-regex.md)                 |
+| Robustness  | Relative symlinks in git hooks         | [variable-as-regex.md](references/variable-as-regex.md)                 |
+| Robustness  | sed for YAML/JSON parsing              | [variable-as-regex.md](references/variable-as-regex.md)                 |
+| DRY         | Repeated check+counter blocks          | [dry-patterns.md](references/dry-patterns.md)                           |
+| DRY         | Repeated scan/grep loops               | [dry-patterns.md](references/dry-patterns.md)                           |
+| DRY         | Repeated format+counter pairs          | [dry-patterns.md](references/dry-patterns.md)                           |
+| DRY         | Duplicated constants across scripts    | [shared-libs-and-structure.md](references/shared-libs-and-structure.md) |
+| DRY         | Duplicated dependency checks           | [shared-libs-and-structure.md](references/shared-libs-and-structure.md) |
+| Robustness  | Missing shellcheck source directive    | [shared-libs-and-structure.md](references/shared-libs-and-structure.md) |
 
 ### Step 4: Classify and Report
 
@@ -136,8 +148,8 @@ For EACH issue found:
 Severity classification:
 
 - **CRITICAL**: Security issues (eval injection, command expansion)
-- **MAJOR**: Portability issues that break on common platforms, division by zero
-- **MINOR**: Missing prerequisite checks, set -euo edge cases in non-critical paths
+- **MAJOR**: Portability issues that break on common platforms, division by zero, DRY violations with 5+ repetitions
+- **MINOR**: Missing prerequisite checks, set -euo edge cases in non-critical paths, DRY violations with 3-4 repetitions, missing shellcheck source directives
 
 After all issues, append suggestions (if any) in this format:
 
@@ -167,6 +179,22 @@ Before completing the review, verify:
 After all anti-pattern issues, look for opportunities to simplify or improve
 readability that do not fall into the categories above. Present these as
 **Suggestions** (not errors) — they are optional improvements, not blockers.
+
+Gardener checks (DRY / KISS / structure):
+
+- **Repeated blocks**: 3+ identical multi-line blocks → extract a helper with `"$@"` forwarding
+- **Scan loops**: same grep-iterate-append body repeated → parameterized scan function
+- **Format+counter**: same string-append + counter-increment → one-line helper
+- **Shared utilities**: same constants/functions in multiple .sh files → `source` a shared lib
+- **Severity as parameter**: separate wrapper functions for p0/warn → one function with severity arg
+- **`$?` capture**: `func; rc=$?; if [[ $rc -ne 0 ]]` → `if ! func; then` (when return code isn't needed later)
+- **Missing `source` guards**: `source foo.sh` without `# shellcheck source=foo.sh` directive
+
+When proposing DRY improvements, verify the extraction is safe:
+
+- Helpers that modify caller variables must NOT run in subshells (`$(...)` or pipes)
+- `"$@"` forwarding preserves all quoting — prefer it over manual argument passing
+- Only extract when 3+ repetitions exist — premature extraction hurts readability
 
 ---
 
