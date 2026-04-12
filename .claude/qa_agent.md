@@ -211,6 +211,17 @@ Two-layer system: Layer 1 (bash detection via `scripts/lib/reflector.sh`) + Laye
 
 ---
 
+## Planning Complex Tasks
+
+For multi-file tasks (3+ files or cross-cutting changes), plan before executing:
+
+1. **Map files first.** List every file to create/modify with its responsibility. This locks in decomposition before writing code.
+2. **Bite-sized steps.** Each step = one action: "Write failing test" → "Run to verify fail" → "Implement minimal code" → "Run to verify pass". No compound steps.
+3. **Scope check.** If the plan covers multiple independent subsystems → break into separate plans. One plan = one coherent change.
+4. **Review loop.** For plans touching 5+ files, review the plan against the spec before execution. Max 2 review iterations.
+
+---
+
 ## Sub-Agent Protocol
 
 > Universal Protocols — in `CLAUDE.md`. Below — orchestration specifics.
@@ -223,6 +234,17 @@ Sub-agents operate in `context: fork` — pass **exhaustive context** in the pro
 - **Scope:** what to cover, scenarios
 - **Constraints:** tech stack, standards
 - **Upstream:** artifacts from previous skills (spec-audit findings, repo-scout-report)
+
+### When to Parallelize Agents
+
+| Condition | Strategy |
+|---|---|
+| Multiple independent failures (different files, no shared state) | **Parallel** — dispatch separate agents per failure |
+| Interconnected failures or shared dependencies | **Sequential** — one agent with full context |
+| Bulk generation across independent domains | **Parallel** — one agent per domain |
+| Single complex task requiring iterative fixing | **Sequential** — avoid split-brain |
+
+**Prompt quality for parallel agents:** Each agent prompt must be Focused (one problem), Complete (all context included — no assumptions about shared state), Specific (clear output format). Anti-pattern: "Fix all tests" fails; "Fix auth tests in UserApiTest.kt focusing on 401 handling" succeeds.
 
 **Anti-pattern Constraint:** When delegating to SDET, include in prompt: "Check `.claude/qa-antipatterns/_index.md` before code generation. Apply `api/eventual-consistency-writes.md` for eventual-consistency write→read pairs and `api/batch-partial-failure.md` for batch endpoints."
 

@@ -34,8 +34,6 @@ Stage relevant files (not `.env`, secrets, or build output). Commit with convent
 
 ```text
 <type>: <description in English>
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
 ```
 
 Types: `feat`, `fix`, `test`, `chore`, `docs`, `refactor`

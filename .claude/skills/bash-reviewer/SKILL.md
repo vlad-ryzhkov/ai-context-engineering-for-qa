@@ -59,6 +59,20 @@ Produces a structured report with fixes sourced from reference documentation.
 
 ## Detection Workflow
 
+### Step 0: Recommend Static Analysis Tools
+
+Before starting the review, output this recommendation:
+
+```text
+**Prerequisite:** Run shellcheck and shfmt before this review.
+  shellcheck -S warning scripts/*.sh    # catches quoting, word splitting, POSIX issues
+  shfmt -d scripts/*.sh                 # catches formatting inconsistencies
+This skill focuses on anti-patterns that shellcheck/shfmt cannot detect.
+```
+
+If the user confirms they already ran shellcheck, proceed. If not, suggest running
+it first — many issues this skill would find are already caught by shellcheck.
+
 ### Step 1: Discover Scripts
 
 Use `Glob` to find all `.sh` and `.bash` files in the target path.
@@ -86,6 +100,8 @@ For each script, use `Grep` to scan for pattern signatures:
 | Variable as regex in grep     | `grep ".*\$\w\|grep \$\{`             | Security    |
 | Relative symlink in hooks     | `ln -s .*\.\./`                       | Robustness  |
 | sed for YAML/JSON parsing     | `sed.*---.*---\|sed.*^[a-z]*:`        | Robustness  |
+| External binary in loop       | `\$(yq\|jq\|aws\|kubectl).*\$`        | Performance |
+| Repeated subprocess same input| `extract_field.*extract_field`         | Performance |
 
 ### Step 3: Read References
 
@@ -109,6 +125,8 @@ For each detected anti-pattern, **READ** the corresponding reference file:
 | Security    | Variable content used as regex         | [variable-as-regex.md](references/variable-as-regex.md)               |
 | Robustness  | Relative symlinks in git hooks         | [variable-as-regex.md](references/variable-as-regex.md)               |
 | Robustness  | sed for YAML/JSON parsing              | [variable-as-regex.md](references/variable-as-regex.md)               |
+| Performance | External binary called repeatedly       | [subprocess-caching.md](references/subprocess-caching.md)             |
+| Performance | Same data extracted multiple times      | [subprocess-caching.md](references/subprocess-caching.md)             |
 
 ### Step 4: Classify and Report
 
@@ -137,7 +155,7 @@ Severity classification:
 
 - **CRITICAL**: Security issues (eval injection, command expansion)
 - **MAJOR**: Portability issues that break on common platforms, division by zero
-- **MINOR**: Missing prerequisite checks, set -euo edge cases in non-critical paths
+- **MINOR**: Missing prerequisite checks, set -euo edge cases in non-critical paths, subprocess caching opportunities
 
 After all issues, append suggestions (if any) in this format:
 

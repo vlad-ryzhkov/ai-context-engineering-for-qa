@@ -20,13 +20,22 @@ existing=$(grep "^${name_field}=" "$map_file")
 
 ```bash
 # GOOD: -F treats pattern as literal string, not regex
-existing=$(grep -F "${name_field}=" "$map_file" | grep -F -m1 "${name_field}=" | cut -d= -f2)
+existing=$(grep -F -m1 "${name_field}=" "$map_file" | cut -d= -f2)
 ```
 
-For patterns that need anchoring (start-of-line), use `awk` instead:
+**Caveat: `-F` disables anchoring, creating substring-match bugs.** `grep -F "tester="` will
+match `super-tester=folder-a`, causing a false "name already taken" result. When the value
+is known-safe (e.g. kebab-case — no regex metacharacters), prefer anchored regex over `-F`:
 
 ```bash
-# GOOD: awk with string comparison, no regex
+# GOOD: ^ anchor prevents substring matches; safe when value is kebab-case
+existing=$(grep -m1 "^${name_field}=" "$map_file" | cut -d= -f2)
+```
+
+When the value may contain regex metacharacters AND anchoring is needed, use `awk`:
+
+```bash
+# GOOD: awk with string comparison, no regex, stops after first match
 existing=$(awk -F= -v name="$name_field" '$1 == name {print $2; exit}' "$map_file")
 ```
 

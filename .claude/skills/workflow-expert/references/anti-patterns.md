@@ -20,6 +20,7 @@ Full catalog of anti-patterns for GitHub Actions workflows. Each entry includes 
 | 8   | **`add-path` / `set-env` commands**                    | CRITICAL | Disabled by GitHub for security — allowed arbitrary environment manipulation                               | Use `>> "$GITHUB_ENV"` / `>> "$GITHUB_PATH"`                              | `grep -n 'add-path\|set-env' .github/workflows/*.yml`                                 |
 | 9   | **Secrets in shell concatenation**                     | MAJOR    | Secret values may appear in error messages, `set -x` output, or process listings                           | Assign to env var, reference indirectly                                   | `grep -n '\${{ secrets\.' .github/workflows/*.yml \| grep 'run:'`                     |
 | 10  | **Artifact execution from untrusted PR**               | CRITICAL | Attacker-controlled artifacts executed in privileged context                                               | Verify artifact hash, never execute PR artifacts in release workflows     | Manual review of `workflow_run` + `download-artifact` patterns                        |
+| 10b | **Unnecessary third-party action**                     | MAJOR    | Every external `uses:` is an additional supply-chain attack surface; community actions can be compromised  | Replace with native GitHub features or shell commands (e.g., `git diff` instead of `dorny/paths-filter`) | Compare each non-official `uses:` against native alternatives                         |
 
 ---
 

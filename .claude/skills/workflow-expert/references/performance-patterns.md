@@ -169,18 +169,15 @@ jobs:
       has_changes: ${{ steps.set-matrix.outputs.has_changes }}
     steps:
       - uses: actions/checkout@<SHA>
-      - uses: dorny/paths-filter@<SHA>
-        id: filter
         with:
-          filters: |
-            auth: 'services/auth/**'
-            payments: 'services/payments/**'
-            users: 'services/users/**'
-      - id: set-matrix
+          fetch-depth: 0          # need history for diff
+      - id: detect
+        # Zero-dependency path detection — no third-party actions needed
         run: |
+          CHANGED=$(git diff --name-only ${{ github.event.before }}..${{ github.sha }} -- services/)
           SERVICES=()
           for svc in auth payments users; do
-            if [ "${{ steps.filter.outputs[svc] }}" == "true" ]; then
+            if echo "$CHANGED" | grep -q "^services/${svc}/"; then
               SERVICES+=("\"$svc\"")
             fi
           done

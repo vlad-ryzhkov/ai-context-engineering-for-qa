@@ -50,6 +50,7 @@ Modify (surgical changes with propagation), Improve (optimization recommendation
 | **Evidence Based**       | Every finding must reference a specific file, line, and rule. No speculative issues.                                                                                                 |
 | **Minimal Blast Radius** | Prefer surgical edits over rewrites. Propagate changes through the call graph.                                                                                                       |
 | **Zero Trust Inputs**    | All user-controlled context variables (PR titles, issue bodies, branch names) are untrusted.                                                                                         |
+| **Native Over 3rd-Party** | Prefer built-in GitHub features and shell commands over third-party actions. Every external `uses:` is an additional supply-chain attack surface. Only recommend community actions when there is no native alternative. |
 | **Deterministic**        | Use `<thinking>` phase to plan before editing. Never guess action parameters.                                                                                                        |
 | **Surgical Precision**   | Never rewrite a file for one variable. Find the exact failure line, trace the data chain (caller → called), and change only what solves the problem. No debug echo unless requested. |
 

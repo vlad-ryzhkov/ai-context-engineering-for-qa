@@ -198,6 +198,7 @@ SHA-pinning provides immutable version control, but the threat model varies by r
 - Official GitHub actions (`actions/checkout`, `actions/setup-node`, etc.) are signed and maintained by GitHub. Tag re-pointing attacks are extremely unlikely.
 - For internal repos, SHA-pins break Dependabot auto-updates and create maintenance overhead that outweighs the marginal security benefit for official actions.
 - Third-party actions have a materially different trust boundary — maintainer accounts can be compromised, and tag re-pointing is a documented attack vector.
+- **Prefer native alternatives:** Before recommending any third-party action, check if the same result can be achieved with built-in GitHub features or shell commands (e.g., `git diff` instead of `dorny/paths-filter`, `github.token` instead of third-party auth actions). Every external `uses:` is an additional supply-chain attack surface.
 - Branch refs (`@main`, `@master`) track HEAD and are always dangerous regardless of source.
 
 ### Finding the SHA for an Action

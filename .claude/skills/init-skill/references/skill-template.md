@@ -199,5 +199,28 @@ Use for multi-file scan skills (doc-lint, agents-checker, skill-audit).
 > `{"agent": "skill-name", "phase": N, "files_scanned": N, "issues_found": N, "remaining": N}`
 ```
 
+### Block E — Verification Gate
+
+Use for ALL skills. Place immediately before SKILL COMPLETE block, after Quality Gate.
+
+```markdown
+> **Verification Gate**: Before writing SKILL COMPLETE, execute the proof command
+> (build, test, lint, file existence check). Read the FULL output + exit code.
+> If output does not positively confirm the claim → SKILL PARTIAL, not SKILL COMPLETE.
+>
+> **Red flags** (restart verification): "should work", "probably fine",
+> "I already tested earlier", "confident it works", "just this once".
+```
+
+**Rationalization prevention** (add to anti-patterns table if skill has one):
+
+| Rationalization | Counter |
+|---|---|
+| "Should work now" | Run it. "Should" is not evidence. |
+| "I'm confident" | Confidence is not verification. Execute the proof. |
+| "Just this once" | No exceptions. Every completion needs fresh evidence. |
+| "Already tested earlier" | Prior runs are stale. Re-verify with current state. |
+| "It's a simple change" | Simple changes cause sneaky bugs. Verify. |
+
 ---
 

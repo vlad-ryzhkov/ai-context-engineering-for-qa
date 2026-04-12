@@ -36,7 +36,7 @@ Read:
 
 ---
 
-## Algorithm (11 Checks)
+## Algorithm (12 Checks)
 
 ## Verbosity Protocol
 
@@ -269,7 +269,15 @@ Grep: "Loop Guard", "Escalation", "3-Strike", or `> **Loop Guard**`.
 - Applicable only if skill involves code testing, compilation, or iterative fixing (api-tests, api-mocks, api-isolated-tests)
 - Recommendation: Add Block C (Loop Guard) from `init-skill/references/skill-template.md`
 
-### Check 16: Cross-Skill Improvement Section (Tier 2)
+### Check 16: Verification Gate (Tier 1 Baseline — WARNING)
+
+Grep: `Verification Gate`, `proof command`, or explicit verification step requiring command execution before SKILL COMPLETE.
+
+- Severity: **WARNING** (if absent)
+- Why: Without a verification gate, skills can claim SKILL COMPLETE without running proof commands — "should work" replaces evidence
+- Recommendation: Add Block E (Verification Gate) from `init-skill/references/skill-template.md`
+
+### Check 17: Cross-Skill Improvement Section (Tier 2)
 
 Pipeline consumer skills (skills that consume structured artifacts produced by another skill,
 e.g., `/api-tests` consuming `test-scenarios.md` from `/api-test-cases`) MUST have a
@@ -323,7 +331,7 @@ Output to chat only:
 |----------|-----------------|
 | **CRITICAL** | "DO NOT FIX", SKILL.md >500 lines, artifact-generating skills without timestamping, paired skill drift (api-tests / api-tests-java) |
 | **ERROR** | Stale cross-references in qa_agent.md \| Side-effect skill missing `disable-model-invocation: true` (Check 1c) |
-| **WARNING** | Bloated Self-Review (>50 lines), Tech Stack duplication, code >50 lines inline, Anti-Patterns >30 lines, 300–500 lines, SKILL.md >400 lines without Progressive Disclosure, excessive rigid constraints (ALWAYS/NEVER/MUST > 5), missing `allowed-tools` (Check 1a), missing STOP/WARN/INFORM checkpoints in framework skills (Check 1d), **Tier 1 Baseline missing during V2 migration** (SILENT MODE, Self-review checklist, Gardener integration) |
+| **WARNING** | Bloated Self-Review (>50 lines), Tech Stack duplication, code >50 lines inline, Anti-Patterns >30 lines, 300–500 lines, SKILL.md >400 lines without Progressive Disclosure, excessive rigid constraints (ALWAYS/NEVER/MUST > 5), missing `allowed-tools` (Check 1a), missing STOP/WARN/INFORM checkpoints in framework skills (Check 1d), **Tier 1 Baseline missing** (SILENT MODE, Self-review checklist, Gardener integration, Verification Gate) |
 | **SUGGESTION** | Tier 2–3 features missing (Anti-patterns, Loop Guard), decorative ``` blocks, rarely-used sections inline, intra-doc redundancy |
 | **INFO** | Minor style or organization suggestions |
 

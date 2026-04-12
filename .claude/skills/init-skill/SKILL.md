@@ -273,6 +273,8 @@ Read and use the template from `references/skill-template.md` → section "Templ
 
 **Style:** imperative (see "Writing Style" above).
 
+**Persuasion principles:** Before writing the skill body, consult `references/persuasion-principles.md` to select the right combination of persuasion principles for the skill type. Match principle intensity to skill category (discipline-enforcing → strong Authority + Commitment; utility → clarity only).
+
 When writing instructions, **reference the actual resources** prepared in Phase 4:
 - `Read references/checklist.md` — not an abstract "use the checklist"
 - `Run scripts/validate.sh` — not "validate"
@@ -286,6 +288,7 @@ Before finalizing SKILL.md, ensure all **Tier 1 Baseline** features are present:
 | **SILENT MODE** | Explicit rule suppressing intermediate chat output | After main heading or in Phase 1 |
 | **Quality Gate + Gardener** | Self-review checklist + Gardener Protocol call | Before SKILL COMPLETE block |
 | **Self-review checklist** | `- [ ]` items (3–7 checks) specific to the skill | Inside Quality Gate |
+| **Verification Gate** | Proof command executed before completion claim | Before SKILL COMPLETE, after Quality Gate |
 | **Input/Output format** | Clear specification of input and output | "Input" and "Output Format" sections |
 | **Output template** | SKILL COMPLETE block with status code | At completion |
 
@@ -297,6 +300,7 @@ Before finalizing SKILL.md, ensure all **Tier 1 Baseline** features are present:
 | Code generation / audit | **Anti-patterns section** | After Algorithm or before Quality Gates |
 | Testing / compilation | **Loop Guard** | Inside execution phase |
 | Multi-file scan | **Status Reporting** | Inside heaviest processing phase |
+| ALL skills | **Verification Gate** | Before SKILL COMPLETE, after Quality Gate |
 | Pipeline consumer (skill consumes output of another skill) | **Cross-skill improvement section** (`## 💡 {Source} Improvements (Gardener)`) | Inside Completion Contract, after SKILL COMPLETE block |
 
 See `references/skill-template.md` → section "Tier 1 Baseline Injection" for exact injectable blocks.
@@ -312,6 +316,31 @@ Show the full SKILL.md and offer editing options (see `references/interaction-gu
 ## Phase 6: Iterative Refinement
 
 The refinement cycle is described in `references/interaction-guide.md` → "Refinement Cycle"
+
+---
+
+## Phase 6.5: Pressure Test (Optional)
+
+For discipline-enforcing skills: **required**. For code generation: **recommended**. For utility: **skip**.
+
+Full protocol: `references/skill-testing.md`
+
+Quick summary:
+1. **RED** — Run a realistic scenario WITHOUT the skill. Document failures and agent rationalizations verbatim.
+2. **GREEN** — Load the skill, re-run. Verify failures are now caught.
+3. **REFACTOR** — Remove dead instructions, strengthen weak spots, add captured rationalizations to anti-patterns.
+
+### ✅ CHECKPOINT 6.5: Pressure Test Results (if applicable)
+
+```text
+Pressure test:
+- Scenario: [description]
+- RED failures: [N issues observed without skill]
+- GREEN fixes: [N/N issues now caught with skill]
+- Rationalizations captured: [N added to anti-patterns]
+
+Proceed to save? (yes / iterate)
+```
 
 ---
 
