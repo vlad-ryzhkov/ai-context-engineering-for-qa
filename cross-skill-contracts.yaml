@@ -15,6 +15,3 @@
 # repo-scout | audit/repo-scout-report.md | api-test-cases | head -5 | grep -q "^#"
 # api-test-cases | audit/test-scenarios.md | api-tests | head -5 | grep -q "^#"
 # api-tests | src/test/kotlin/ | api-test-review | find {} -name "*.kt" | head -1
-#
-# Go Pipeline (future):
-# golang-codereviewer | audit/code-review.md | golang-tester | head -5 | grep -q "^#"
