@@ -86,6 +86,11 @@ For each script, use `Grep` to scan for pattern signatures:
 | Variable as regex in grep     | `grep ".*\$\w\|grep \$\{`             | Security    |
 | Relative symlink in hooks     | `ln -s .*\.\./`                       | Robustness  |
 | sed for YAML/JSON parsing     | `sed.*---.*---\|sed.*^[a-z]*:`        | Robustness  |
+| CLI arg into path w/o guard   | `--\w+.*"\$2".*\|\$\{[A-Z_]+\}/\$\{`  | Security    |
+| Substring placeholder-exclude | `your_\|example_\|placeholder`        | Security    |
+| Case-restricted security cls  | `\[A-Z_\].*(TOKEN\|KEY\|SECRET)`      | Security    |
+| Text-only extension filter    | `find.*-name.*\.md.*-o.*-name.*\.sh`  | Security    |
+| Suppression w/o allowlist     | `is_nolint\|is_suppressed\|# noqa`    | Security    |
 
 ### Step 3: Read References
 
@@ -109,6 +114,11 @@ For each detected anti-pattern, **READ** the corresponding reference file:
 | Security    | Variable content used as regex         | [variable-as-regex.md](references/variable-as-regex.md)               |
 | Robustness  | Relative symlinks in git hooks         | [variable-as-regex.md](references/variable-as-regex.md)               |
 | Robustness  | sed for YAML/JSON parsing              | [variable-as-regex.md](references/variable-as-regex.md)               |
+| Security    | Suppression DSL w/o allowlist          | [variable-as-regex.md](references/variable-as-regex.md)               |
+| Security    | CLI arg path traversal                 | [cli-arg-path-traversal.md](references/cli-arg-path-traversal.md)     |
+| Security    | Substring placeholder-exclude          | [security-scanner-fn.md](references/security-scanner-fn.md)           |
+| Security    | Case-restricted security regex         | [security-scanner-fn.md](references/security-scanner-fn.md)           |
+| Security    | Text-only extension filter             | [security-scanner-fn.md](references/security-scanner-fn.md)           |
 
 ### Step 4: Classify and Report
 
@@ -167,6 +177,27 @@ Before completing the review, verify:
 After all anti-pattern issues, look for opportunities to simplify or improve
 readability that do not fall into the categories above. Present these as
 **Suggestions** (not errors) — they are optional improvements, not blockers.
+
+Gardener checks:
+
+- **Severity as parameter**: two near-identical functions where the only
+  difference is a literal (`p0` vs `warn`, `FAIL` vs `WARN`) — fold into
+  one function with severity as a parameter.
+- **Stringly-typed mode switch**: a function takes a string arg that
+  branches its behavior into 3+ modes (`""` / `"use_whitelist"` / regex).
+  Split into 2–3 named functions calling a shared internal helper.
+- **Dead placeholder state**: a variable declared and initialized (usually
+  `FOO=0`) but never assigned again; often commented as "reserved for
+  future" — delete it and the line that prints it. Re-add when actually
+  needed.
+- **Function mutates caller-scope locals**: a helper reads/writes
+  variables from its caller's scope (`failure_count`, `has_p0_failure`,
+  etc.) via bash dynamic scoping. Convert the helper to a pure function
+  returning a status code (0/1/2); let the caller do the counter update
+  inline or via a tiny local wrapper. Keeps the mutation surface small
+  and explicit.
+- **`$?` capture when not needed later**: `func; rc=$?; if [[ $rc -ne 0 ]]`
+  → `if ! func; then`.
 
 ---
 

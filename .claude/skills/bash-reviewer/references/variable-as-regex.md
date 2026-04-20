@@ -98,3 +98,91 @@ If yq is not available, document the limitation and use a more robust awk approa
 # ACCEPTABLE: awk-based extraction (handles most cases)
 agent=$(awk '/^---$/{n++; next} n==1 && /^agent:/{sub(/^agent:[[:space:]]*/, ""); print; exit}' "$file")
 ```
+
+## Suppression DSL Without a Critical-Check Allowlist
+
+### Anti-Pattern: `<!-- nolint:... -->` directives that can silence P0 scanners
+
+Any linter that accepts an inline suppression directive (`<!-- nolint:X -->`,
+`# noqa: X`, `// eslint-disable X`, etc.) is a trust boundary: anyone with
+commit rights to a file can disable a check by adding a comment. If the
+dispatch treats every check name equally, a PR can legally land a commit
+that turns off the secret scanner.
+
+**Signal:** `if is_suppressed "$check_name"; then return 0; fi` at the top
+of the dispatch, with no filter on which checks are suppressible.
+
+```bash
+# BAD: any check can be suppressed, including security.
+# Commit message: "chore: fix false positive in docs"
+# Actual diff: `+<!-- nolint:security -->` in SKILL.md
+#              `+AKIAIOSFODNN7EXAMPLE000000000000000000` in same file
+run_check() {
+  local check_name="$1"
+  if is_nolint "$nolint_list" "$check_name"; then
+    log_pass "$check_name (nolint)"   # silent, no audit trail
+    return 0
+  fi
+  "$@"
+}
+```
+
+Two failures compound:
+
+1. **No allowlist of unsuppressible checks** — secret scanning is now
+   opt-out with one line.
+2. **No audit log** — the suppressed check prints as PASS, indistinguishable
+   from a real pass. Reviewers reading CI output won't notice.
+
+### Fix: Deny-list the checks that must always run; log every suppression
+
+Maintain a tight allow-list of checks that cannot be suppressed. When a PR
+tries to suppress one, fail the check AND still run the real scanner — so
+both the intent and (if present) the actual secret are surfaced. For
+suppressible checks, log the suppression with the file path.
+
+```bash
+is_never_suppressible() {
+  case "$1" in
+    security) return 0 ;;   # secret scanning — never suppressible
+    *) return 1 ;;
+  esac
+}
+
+run_check() {
+  local check_name="$1" severity="$2" nolint_list="$3" rel_path="$4"
+  shift 4
+
+  local forced_fail=0
+  if is_nolint "$nolint_list" "$check_name"; then
+    if is_never_suppressible "$check_name"; then
+      log_fail "$check_name" "nolint is not allowed for this check (ignored)"
+      forced_fail=1
+      # Fall through — the real check still runs, so an actual secret in
+      # the same file is also reported. A malicious PR gets two FAIL lines.
+    else
+      log_warn "$check_name" "SUPPRESSED via nolint in $rel_path"
+      return 0
+    fi
+  fi
+
+  if "$@" && [[ $forced_fail -eq 0 ]]; then
+    return 0
+  fi
+  [[ "$severity" == "p0" || $forced_fail -eq 1 ]] && return 2
+  return 1
+}
+```
+
+### Generalizes beyond `nolint`
+
+Same pattern applies to:
+
+- `# type: ignore` / `mypy: disable-error-code` for type checkers
+- `// eslint-disable-next-line` for ESLint
+- `@SuppressWarnings` in Java
+- Custom `skip-ci: <job>` directives in YAML headers
+
+Every one of them needs a hardcoded list of unsuppressible checks (security,
+data-loss prevention, license compliance). The allowlist lives in the tool,
+not in the config, so a repo-level config change can't disable it.
