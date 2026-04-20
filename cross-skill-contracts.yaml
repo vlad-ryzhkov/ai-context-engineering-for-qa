@@ -1,0 +1,20 @@
+# Cross-Skill Pipeline Contracts
+# Format: upstream | artifact | downstream | format_check
+#
+# Each line declares a data dependency between two skills:
+#   upstream   — skill that produces the artifact
+#   artifact   — file path (relative to project root) produced by upstream
+#   downstream — skill that consumes the artifact
+#   format_check — optional bash command to validate artifact format
+#
+# When no contracts are defined, cross-skill validation passes vacuously (0 contracts = 0 errors).
+#
+# Examples (uncomment when pipeline skills are available):
+#
+# QA Pipeline:
+# repo-scout | audit/repo-scout-report.md | api-test-cases | head -5 | grep -q "^#"
+# api-test-cases | audit/test-scenarios.md | api-tests | head -5 | grep -q "^#"
+# api-tests | src/test/kotlin/ | api-test-review | find {} -name "*.kt" | head -1
+#
+# Go Pipeline (future):
+# golang-codereviewer | audit/code-review.md | golang-tester | head -5 | grep -q "^#"
