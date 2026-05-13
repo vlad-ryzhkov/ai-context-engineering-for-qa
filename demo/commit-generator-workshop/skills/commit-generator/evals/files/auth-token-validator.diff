@@ -1,0 +1,13 @@
+diff --git a/src/auth/token.go b/src/auth/token.go
+--- a/src/auth/token.go
++++ b/src/auth/token.go
+@@ -12,6 +12,10 @@ func ValidateToken(tokenString string) (bool, error) {
+     if tokenString == "" {
+         return false, errors.New("token is empty")
+     }
++
++    if len(tokenString) < 10 {
++        return false, errors.New("token is too short")
++    }
+     return true, nil
+ }

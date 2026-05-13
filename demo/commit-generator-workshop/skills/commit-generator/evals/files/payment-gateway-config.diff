@@ -1,0 +1,26 @@
+diff --git a/configs/payment-gateway.yaml b/configs/payment-gateway.yaml
+--- a/configs/payment-gateway.yaml
++++ b/configs/payment-gateway.yaml
+@@ -1,18 +1,18 @@
+ service: payment-gateway
+ endpoints:
+   - name: charge
+     method: POST
+     path: /v1/charge
+     timeout_ms: 5000
+     retries:
+-      max: 3
+-      backoff_ms: 250
++        max: 3
++        backoff_ms: 250
+   - name: refund
+     method: POST
+     path: /v1/refund
+     timeout_ms: 5000
+     retries:
+-      max: 3
+-      backoff_ms: 250
++        max: 3
++        backoff_ms: 250
+ logging:
+   level: info

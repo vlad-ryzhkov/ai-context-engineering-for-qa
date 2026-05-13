@@ -1,0 +1,9 @@
+diff --git a/skills/my-skill/SKILL.md b/skills/my-skill/SKILL.md
+--- a/skills/my-skill/SKILL.md
++++ b/skills/my-skill/SKILL.md
+@@ -45,2 +45,5 @@
+ Analyze the text and provide a summary.
++
++<guardrails>
++- Do NOT modify files outside the scope.
++</guardrails>

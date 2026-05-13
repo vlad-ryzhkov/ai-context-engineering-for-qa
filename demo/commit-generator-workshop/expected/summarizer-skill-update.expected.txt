@@ -1,0 +1,1 @@
+docs(skill): remove guardrails block from prompt

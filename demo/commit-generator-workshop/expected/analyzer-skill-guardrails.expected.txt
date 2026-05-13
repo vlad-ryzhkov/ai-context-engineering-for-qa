@@ -1,0 +1,1 @@
+docs(skill): add strict guardrails to prompt

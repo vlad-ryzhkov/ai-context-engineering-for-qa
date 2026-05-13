@@ -1,0 +1,21 @@
+diff --git a/src/billing/invoice.go b/src/billing/invoice.go
+--- a/src/billing/invoice.go
++++ b/src/billing/invoice.go
+@@ -8,7 +8,7 @@ package billing
+
+ import "errors"
+
+-func CalcTotal(items []Item) (float64, error) {
++func CalculateTotal(items []Item) (float64, error) {
+     if len(items) == 0 {
+         return 0, errors.New("no items")
+     }
+@@ -22,7 +22,7 @@ func CalcTotal(items []Item) (float64, error) {
+     return total, nil
+ }
+
+-func ApplyDiscount(total float64, pct float64) float64 {
++func ApplyDiscount(total, pct float64) float64 {
+     if pct <= 0 {
+         return total
+     }

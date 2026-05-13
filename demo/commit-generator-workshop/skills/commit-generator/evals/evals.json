@@ -1,0 +1,77 @@
+{
+  "skill_name": "commit-generator",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Read the git diff at evals/files/auth-token-validator.diff and generate a Conventional Commits message for it. Output only the message — no preamble, no markdown.",
+      "expected_output": "Example: 'feat(auth): add length validation for JWT tokens'.",
+      "files": ["evals/files/auth-token-validator.diff"],
+      "expectations": [
+        "Output starts with 'feat(' or 'fix('",
+        "Output is exactly one line with no markdown fences",
+        "Total length is 72 characters or fewer",
+        "Description mentions length validation or token length",
+        "No trailing period on the description"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Read the git diff at evals/files/analyzer-skill-guardrails.diff and generate a Conventional Commits message for it. Output only the message — no preamble, no markdown.",
+      "expected_output": "Example: 'docs(skill): add strict guardrails to prompt'.",
+      "files": ["evals/files/analyzer-skill-guardrails.diff"],
+      "expectations": [
+        "Output starts with 'docs(' or 'chore('",
+        "Description contains the word 'guardrails' or 'prompt'",
+        "Output is exactly one line",
+        "Total length is 72 characters or fewer"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Read the git diff at evals/files/no-staged-changes.diff and generate a Conventional Commits message for it. The file is intentionally empty (no staged changes). Output only the message — no preamble, no markdown.",
+      "expected_output": "Example: 'abort: no changes detected'.",
+      "files": ["evals/files/no-staged-changes.diff"],
+      "expectations": [
+        "Output exactly equals 'abort: no changes detected'",
+        "No Conventional Commits type prefix (fix/feat/docs/...) is generated"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Read the git diff at evals/files/billing-invoice-signature.diff and generate a Conventional Commits message for it. Output only the message — no preamble, no markdown.",
+      "expected_output": "Example: 'refactor(billing): rename CalcTotal and tidy discount signature'.",
+      "files": ["evals/files/billing-invoice-signature.diff"],
+      "expectations": [
+        "Output starts with 'refactor('",
+        "Output does NOT start with 'feat(' or 'fix(' — there is no behaviour change",
+        "Description mentions rename OR signature OR tidy",
+        "Total length is 72 characters or fewer"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Read the git diff at evals/files/payment-gateway-config.diff and generate a Conventional Commits message for it. Output only the message — no preamble, no markdown.",
+      "expected_output": "Example: 'style(payment-gateway): increase yaml indent under retries blocks'.",
+      "files": ["evals/files/payment-gateway-config.diff"],
+      "expectations": [
+        "Output starts with 'style(' or 'chore('",
+        "Output does NOT start with 'fix(' or 'feat(' or 'refactor(' — there is no semantic change",
+        "Description mentions indent OR indentation OR formatting OR yaml",
+        "Total length is 72 characters or fewer"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Read the git diff at evals/files/summarizer-skill-update.diff and generate a Conventional Commits message for it. Output only the message — no preamble, no markdown.",
+      "expected_output": "Example: 'docs(skill): remove guardrails block from prompt'.",
+      "files": ["evals/files/summarizer-skill-update.diff"],
+      "expectations": [
+        "Output starts with 'docs(' or 'chore('",
+        "Description mentions 'remove' or 'delete' or 'drop'",
+        "Description mentions 'guardrails' or 'protection' or 'safety'",
+        "Output does NOT use cosmetic words like 'cleanup', 'simplify', or 'tidy' for a safety-removal change",
+        "Total length is 72 characters or fewer"
+      ]
+    }
+  ]
+}
