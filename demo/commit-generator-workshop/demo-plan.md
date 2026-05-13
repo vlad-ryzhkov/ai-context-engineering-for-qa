@@ -1,6 +1,19 @@
 # Workshop — `commit-generator` skill
 
+<!-- start skill with prompt -->
+
+Why and when skill useful:
+- 
+Example: `golang-tester` (since Feb 16 2026) for go unit test creation:
+input - some skills
+outputs - unit tests
+skill: rules, steps, referencies, antipatterns
+
+Another example: /grill-me
+https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-me/SKILL.md 
+
 Live demo: build a Conventional Commits skill from scratch, run evals, ship.
+Disclaimer: Focus on flows, prompts, tools
 
 ## Coverage
 
@@ -13,6 +26,8 @@ Live demo: build a Conventional Commits skill from scratch, run evals, ship.
 
 /ai-skills/docs/skill-creation-guide.md
 
+## Official Anthropic's skill-creator
+
 ### Think first
 
 A skill earns its keep only when the task is repetitive, the input/output are strict, and the execution flow is simple. 
@@ -21,8 +36,7 @@ Some questions:
 
 1. **Question 1** — "What should this skill enable Claude to do?"
 2. **Question 2** — "When should this skill trigger?"
-3. **Question 3** — "What's the expected output format?"
-4. **Question 4** — "Should we set up test cases?"
+4. **Question 3** — "Should we set up test cases?"
 
 ## How to start with chat
 
@@ -111,12 +125,15 @@ If the delta is small, the skill is dead weight; cut it or sharpen the contract.
 ### Run skill-creator
 
 /skill-creator use prompt demo/commit-generator-workshop/prompts/skill-creation-prompt.md
+<!-- run web view -->
 
 ---
 
-## Full guide (again)
+## Conclusion
 
-/ai-skills/docs/skill-creation-guide.md
+- Easy
+- Fast
+- You can try it now
 
 ### Coming soon
 

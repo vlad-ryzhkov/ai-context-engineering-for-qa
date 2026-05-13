@@ -26,7 +26,6 @@ I want to create a skill called **commit-generator**.
 ## Examples and evals
 
 - Examples of inputs: `demo/commit-generator-workshop/skills/commit-generator/evals/files/`
-- Examples of outputs: `demo/commit-generator-workshop/expected/`
 - Evals draft: `demo/commit-generator-workshop/skills/commit-generator/evals/evals.json`
 
 ## Working details
@@ -34,6 +33,8 @@ I want to create a skill called **commit-generator**.
 1. If a without-skill (baseline) launch has already executed once and no new files / inputs / tests / fixtures were added, do NOT rerun the without-skill baseline on every iteration.
 2. You may spawn the same LLM for subagents (e.g. main Haiku → subagents also Haiku) for each "input + skill" pair.
 3. You may spawn a separate grader LLM subagent for reviewing results.
+4. Context isolation: for baseline execution agents shouldn't have access to evals
+5. Show results in official anthropic's skill-creator web-view
 
 "Haiku" here is just an example; CI will use it. Feel free to use any model for skill creation itself.
 
