@@ -5,7 +5,7 @@ Live demo: build a Conventional Commits skill from scratch, run evals, ship.
 ## Coverage
 
 1. Live demo — creating a simple AI skill step by step.
-2. Overview of the `ai-skills` repository structure and development flow.
+2. Overview of the `ai-skills` development flow.
 
 ---
 
@@ -88,7 +88,7 @@ Anti-leakage rule: filenames look like real production paths and do NOT telegrap
 
 Anthropic has tightened policies on generated prompts. Treat prompt authoring as engineering, not as a one-shot generation step.
 
-### Promt structure for skill creation / skill draft
+### Prompt structure for skill creation / skill draft
 
 Structure:
 
