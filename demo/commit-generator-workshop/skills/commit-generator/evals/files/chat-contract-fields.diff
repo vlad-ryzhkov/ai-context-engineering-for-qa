@@ -1,0 +1,40 @@
+diff --git a/protobuf/chat/v1/chat.proto b/protobuf/chat/v1/chat.proto
+--- a/protobuf/chat/v1/chat.proto
++++ b/protobuf/chat/v1/chat.proto
+@@ -4,8 +4,6 @@ option go_package = "./;chat";
+
+ package chat;
+
+-import "google/protobuf/struct.proto";
+-
+ service Chat {
+   rpc Create(CreateRequest) returns (ChatResponse) {}
+   rpc Close(CloseRequest) returns (CloseResponse) {}
+@@ -120,14 +118,13 @@ message Options {
+
+ message ChatUserOption {
+   int64 user_id = 1;
+-  // deprecated: bool send_image_is_allowed = 2;
+   reserved 2;
++  reserved "send_image_is_allowed";
+   bool image_from_camera = 3;
+   bool image_from_gallery = 4;
+   bool voice = 5;
+-  // deprecated
+-  // Any user-related attributes.
+-  google.protobuf.Struct attributes = 20;
++  reserved 20;
++  reserved "attributes";
+ }
+
+ message CloseRequest {
+@@ -145,7 +142,8 @@ message SendServiceMessageRequest {
+   ChatIdentity chat = 1;
+   ServiceSender service_sender = 2;
+   ServiceMessage message = 3;
+-  optional CreateRequest create_request = 4;
++  reserved 4;
++  reserved "create_request";
+ }
+
+ message ChatUser {

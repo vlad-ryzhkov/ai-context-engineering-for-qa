@@ -9,8 +9,10 @@ Usage:
         --benchmark <workspace>/iteration-N/benchmark.json \\
         --iter iter-CG1 \\
         [--sha <git-sha>] \\
+        [--run-id <id>] \\
+        [--tokens-in <int>] \\
+        [--tokens-out <int>] \\
         [--cost <usd>] \\
-        [--cache <pct>] \\
         [--notes "free-form note"] \\
         [--history skills/benchmark-history.md]
 
@@ -31,8 +33,8 @@ Per-run tracker for the workshop demo skill. Skill-creator runs produce one `ben
 
 ## Iteration table
 
-| Iter | Date (UTC) | SHA | Tests | Pass ws | Pass wo | Δ | Duration ws | Cost | Cache | Notes |
-|------|------------|-----|-------|---------|---------|---|-------------|------|-------|-------|
+| Iter | Date (UTC) | Run id | SHA | Tests | Pass ws | Pass wo | Δ | Tokens (in/out) | Cost | Notes |
+|------|------------|--------|-----|-------|---------|---------|---|-----------------|------|-------|
 """
 
 
@@ -55,8 +57,10 @@ def main() -> int:
     ap.add_argument("--benchmark", required=True, type=Path, help="Path to skill-creator benchmark.json")
     ap.add_argument("--iter", required=True, help="Iteration id, e.g. iter-CG1")
     ap.add_argument("--sha", default="", help="Skill commit SHA (optional)")
+    ap.add_argument("--run-id", default="", help="Run identifier: GH Actions run URL/id OR local workspace path (optional)")
+    ap.add_argument("--tokens-in", default="", help="Total input tokens across all runs (optional)")
+    ap.add_argument("--tokens-out", default="", help="Total output tokens across all runs (optional)")
     ap.add_argument("--cost", default="", help="Total cost in USD, e.g. 0.42 (optional)")
-    ap.add_argument("--cache", default="", help="Cache hit rate %% (e.g. 98.5) — optional")
     ap.add_argument("--notes", default="", help="Free-form notes for the row")
     ap.add_argument(
         "--history",
@@ -85,16 +89,23 @@ def main() -> int:
     pass_wo = fmt_pass(wo, total)
     delta = delta_pp(ws.get("pass_rate", {}).get("mean", 0.0), wo.get("pass_rate", {}).get("mean", 0.0))
 
-    time_mean = ws.get("time_seconds", {}).get("mean")
-    duration_ws = f"{time_mean:.1f}s" if isinstance(time_mean, (int, float)) and time_mean > 0 else "—"
-
-    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    date = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
     sha = args.sha or "—"
+    run_id = args.run_id or "—"
+    tin = args.tokens_in
+    tout = args.tokens_out
+    if tin and tout:
+        tokens = f"{tin} / {tout}"
+    elif tin:
+        tokens = f"{tin} / —"
+    elif tout:
+        tokens = f"— / {tout}"
+    else:
+        tokens = "—"
     cost = f"${args.cost}" if args.cost else "—"
-    cache = f"{args.cache}%" if args.cache else "—"
     notes = args.notes.replace("|", "\\|") or "—"
 
-    row = f"| {args.iter} | {date} | {sha} | {total} | **{pass_ws}** | {pass_wo} | {delta} | {duration_ws} | {cost} | {cache} | {notes} |\n"
+    row = f"| {args.iter} | {date} | {run_id} | {sha} | {total} | **{pass_ws}** | {pass_wo} | {delta} | {tokens} | {cost} | {notes} |\n"
 
     history = args.history
     history.parent.mkdir(parents=True, exist_ok=True)

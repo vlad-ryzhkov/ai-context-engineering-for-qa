@@ -1,0 +1,17 @@
+diff --git a/auth/stripe_webhook.go b/auth/stripe_webhook.go
+--- a/auth/stripe_webhook.go
++++ b/auth/stripe_webhook.go
+@@ -1,6 +1,9 @@
+ package auth
+
+ import (
+     "net/http"
++    "github.com/stripe/stripe-go/v74"
+ )
+
++const STRIPE_SECRET_KEY = "sk_live_REDACTED_FIXTURE"
++
+ func HandleWebhook(w http.ResponseWriter, r *http.Request) {
++    stripe.Key = STRIPE_SECRET_KEY
+     w.WriteHeader(http.StatusOK)
+ }

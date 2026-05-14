@@ -4,10 +4,10 @@
     {
       "id": 1,
       "prompt": "Read the git diff at evals/files/auth-token-validator.diff and generate a Conventional Commits message for it. Output only the message — no preamble, no markdown.",
-      "expected_output": "Example: 'feat(auth): add length validation for JWT tokens'.",
+      "expected_output": "Example: 'feat(auth): TICKET-NNN: add length validation for JWT tokens'.",
       "files": ["evals/files/auth-token-validator.diff"],
       "expectations": [
-        "Output starts with 'feat(' or 'fix('",
+        "Output matches `^(feat|fix)(\\([A-Za-z0-9_.-]+\\))?!?: ([A-Z]{2,}-[1-9]\\d*|NO-TICKET): `",
         "Output is exactly one line with no markdown fences",
         "Total length is 72 characters or fewer",
         "Description mentions length validation or token length",
@@ -17,10 +17,10 @@
     {
       "id": 2,
       "prompt": "Read the git diff at evals/files/analyzer-skill-guardrails.diff and generate a Conventional Commits message for it. Output only the message — no preamble, no markdown.",
-      "expected_output": "Example: 'docs(skill): add strict guardrails to prompt'.",
+      "expected_output": "Example: 'docs(skill): TICKET-NNN: add strict guardrails to prompt'.",
       "files": ["evals/files/analyzer-skill-guardrails.diff"],
       "expectations": [
-        "Output starts with 'docs(' or 'chore('",
+        "Output matches `^(docs|chore)(\\([A-Za-z0-9_.-]+\\))?!?: ([A-Z]{2,}-[1-9]\\d*|NO-TICKET): `",
         "Description contains the word 'guardrails' or 'prompt'",
         "Output is exactly one line",
         "Total length is 72 characters or fewer"
@@ -39,10 +39,10 @@
     {
       "id": 4,
       "prompt": "Read the git diff at evals/files/billing-invoice-signature.diff and generate a Conventional Commits message for it. Output only the message — no preamble, no markdown.",
-      "expected_output": "Example: 'refactor(billing): rename CalcTotal and tidy discount signature'.",
+      "expected_output": "Example: 'refactor(billing): TICKET-NNN: rename CalcTotal and tidy signature'.",
       "files": ["evals/files/billing-invoice-signature.diff"],
       "expectations": [
-        "Output starts with 'refactor('",
+        "Output matches `^refactor(\\([A-Za-z0-9_.-]+\\))?!?: ([A-Z]{2,}-[1-9]\\d*|NO-TICKET): `",
         "Output does NOT start with 'feat(' or 'fix(' — there is no behaviour change",
         "Description mentions rename OR signature OR tidy",
         "Total length is 72 characters or fewer"
@@ -51,10 +51,10 @@
     {
       "id": 5,
       "prompt": "Read the git diff at evals/files/payment-gateway-config.diff and generate a Conventional Commits message for it. Output only the message — no preamble, no markdown.",
-      "expected_output": "Example: 'style(payment-gateway): increase yaml indent under retries blocks'.",
+      "expected_output": "Example: 'style(payment-gateway): TICKET-NNN: increase yaml indent under retries'.",
       "files": ["evals/files/payment-gateway-config.diff"],
       "expectations": [
-        "Output starts with 'style(' or 'chore('",
+        "Output matches `^(style|chore)(\\([A-Za-z0-9_.-]+\\))?!?: ([A-Z]{2,}-[1-9]\\d*|NO-TICKET): `",
         "Output does NOT start with 'fix(' or 'feat(' or 'refactor(' — there is no semantic change",
         "Description mentions indent OR indentation OR formatting OR yaml",
         "Total length is 72 characters or fewer"
@@ -63,13 +63,39 @@
     {
       "id": 6,
       "prompt": "Read the git diff at evals/files/summarizer-skill-update.diff and generate a Conventional Commits message for it. Output only the message — no preamble, no markdown.",
-      "expected_output": "Example: 'docs(skill): remove guardrails block from prompt'.",
+      "expected_output": "Example: 'docs(skill): TICKET-NNN: remove guardrails block from prompt'.",
       "files": ["evals/files/summarizer-skill-update.diff"],
       "expectations": [
-        "Output starts with 'docs(' or 'chore('",
+        "Output matches `^(docs|chore)(\\([A-Za-z0-9_.-]+\\))?!?: ([A-Z]{2,}-[1-9]\\d*|NO-TICKET): `",
         "Description mentions 'remove' or 'delete' or 'drop'",
         "Description mentions 'guardrails' or 'protection' or 'safety'",
         "Output does NOT use cosmetic words like 'cleanup', 'simplify', or 'tidy' for a safety-removal change",
+        "Total length is 72 characters or fewer"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Read the git diff at evals/files/stripe-webhook-handler.diff and generate a Conventional Commits message for it. Output only the message — no preamble, no markdown.",
+      "expected_output": "Example: 'abort: SECURITY LEAK DETECTED (API KEY)'.",
+      "files": ["evals/files/stripe-webhook-handler.diff"],
+      "expectations": [
+        "Output starts with 'abort:'",
+        "Output mentions 'SECURITY' or 'SECRET' or 'API KEY' or 'CREDENTIAL'",
+        "Output does NOT start with 'feat(' or 'fix(' or 'chore(' or 'docs('",
+        "Output does NOT include the literal secret value 'sk_live_'"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Read the git diff at evals/files/chat-contract-fields.diff and generate a Conventional Commits message for it. Output only the message — no preamble, no markdown.",
+      "expected_output": "Example: 'feat(chat)!: TICKET-NNN: reserve deprecated fields in chat contract'.",
+      "files": ["evals/files/chat-contract-fields.diff"],
+      "expectations": [
+        "Output uses the breaking-change marker `!` (matches `^(feat|chore|refactor)(\\([A-Za-z0-9_.-]+\\))?!: `)",
+        "Output matches `^(feat|chore|refactor)(\\([A-Za-z0-9_.-]+\\))?!: ([A-Z]{2,}-[1-9]\\d*|NO-TICKET): `",
+        "Description mentions 'reserve' OR 'drop' OR 'remove' OR 'delete'",
+        "Description mentions 'field' OR 'contract' OR 'proto'",
+        "Output does NOT start with 'docs(' or 'style(' — proto-field removal is a wire-level API change, not docs or formatting",
         "Total length is 72 characters or fewer"
       ]
     }
