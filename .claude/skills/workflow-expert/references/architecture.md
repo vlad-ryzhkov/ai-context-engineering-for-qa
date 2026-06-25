@@ -92,6 +92,32 @@ on:
         type: string
 ```
 
+### `choice` inputs are API-validated — removing an option is breaking
+
+A `type: choice` input is validated server-side against its `options:` on the
+**dispatch ref**. Any caller that triggers the workflow via the API or CLI —
+`gh workflow run <wf> -f <name>=<value>`, the REST `dispatches` endpoint, or a
+ChatOps/automation gate that shells out to them — gets **HTTP 422 "not in the
+list of allowed values"** when `<value>` is absent from `options:`. The UI
+dropdown is only one consumer; programmatic callers fail the same way.
+
+Therefore **removing, renaming, or reordering-away a `choice` option is a
+breaking change for every programmatic caller**, not a cosmetic UI tweak. Before
+dropping an option:
+
+1. Grep the repo for callers that pass that value — `gh workflow run`,
+   `actions/github-script` `createWorkflowDispatch`, `curl ... /dispatches`, and
+   any wrapper script (e.g. a `chatops`/`run-evals` gate).
+2. If a caller can still emit the value, keep the option (or migrate the caller
+   first). The dispatch fails closed: a 422 leaves the run un-started.
+3. Guard the contract with a test that asserts every value a caller can dispatch
+   is present in the workflow's `options:` list. A pure-YAML+source parse is
+   enough — no network. (Note: YAML 1.1 folds the bareword `on:` key to boolean
+   `True`; index `spec.get("on", spec.get(True))` when parsing.)
+
+This boundary is invisible to green unit tests of the downstream resolver — the
+caller's value never reaches the resolver when the API rejects it at dispatch.
+
 ### Usage in Steps
 
 ```yaml

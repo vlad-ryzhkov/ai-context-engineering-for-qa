@@ -349,6 +349,7 @@ Surgical workflow changes with call-graph propagation.
    - If adding a new input: add to `workflow_call.inputs` in called workflow + add `with:` in all callers
    - If adding a new secret: add to `workflow_call.secrets` in called workflow + add `secrets:` in all callers
    - If modifying an output: update `jobs.<id>.outputs` + update all consumers via `needs.<id>.outputs.<name>`
+   - If removing/renaming a `workflow_dispatch` `choice` option: it is API-validated — programmatic callers (`gh workflow run -f`, REST `dispatches`, ChatOps gates) get HTTP 422 on a dropped value. Grep for callers that pass it BEFORE dropping. See `references/architecture.md` §choice inputs are API-validated.
 5. Generate SEARCH/REPLACE blocks for each affected file
 6. Validate: no 8 NEVER rule violations introduced
 7. Format output per `references/output-templates.md` Modify template
