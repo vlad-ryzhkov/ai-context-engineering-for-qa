@@ -9,6 +9,7 @@
     "lint:skills:strict": "agnix --target claude-code --strict ."
   },
   "devDependencies": {
-    "agnix": "^0.16.1"
+    "agnix": "^0.16.1",
+    "vigiles": "^14"
   }
 }

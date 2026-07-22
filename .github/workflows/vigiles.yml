@@ -1,0 +1,50 @@
+name: vigiles
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write # for the sticky PR comment
+
+jobs:
+  lint:
+    # Lint pillar — verify the references in your instruction files (composite
+    # Action over the published CLI). Posts a sticky PR comment + a `valid` output.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: zernie/vigiles@v1
+
+  harness:
+    # Test pillar — run your *.harness.{mjs,ts} tests against the real agent CLI and
+    # a scripted mock model (deterministic, no API key). Drop this job if you only
+    # author runHook unit tests, or keep it for the deterministic tier.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install
+      - run: npm i -g @anthropic-ai/claude-code @openai/codex # mock tier needs the binary, no API key
+      - run: npx vigiles test
+
+  eval-check:
+    # Eval staleness gate — real-model evals run LOCALLY on your subscription
+    # (`npx vigiles eval --update`, which commits a lock); this job VERIFIES those
+    # committed results against the current inputs with NO model call. It stays a
+    # green no-op until you commit your first lock. See docs/harness-testing.md.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: zernie/vigiles@v1
+        with:
+          command: eval-check

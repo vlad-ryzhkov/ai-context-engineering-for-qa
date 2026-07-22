@@ -1,0 +1,7 @@
+[[hooks.PostToolUse]]
+matcher = "^apply_patch$"
+command = "npx --no-install vigiles hook-runtime eval-lock-nudge"
+
+[[hooks.PostToolUse]]
+matcher = "^apply_patch$"
+command = "npx --no-install vigiles hook-runtime refs"
