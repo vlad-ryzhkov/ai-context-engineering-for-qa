@@ -19,7 +19,10 @@ All skills must pass:
 | Check          | Tool                               | Threshold              |
 | -------------- | ---------------------------------- | ---------------------- |
 | AI config lint | `npx agnix --target claude-code .` | Zero errors            |
+| Harness audit  | `npx vigiles lint`                 | Exit 0 (CI-gated)      |
 | Line count     | `/skill-audit` check               | ≤500 lines (warn >400) |
+
+`agnix` checks skill structure/format; `vigiles lint` checks harness truthfulness — that every path, tool contract, hook, and skill reference actually resolves. Both run in CI.
 
 ### Tier 1 Baseline Sections (required in every SKILL.md)
 
@@ -46,6 +49,7 @@ npx agnix --target claude-code --fix .
 Before opening a PR that touches `.claude/`:
 
 - [ ] `npx agnix --target claude-code .` passes
+- [ ] `npx vigiles lint` — exit 0
 - [ ] `/skill-audit` — zero errors
 - [ ] SKILL.md ≤500 lines; overflow moved to `references/`
 
