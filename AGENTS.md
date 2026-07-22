@@ -1,3 +1,5 @@
+<!-- vigiles-disable require-instructions-spec -->
+
 # AGENTS.md — Project Context Bridge
 
 ## CORE INSTRUCTION

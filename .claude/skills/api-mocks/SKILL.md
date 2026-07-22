@@ -1,6 +1,7 @@
 ---
 name: api-mocks
 description: Generates in-process HTTP mock server for the API under test + WireMock singletons for external services. Use when tests fail with ConnectException or no live server is available. Do not use when a live test server is available.
+allowed-tools: "Read Write Edit Glob Grep Bash"
 agent: sdet
 context: fork
 input: specification file (same path used for /api-tests)
@@ -25,11 +26,13 @@ output: helpers/MockServer.kt, helpers/MockServerExtension.kt, META-INF/services
 **What to generate (always in this order):**
 
 **1. `helpers/{ExternalService}MockServer.kt`** — WireMock singleton (only if spec mentions external services like SMS, payments, etc.)
+
 - `object` singleton, dynamic port, `start()` idempotent, `stop()`, `port()`
 - `stub{Service}Success()` / `stub{Service}Unavailable()` / `resetAll()`
 - Path: `POST /{service-path}` from spec
 
 **2. `helpers/{Endpoint}MockServer.kt`** — JDK `com.sun.net.httpserver.HttpServer`
+
 - `class` (not object) — per-class lifecycle; `start()` sets `BASE_URL` system property, `stop()` clears it
 - Extract from spec: required fields → validate presence, type, format; business rules (length, regex, uniqueness, password complexity)
 - `ConcurrentHashMap` sets for uniqueness tracking (case-insensitive for email)
@@ -41,21 +44,26 @@ output: helpers/MockServer.kt, helpers/MockServerExtension.kt, META-INF/services
 - Security headers on all responses: `Content-Type: application/json; charset=utf-8`, `X-Content-Type-Options: nosniff`, `Strict-Transport-Security: max-age=31536000; includeSubDomains`
 
 **3. `helpers/MockServerExtension.kt`** — `BeforeAllCallback` + `AfterAllCallback`
+
 - `beforeAll`: start external WireMock singleton → `System.setProperty("{SERVICE}_GATEWAY_URL", "http://localhost:${ExternalMock.port()}")` → `stub{Service}Success()` (default) → create+start `{Endpoint}MockServer` → store in `ExtensionContext.Store`
 - `afterAll`: remove+stop `{Endpoint}MockServer` from store → `ExternalMock.resetAll()`
 
 **4. `src/test/resources/META-INF/services/org.junit.jupiter.api.extension.Extension`**
+
 - Single line: `{package}.helpers.MockServerExtension`
 
 **5. `src/test/resources/junit-platform.properties`**
+
 - Add `junit.jupiter.extensions.autodetection.enabled=true` (preserve existing properties)
 
 ## BASE_URL Rule (CRITICAL)
 
 API client `BASE_URL` MUST be a computed property — read on every call, not once at object init:
+
 ```kotlin
 val BASE_URL: String get() = System.getProperty("BASE_URL", "http://localhost:8080")
 ```
+
 A static `val` captures the port at class-load time and breaks when the second test class starts a new server on a different port.
 
 ## Known Limitation
@@ -65,14 +73,14 @@ Leave them as-is — they will fail at infra level. Document in Smoke Run output
 
 ## Anti-Patterns
 
-| Anti-Pattern | Why It Breaks | Fix |
-|---|---|---|
-| `val BASE_URL = "http://localhost:8080"` (static) | Captures port at class-load; breaks on second test with different port | Use `val BASE_URL: String get() = System.getProperty("BASE_URL", "...")` |
-| Mock server created per test (no singleton) | Flaky, port conflicts, memory leaks | Use `object` singleton for external mocks, lifecycle-managed by `MockServerExtension` |
-| Validation errors missing `"field": "<name>"` | Test cannot assert field-specific errors | Always include field name in error JSON: `{message, field}` |
-| JWT token with hardcoded claims | Tests can't verify claim values | Extract claims from spec, generate with Base64 encoding: `header.payload.mock-sig` |
-| External service call without timeout/fallback | Hangs indefinitely on network failure | Use `System.getProperty()` + timeout + catch → 503 on failure |
-| No idempotency cache (same key twice) | Tests can't verify idempotent behavior | Implement `ConcurrentHashMap` idempotency key → (body hash → response) |
+| Anti-Pattern                                      | Why It Breaks                                                          | Fix                                                                                   |
+| ------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `val BASE_URL = "http://localhost:8080"` (static) | Captures port at class-load; breaks on second test with different port | Use `val BASE_URL: String get() = System.getProperty("BASE_URL", "...")`              |
+| Mock server created per test (no singleton)       | Flaky, port conflicts, memory leaks                                    | Use `object` singleton for external mocks, lifecycle-managed by `MockServerExtension` |
+| Validation errors missing `"field": "<name>"`     | Test cannot assert field-specific errors                               | Always include field name in error JSON: `{message, field}`                           |
+| JWT token with hardcoded claims                   | Tests can't verify claim values                                        | Extract claims from spec, generate with Base64 encoding: `header.payload.mock-sig`    |
+| External service call without timeout/fallback    | Hangs indefinitely on network failure                                  | Use `System.getProperty()` + timeout + catch → 503 on failure                         |
+| No idempotency cache (same key twice)             | Tests can't verify idempotent behavior                                 | Implement `ConcurrentHashMap` idempotency key → (body hash → response)                |
 
 ## Workflow
 
@@ -87,6 +95,7 @@ Leave them as-is — they will fail at infra level. Document in Smoke Run output
 ### Quality Gate (Self-Review)
 
 Before finalizing, verify internally:
+
 - [ ] All 5 files generated: external mock + API mock + extension + META-INF + properties
 - [ ] Compilation: `./gradlew compileTestKotlin` passes with zero errors
 - [ ] BASE_URL uses computed property (dynamic, not static)

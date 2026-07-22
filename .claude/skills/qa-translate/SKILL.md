@@ -53,6 +53,7 @@ Determine which files to translate, in priority order:
 ### Directory/Glob Handling
 
 If the input is a directory or glob pattern:
+
 1. Expand using `Glob` tool
 2. Exclude files already in English (see Language Detection Guard below)
 3. Report the file list and count to the user
@@ -72,6 +73,7 @@ grep -E -c '[А-Яа-яЁё]' {file_path}
 ### Batch Processing
 
 If the resolved file list contains **>5 files**:
+
 1. Process in batches of 5
 2. After each batch, report progress and ask for confirmation:
    ```text
@@ -124,6 +126,7 @@ Apply the term map and produce the English translation:
 - **Do NOT reorder sections** — translation preserves document structure exactly
 
 **AI-prompt translation priorities:**
+
 - Favor absolute technical precision and declarative commands over natural idioms
 - Russian idioms in prompts → convert to direct constraints (e.g., "Молчание золота" → "VERBOSITY: MINIMAL" or "Minimize output")
 - Do NOT use literary/conversational English — use dry, imperative directives
@@ -132,6 +135,7 @@ Apply the term map and produce the English translation:
 - **Terminology Case Normalization:** Do NOT replicate capitalization inconsistencies from the source. Always normalize domain terms to the exact casing specified in the glossary (e.g., if source has mixed "скилл / СКИЛЛ / скиллы", always translate to the unified form as per glossary and context rules)
 
 **Structural whitespace preservation:**
+
 - Do NOT delete blank lines between sections — they serve as context boundaries for LLM attention
 - Preserve all `---` horizontal rules exactly — they are semantic separators
 - Maintain identical blank-line patterns between headers, lists, and code blocks
@@ -143,13 +147,13 @@ Apply the term map and produce the English translation:
 
 **Before writing**, run structural verification on the **source file** using `Bash`:
 
-```bash
+````bash
 # Count headers, code blocks, and table rows in source (POSIX-compatible)
 wc -l < {source_file}
 grep -c '^#' {source_file}
 grep -E -c '^[[:space:]]*```' {source_file}
 grep -c '^|' {source_file}
-```
+````
 
 Save these counts. After writing the translated file, run the same commands on the **output** and compare:
 
@@ -181,7 +185,10 @@ Save these counts. After writing the translated file, run the same commands on t
 If any check fails → fix the translation and re-write.
 
 **Path Validation Check:**
-Before writing, scan all markdown links `[]()` and HTML `src="..."` / `href="..."` attributes. If any path contains Cyrillic characters or unencoded spaces (e.g., `[...](...%20.pdf)` or `<img src="путь/файл.png">`), collect them into a warning list. Do NOT modify the paths — they are DNT to avoid breaking references. Output the warning after the file is written (see Verbosity Protocol).
+
+<!-- vigiles-disable skill-resource -->
+
+Before writing, scan all markdown links `[]()` and HTML `src="..."` / `href="..."` attributes. If any path contains Cyrillic characters or unencoded spaces (for instance a link target ending in an escaped space then `.pdf`, or `<img src="путь/файл.png">`), collect them into a warning list. Do NOT modify the paths — they are DNT to avoid breaking references. Output the warning after the file is written (see Verbosity Protocol).
 
 **Output mode: overwrite in-place.** Write the translated content directly to the source file path using the `Write` tool. The repository is git-tracked; the user can `git restore .` to undo.
 
@@ -202,14 +209,14 @@ This prevents half-translated files if the output token limit is hit.
 
 Every translated file MUST pass all of these:
 
-| # | Gate | Criterion |
-|---|------|-----------|
-| 1 | Glossary compliance | All terms from `references/glossary.md` use the specified English translation |
-| 2 | No residual Russian | Zero Cyrillic characters outside fenced code blocks |
-| 3 | Structure preserved | Header count, table count, code block count match source exactly |
-| 4 | Code blocks intact | Fenced code block content is byte-identical to source |
-| 5 | DNT items preserved | File names, paths, commands, tools, frameworks unchanged |
-| 6 | Formatting rules | All 14 rules from `references/formatting-rules.md` followed |
+| #   | Gate                | Criterion                                                                     |
+| --- | ------------------- | ----------------------------------------------------------------------------- |
+| 1   | Glossary compliance | All terms from `references/glossary.md` use the specified English translation |
+| 2   | No residual Russian | Zero Cyrillic characters outside fenced code blocks                           |
+| 3   | Structure preserved | Header count, table count, code block count match source exactly              |
+| 4   | Code blocks intact  | Fenced code block content is byte-identical to source                         |
+| 5   | DNT items preserved | File names, paths, commands, tools, frameworks unchanged                      |
+| 6   | Formatting rules    | All 14 rules from `references/formatting-rules.md` followed                   |
 
 ---
 
@@ -227,18 +234,18 @@ Verify these 5 points for every translated file:
 
 ## Anti-Patterns
 
-| Anti-Pattern | Why It's Wrong | Correct Approach |
-|--------------|----------------|------------------|
-| Creative/literary translation | Technical docs need precision, not style | Use glossary terms, direct translation |
-| Translating code block content | Breaks functionality | Keep code blocks byte-identical |
-| Adding commentary or notes | Changes the document's intent | Translate only what exists |
-| Inconsistent terminology | Same Russian term → different English terms | Always check glossary, use one mapping |
-| Translating file paths | Breaks references | `/spec-audit` stays `/spec-audit` |
-| Translating skill/command names | Breaks invocations | `/init-skill` stays `/init-skill` |
-| Padding text to match line count | Artificial bloat | English is more concise — that's normal |
-| Translating YAML keys | Breaks frontmatter parsing | Only translate `description` value |
-| Removing or adding emoji | Changes visual structure | Preserve all emoji as-is |
-| Translating acronyms | Loses meaning | SSOT, PII, IDOR stay as-is |
+| Anti-Pattern                     | Why It's Wrong                              | Correct Approach                        |
+| -------------------------------- | ------------------------------------------- | --------------------------------------- |
+| Creative/literary translation    | Technical docs need precision, not style    | Use glossary terms, direct translation  |
+| Translating code block content   | Breaks functionality                        | Keep code blocks byte-identical         |
+| Adding commentary or notes       | Changes the document's intent               | Translate only what exists              |
+| Inconsistent terminology         | Same Russian term → different English terms | Always check glossary, use one mapping  |
+| Translating file paths           | Breaks references                           | `/spec-audit` stays `/spec-audit`       |
+| Translating skill/command names  | Breaks invocations                          | `/init-skill` stays `/init-skill`       |
+| Padding text to match line count | Artificial bloat                            | English is more concise — that's normal |
+| Translating YAML keys            | Breaks frontmatter parsing                  | Only translate `description` value      |
+| Removing or adding emoji         | Changes visual structure                    | Preserve all emoji as-is                |
+| Translating acronyms             | Loses meaning                               | SSOT, PII, IDOR stay as-is              |
 
 ---
 
@@ -249,11 +256,13 @@ Verify these 5 points for every translated file:
 **No filler:** Never output conversational text before or after tool invocations. No "Here is the translated file:", no "I'll now write the translation:", no "The translation is complete." — go straight to tool calls and structured output blocks.
 
 **Per-file output:** After writing each file, output one line:
+
 ```text
 ✅ Translated: {path} ({source_lines} → {translated_lines} lines)
 ```
 
 **On unstable paths** (if Path Validation Check detected issues):
+
 ```text
 ⚠️ WARNING: Detected unstable paths in the source (Cyrillic or spaces). Links preserved as DNT to avoid breaking references, but manual file renaming is recommended:
   - {path1}
@@ -261,6 +270,7 @@ Verify these 5 points for every translated file:
 ```
 
 **On skip:**
+
 ```text
 ⏭️ Skipped (already English): {path}
 ```

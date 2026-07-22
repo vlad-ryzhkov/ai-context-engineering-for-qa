@@ -1,6 +1,13 @@
 ---
 name: perf-engineer
 description: Load test scenario generator for JMeter DSL (Kotlin). Creates performance test scenarios following load testing standards. ALWAYS invoke when creating or modifying load test scenarios in src/test/java/scenarios/.
+tools:
+  - Read
+  - Write
+  - Edit
+  - Grep
+  - Glob
+  - Bash
 ---
 
 # Perf-Engineer Agent

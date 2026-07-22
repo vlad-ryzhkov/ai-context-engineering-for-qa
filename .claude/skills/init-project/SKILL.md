@@ -1,6 +1,7 @@
 ---
 name: init-project
 description: Generates CLAUDE.md for a QA project — scans the repository, analyzes tech stack, creates an onboarding document. Use for a new QA project without CLAUDE.md or setting up AI-assisted workflow. Do not use if CLAUDE.md is already configured — edit manually.
+allowed-tools: "Read Write Edit Glob Grep Bash"
 agent: sdet
 context: fork
 ---
@@ -50,16 +51,19 @@ Read `.claude/qa_agent.md`.
 **Structured Output Priority:** All analysis goes into the artifact (MD/HTML), not into chat.
 
 **Chat output (constraints):**
+
 - Brief Summary: max 5 lines (what was found, how many, result)
 - Findings table: max 15 lines (top by severity)
 - Full report: `📊 Full report: {path}` + open file
 
 **Iterative steps:** Do not output progress for each file. Checkpoint only on:
+
 - Phase transition (Phase N → Phase N+1)
 - Blocker detected
 - Completion (SKILL COMPLETE)
 
 **Tools first:**
+
 - Grep → table → report, no "Now I will grep..."
 - Read → analyze → report, no "The file shows..."
 
@@ -118,13 +122,14 @@ Could not determine tech stack automatically. Specify manually:
 
 Based on Step 1, determine the type:
 
-| Indicator | Type | Include in CLAUDE.md |
-|-----------|------|----------------------|
-| `src/test/` exists | **QA project** | Tech Stack + Commands only |
+| Indicator                              | Type              | Include in CLAUDE.md                                |
+| -------------------------------------- | ----------------- | --------------------------------------------------- |
+| `src/test/` exists                     | **QA project**    | Tech Stack + Commands only                          |
 | No `src/test/`, has Helm/Terraform/k8s | **Infra project** | Tech Stack + Commands + Key Values (if non-trivial) |
-| Both indicators | **Mixed** | Tech Stack + Commands |
+| Both indicators                        | **Mixed**         | Tech Stack + Commands                               |
 
 **Do NOT include in any type:**
+
 - Architecture or directory structure descriptions (agents discover files on their own)
 - QA Skills listings (agents discover skills from YAML headers in `.claude/skills/`)
 - CI/CD pipeline diagrams (redundant with existing workflow files)
@@ -151,13 +156,13 @@ If nothing found — skip the `## API Documentation` section in CLAUDE.md entire
 
 Based on dependencies, determine:
 
-| Category | What to look for | BANNED alternatives |
-|----------|------------------|---------------------|
-| HTTP Client | ktor-client, requests, axios | retrofit, okhttp, urllib |
-| Serialization | jackson, pydantic, zod | gson, moshi |
-| Assertions | kotest, pytest, jest | junit assertEquals, unittest |
-| Test Framework | junit5, pytest, jest | testng, nose |
-| Reporting | allure | — |
+| Category       | What to look for             | BANNED alternatives          |
+| -------------- | ---------------------------- | ---------------------------- |
+| HTTP Client    | ktor-client, requests, axios | retrofit, okhttp, urllib     |
+| Serialization  | jackson, pydantic, zod       | gson, moshi                  |
+| Assertions     | kotest, pytest, jest         | junit assertEquals, unittest |
+| Test Framework | junit5, pytest, jest         | testng, nose                 |
+| Reporting      | allure                       | —                            |
 
 ### Step 3: Generate CLAUDE.md
 
@@ -193,15 +198,15 @@ Save the result to `CLAUDE.md` in the project root.
 
 ## Anti-Patterns
 
-| Anti-Pattern | Why It Breaks | Fix |
-|---|---|---|
-| Tech Stack inferred from only one source (package.json only) | Misses critical dependencies in lock files or transitive deps | Check both manifest (package.json) AND lock files (yarn.lock, package-lock.json) |
-| Hardcoded tech stack that doesn't match actual project | CLAUDE.md contradicts reality; AI gets confused | Scan build files, import statements; verify before writing |
-| `[xxx]` placeholders left unfilled (e.g., `[Language]`, `[MainBranch]`) | Template cruft confuses AI; interpreted as literal values | Replace all placeholders via Step 1 data; remove if unknown |
-| No API Documentation section when spec files exist | AI doesn't know about the API spec; generates tests without reference | Always scan for OpenAPI/gRPC/GraphQL specs in Step 1.7 |
-| Including codebase overview or directory listings | Agents discover files on their own; overviews add cost without improving file discovery ([research](https://arxiv.org/abs/2602.11988)) | Remove Project Structure, Architecture, and directory listing sections |
-| Duplicating existing README/docs content | Redundant documentation increases reasoning tokens +20%, making tasks harder | Only include information NOT already in repo docs |
-| Adding QA Skills listing | Agents discover skills from YAML headers automatically | Do not list skills — they are auto-discovered |
+| Anti-Pattern                                                            | Why It Breaks                                                                                                                          | Fix                                                                              |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Tech Stack inferred from only one source (package.json only)            | Misses critical dependencies in lock files or transitive deps                                                                          | Check both manifest (package.json) AND lock files (yarn.lock, package-lock.json) |
+| Hardcoded tech stack that doesn't match actual project                  | CLAUDE.md contradicts reality; AI gets confused                                                                                        | Scan build files, import statements; verify before writing                       |
+| `[xxx]` placeholders left unfilled (e.g., `[Language]`, `[MainBranch]`) | Template cruft confuses AI; interpreted as literal values                                                                              | Replace all placeholders via Step 1 data; remove if unknown                      |
+| No API Documentation section when spec files exist                      | AI doesn't know about the API spec; generates tests without reference                                                                  | Always scan for OpenAPI/gRPC/GraphQL specs in Step 1.7                           |
+| Including codebase overview or directory listings                       | Agents discover files on their own; overviews add cost without improving file discovery ([research](https://arxiv.org/abs/2602.11988)) | Remove Project Structure, Architecture, and directory listing sections           |
+| Duplicating existing README/docs content                                | Redundant documentation increases reasoning tokens +20%, making tasks harder                                                           | Only include information NOT already in repo docs                                |
+| Adding QA Skills listing                                                | Agents discover skills from YAML headers automatically                                                                                 | Do not list skills — they are auto-discovered                                    |
 
 ## Quality Gate (Self-Review)
 

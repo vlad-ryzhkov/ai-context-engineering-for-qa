@@ -1,3 +1,5 @@
+<!-- vigiles-disable require-instructions-spec -->
+
 # AI QA Workshop Environment
 
 ## Context
