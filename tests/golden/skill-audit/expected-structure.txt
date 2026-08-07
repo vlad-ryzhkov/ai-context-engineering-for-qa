@@ -1,0 +1,16 @@
+# Golden Test Assertions for: skill-audit
+# Profile: analysis
+# Format: CHECK_TYPE | PATTERN | DESCRIPTION
+
+# Section structure
+HEADING_PRESENT | Skill Audit | Main report heading
+HEADING_PRESENT | Summary | Summary section present
+PATTERN_PRESENT | SKILL COMPLETE | Completion block
+
+# Severity indicators (at least one finding expected for deliberately flawed input)
+COUNT_MIN | ERROR | min=0: Error findings may be present
+COUNT_MIN | WARN | min=0: Warning findings may be present
+
+# Quality signals
+PATTERN_ABSENT | Thread.sleep | No banned patterns in audit output
+PATTERN_ABSENT | TODO: implement | No placeholder stubs in output

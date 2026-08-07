@@ -1,0 +1,11 @@
+# Golden Test Assertions for: doc-lint
+# Profile: analysis
+# Format: CHECK_TYPE | PATTERN | DESCRIPTION
+
+# Section structure
+HEADING_PRESENT | Documentation | Main report heading or title
+PATTERN_PRESENT | SKILL COMPLETE | Completion block
+
+# Quality signals
+PATTERN_ABSENT | Thread.sleep | No banned patterns in lint output
+PATTERN_ABSENT | TODO: implement | No placeholder stubs

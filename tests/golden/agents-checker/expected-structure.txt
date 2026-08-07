@@ -1,0 +1,15 @@
+# Golden Test Assertions for: agents-checker
+# Profile: analysis
+# Format: CHECK_TYPE | PATTERN | DESCRIPTION
+
+# Section structure
+HEADING_PRESENT | Agent | Agent validation heading
+PATTERN_PRESENT | SKILL COMPLETE | Completion block
+
+# Agent files should be referenced
+PATTERN_PRESENT | auditor | Auditor agent referenced
+PATTERN_PRESENT | sdet | SDET agent referenced
+
+# Quality signals
+PATTERN_ABSENT | Thread.sleep | No banned patterns
+PATTERN_ABSENT | TODO: implement | No placeholder stubs
