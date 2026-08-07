@@ -11,7 +11,8 @@
         "Output is exactly one line with no markdown fences",
         "Total length is 72 characters or fewer",
         "Description mentions length validation or token length",
-        "No trailing period on the description"
+        "No trailing period on the description",
+        "mcp usage / invokes"
       ]
     },
     {

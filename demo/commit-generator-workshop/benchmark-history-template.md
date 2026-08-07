@@ -7,7 +7,7 @@ Per-run tracker for the workshop demo skill. Skill-creator runs produce one `ben
 ## Iteration table
 
 | Iter     | Date (UTC) | SHA | Tests | Pass ws          | Pass wo      | Δ   | Duration ws | Cost | Cache | Notes                                                                                                                                          |
-| -------- | ---------- | --- | ----- | ---------------- | ------------ | --- | ----------- | ---- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+|----------|------------|-----|-------|------------------|--------------|-----|-------------|------|-------|------------------------------------------------------------------------------------------------------------------------------------------------|
 | iter-CG0 | 2026-05-13 | —   | 6     | **— / 6 = TBD%** | — / 6 = TBD% | TBD | —           | —    | —     | Placeholder row — replace with real iter-CG1 output after first skill-creator run. Removed once `append_history.py` writes its first real row. |
 
 ## How rows are produced

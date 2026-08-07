@@ -1,4 +1,4 @@
-# Workshop — `commit-generator` skill
+# Workshop — skill creation
 
 ## Why a skill is useful
 
@@ -7,13 +7,7 @@
 - **Zero back-and-forth** — enables fully `autonomous` execution with no manual corrections.
 - **Measurable quality** — provides binary pass/fail criteria for `automated regression testing`.
 - **Token efficiency** — `reduces output volume` and token burn compared with naive chat prompting.
-
-## When a skill is useful
-
-- **Repetitive routine** — `automates high-frequency tasks` performed daily or weekly.
-- **Strict I/O surface** — applies when data is `structured` (diffs, JSON, logs), not free-form chat.
-- **Rule-based logic** — fits tasks driven by a `fixed algorithm`, not subjective judgment.
-- **High ROI** — justified for tasks costing >15 min/day or where manual errors are expensive.
+__
 
 Example: `golang-tester` (since 2026-02-16) for Go unit-test generation:
 
@@ -27,9 +21,11 @@ __
 Another example: /grill-me skill for planning
 https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-me/SKILL.md
 
+__
+
 Live demo: build a `/commit-generator` Conventional Commits skill from scratch, run evals, ship.
 Disclaimer: focus is on flows, prompts, and tools. NOT a difficult logic.
-Note: Haiku will be used.
+Note: Haiku will be used. (optional)
 
 ## Coverage
 
@@ -42,11 +38,13 @@ Note: Haiku will be used.
 
 /ai-skills/docs/skill-creation-guide.md especially `best practices`
 
-## Official Anthropic's skill-creator
+## Official Anthropic's skill-creator - skill-creator review
 
 ### Think first
 
 A skill earns its keep only when the task is repetitive, the input/output are strict, and the execution flow is simple.
+
+`/commit-generator`
 
 Some questions:
 
@@ -84,6 +82,8 @@ Some questions:
 > Yes. Eight fixtures are ready in `demo/commit-generator-workshop/skills/commit-generator/evals/files/`.
 OR
 > Take some examples from this PR / doc <path>
+
+### Planning Your Skill
 
 ### Folder structure preparation
 
@@ -146,11 +146,20 @@ and we don't burn company tokens for zero ROI.
 
 /skill-creator use prompt demo/commit-generator-workshop/prompts/skill-creation-prompt.md
 
+### Check SKILL.md - read it carefully
+
 ### Check wev-view
 
 ### Check skill-creator output
 
 > demo/commit-generator-workshop/skills/commit-generator-workspace
+
+### TICKET-## for `commit-generator`
+
+### /context - token consumption
+
+### Open PR in ai-skill repository - linters and AI-review will start
+
 ---
 
 ## Conclusion: Treat AI skills like deterministic functions.
@@ -177,3 +186,5 @@ Build a skill only if your task hits these 4 triggers:
 1. Evals (test inputs + expectations (e.g. evals.json)) will be mandatory for all new skills.
 2. Evals will run on Haiku via promptfoo for every PR in `ai-skills`.
 3. Skill codeowners
+
+### Q&A session
