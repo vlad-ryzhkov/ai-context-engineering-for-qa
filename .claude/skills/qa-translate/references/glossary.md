@@ -146,7 +146,7 @@ These items MUST remain exactly as-is in the translation:
 ### File and Directory Names
 
 - `SKILL.md`, `CLAUDE.md`, `README.md`, `qa_agent.md`
-- `.claude/`, `.claude/skills/`, `.claude/agents/`, `.claude/protocols/`
+- `.claude/`, `.claude/skills/`, `.claude/protocols/`
 - `references/`, `scripts/`, `assets/`, `audit/`
 - `copilot-instructions.md`, `AGENTS.md`
 

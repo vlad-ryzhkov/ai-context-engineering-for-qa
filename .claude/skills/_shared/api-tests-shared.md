@@ -55,7 +55,18 @@ WARNING: No scenarios for {endpoint} in audit/test-scenarios.md. Continuing with
 
 ## Architecture Modes
 
-**Step 0 (Workflow Pre-flight):** Before any generation, run auto-detection (sdet.md -> Architecture Routing). Determine `ARCH_MODE = A | B`. All output paths depend on this.
+**Step 0 (Workflow Pre-flight):** Before any generation, determine `ARCH_MODE = A | B` with the
+auto-detection below. All output paths depend on it.
+
+### Auto-Detection Algorithm
+
+Check in order, stop at the first match:
+
+1. `core/src/main/kotlin/` exists **AND** at least one sibling directory contains `src/test/kotlin/`
+   → **Mode B** (Gradle multi-module with a shared `core`)
+2. `src/test/kotlin/*/tests/` exists → **Mode A** (single-module, domain-isolated)
+3. Neither matches → ask: "Is this a standalone single-service project (Mode A), or a Gradle
+   multi-module project with a shared `core` module (Mode B)?"
 
 ### Mode A: DDD Isolated (default)
 
@@ -109,7 +120,7 @@ core/src/main/{lang}/{pkg}/core/api/response/
 ## Workflow
 
 0. **Input Check (MANDATORY):**
-   - **Architecture Detection:** Run auto-detection (sdet.md -> Architecture Routing). Determine `ARCH_MODE = A | B`. Use detected mode for all output paths (see Architecture Modes section).
+   - **Architecture Detection:** Run the Auto-Detection Algorithm above. Determine `ARCH_MODE = A | B`. Use detected mode for all output paths (see Architecture Modes section).
    - Perform 2-phase test-scenarios validation (see Input Validation above)
    - If any phase FAILs -> output WARNING and continue with available data
    - If all checks PASS -> Read `audit/test-scenarios.md`

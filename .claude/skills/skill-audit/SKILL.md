@@ -2,7 +2,6 @@
 name: skill-audit
 description: Audit SKILL.md and qa_agent.md for bloat, duplication, harmful patterns ("DO NOT FIX", bloated templates). Use to optimize AI setup and reduce token usage. Do not use for documentation audit — use /doc-lint instead.
 allowed-tools: "Read Write Edit Glob Grep Bash(wc*)"
-agent: auditor
 context: fork
 ---
 
@@ -13,7 +12,7 @@ Audit AI instructions for efficiency: detect bloat, duplication, harmful pattern
 ## Before You Start
 
 Read:
-1. `.claude/qa_agent.md` and `.claude/agents/auditor.md`
+1. `.claude/qa_agent.md`
 2. `.claude/skills/init-skill/references/validation-checklist.md` — line thresholds and required sections
 3. `.claude/skills/init-skill/references/yaml-reference.md` — YAML frontmatter rules
 

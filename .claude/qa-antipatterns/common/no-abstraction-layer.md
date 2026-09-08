@@ -61,7 +61,7 @@ fun `user can register`() {
 - Duplication of URL, headers, contentType
 - Missing Request classes extending `ApiRequestBaseJson<T>`
 - Hardcoded URLs in tests (`"https://..."`)
-- Custom `ApiClient`/`ApiResponse` wrappers instead of common-test-libs
+- Custom `ApiClient`/`ApiResponse` wrappers instead of the team's shared test library
 
 ## See Also
 

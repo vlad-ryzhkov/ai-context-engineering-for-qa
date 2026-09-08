@@ -2,7 +2,6 @@
 name: repo-scout
 description: Scans a backend repository (Go, Python, Node.js, Java/Kotlin), catalogs API surface, infrastructure, test coverage, and produces a Test Generation Blueprint for downstream skills. Use when entering a new repo before writing tests. Do not use for QA projects — use /init-project for those.
 allowed-tools: "Read Glob Grep Bash(ls*) Bash(wc*) Bash(jq*) Bash(yq*)"
-agent: sdet
 context: fork
 ---
 
@@ -261,7 +260,7 @@ After cataloging all endpoints, group them into 3–8 high-level business domain
    - Reflection: determine the **default value** — check local/test config files for the reflection flag. Report "enabled" or "disabled locally" (not just "configurable"). If disabled, testers cannot use grpcurl/grpcui for discovery and must use `-import-path` with proto files.
    - Proto import paths needed for client generation
    - Required proto plugins and their versions
-5. **Remote env setup:** Parse `.dev-platform/`, CI config for:
+5. **Remote env setup:** Parse internal platform config directories and CI config for:
    - Namespace configuration
    - Service dependencies and ports
    - Cross-repo prerequisites (shared proto, gateway config). Record as "Cross-Repo PR" blockers.
@@ -328,7 +327,7 @@ skills (/api-test-cases, /api-isolated-tests, /api-tests). Produces guidance, NO
 | Docker | `**/Dockerfile`, `**/docker-compose.yaml` / `.yml` |
 | Database | `migrations/**`, `**/migrations/**`, `**/liquibase/**` |
 | Configuration | `config/*.yaml`, `config/*.yml` |
-| Dev-Platform | `.dev-platform/**` |
+| Platform config | `.platform/**`, `.deploy/**`, `deploy/**` |
 
 #### 6.6 Deployment Topology (S6)
 

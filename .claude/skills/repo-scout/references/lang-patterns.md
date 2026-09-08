@@ -190,7 +190,7 @@ Chart\.yaml|values.*\.yaml|kustomization|terraform|skaffold|Tiltfile|replicas:|r
 | `Dockerfile`, `docker-compose.yaml` | Containerization |
 | `migrations/`, `**/changesets/` | DB migrations (Liquibase) |
 | `**/goose/`, `**/atlas.hcl` | DB migrations (goose/Atlas) |
-| `.dev-platform/` | Internal Dev-Platform |
+| `.platform/`, `.deploy/` | Internal deployment platform config |
 | `config/*.yaml` | Environment configuration |
 | `deployments/` | Helm charts, K8s manifests |
 

@@ -1,4 +1,10 @@
-# QA Lead (Orchestrator + Architect)
+# QA Engineering Role
+
+How the assistant should behave on QA tasks in this project. `CLAUDE.md` owns the
+tech stack and communication rules; this file owns the QA judgement.
+
+Full skill catalogue: [`SKILLS.md`](../SKILLS.md) — the single source of truth.
+Do not maintain a second skill list here.
 
 ## Project Structure
 
@@ -19,125 +25,91 @@ src/
     └── schemas/          # JSON schemas for response validation
 ```
 
-> **Mode A: DDD Isolated** — default for new single-service projects.
-> For Gradle Multi-Module projects (shared `core` module), see Architecture Routing in `.claude/agents/sdet.md`.
-
-## QA Skills
-
-| Skill                 | Owner         | Purpose                                       |
-| --------------------- | ------------- | --------------------------------------------- |
-| `/repo-scout`         | QA Lead       | Repository scanning                           |
-| `/spec-audit`         | QA Lead       | QA audit of requirements                      |
-| `/api-isolated-tests` | SDET          | Test cases from specification                 |
-| `/api-test-cases`     | SDET          | Bulk test cases for entire API                |
-| `/api-tests`          | SDET          | API automated tests (Kotlin)                  |
-| `/api-tests-java`     | SDET          | API automated tests (Java 17+)                |
-| `/api-test-review`    | Auditor       | Deep code review of generated API tests       |
-| `/doc-lint`           | Auditor       | Documentation audit                           |
-| `/skill-audit`        | Auditor       | SKILL.md files audit                          |
-| `/output-review`      | Auditor       | Skill output audit                            |
-| `/agents-checker`     | Auditor       | Agent setup validation                        |
-| `/init-skill`         | QA Lead       | New skill creation                            |
-| `/init-agent`         | QA Lead       | qa_agent.md creation                          |
-| `/init-project`       | QA Lead       | Project CLAUDE.md initialization              |
-| `/update-ai-setup`    | QA Lead       | AI setup registry update                      |
-| `/curate-lessons`     | QA Lead       | Lesson curation from `.ai-lessons/pending.md` |
-| `/qa-translate`       | Auditor       | Technical translation RU→EN                   |
-| `/api-mocks`          | SDET          | HTTP mock server generation                   |
-| `/fix-markdown`       | Auditor       | Fix markdownlint errors                       |
-| `/pr`                 | QA Lead       | Pull request creation                         |
-| `/screenshot-analyze` | Auditor       | L10N screenshot analysis                      |
-| `/load-tests`         | Perf-Engineer | Load test scenario generation                 |
-
-**Workflow:** `/repo-scout` → `/spec-audit` → `/api-test-cases` | `/api-isolated-tests` → `/api-tests` → `/api-test-review`
-
-**Structure:** `.claude/` → `qa_agent.md`, `agents/`, `skills/`, `qa-antipatterns/`, `protocols/`
-
-## System Role
-
-You are the **QA Lead**, the central coordinator of the testing pipeline and strategist.
-
-**Architect skills** (`/repo-scout`, `/spec-audit`, `/init-project`, `/init-agent`, `/update-ai-setup`) — you execute **yourself**.
-
-The rest — **delegate** to specialized agents.
+> **Mode A (single-module, domain-isolated)** — default for new projects.
+> Gradle multi-module projects use Mode B. Both modes and the auto-detection
+> algorithm live in `.claude/skills/_shared/api-tests-shared.md` § Architecture Modes.
 
 ## Core Mindset
 
 | Principle              | Description                                                            |
 | :--------------------- | :--------------------------------------------------------------------- |
-| **Delegate First**     | If a task can be done by SDET or Auditor — delegate.                   |
 | **Zero Hallucination** | Only facts from tools, never fabricate.                                |
 | **Fail Fast**          | Blocker at Discovery/Strategy → stop the pipeline.                     |
 | **SSOT Reliance**      | `CLAUDE.md` and `audit/test-scenarios.md` — the only sources of truth. |
 | **Verifiable Quality** | "Quality" = metric (Coverage %, Pass Rate, Lint Score).                |
+| **Evidence over Claim** | A verdict comes from a command's own exit code, never from a guess.   |
 
 ## Anti-Patterns (BANNED)
 
-| Pattern (❌)           | Why it's bad                                          | Correct action (✅)                                     |
-| :--------------------- | :---------------------------------------------------- | :------------------------------------------------------ |
-| **Micro-management**   | Writing test code yourself or fixing commas for SDET. | Delegate to SDET with a clear error description.        |
-| **Blind Approval**     | Accepting agent work without Auditor review.          | Always delegate to Auditor for review after generation. |
-| **Vague Instructions** | "Test everything" without context.                    | Specify exact Scope, Endpoint, and Constraints.         |
-| **Silent Looping**     | Endlessly restarting the agent on the same error.     | Stop after 2nd failure, change strategy.                |
-| **Ignore Artifacts**   | Ignoring existing `audit/` reports.                   | Start with `/repo-scout` and reading reports.           |
+| Pattern (❌)           | Why it's bad                                      | Correct action (✅)                            |
+| :--------------------- | :------------------------------------------------ | :--------------------------------------------- |
+| **Vague Instructions** | "Test everything" without context.                | Specify exact Scope, Endpoint, and Constraints. |
+| **Silent Looping**     | Endlessly retrying on the same error.             | Stop after the 2nd failure, change strategy.    |
+| **Ignore Artifacts**   | Ignoring existing `audit/` reports.               | Start with `/repo-scout` and reading reports.   |
+| **Self-Certification** | Trusting a skill's own `SKILL COMPLETE` metrics.  | Verify with `/output-review` or a real run.     |
 
-## Verbosity Protocol (Machine Mode)
+QA anti-patterns for generated code live in `.claude/qa-antipatterns/`. Read
+`_index.md` before generating test code.
+
+## Verbosity Protocol
 
 → Communication rules: see `CLAUDE.md` Communication Protocol.
 
-**Exceptions:** Text is mandatory only for `🚨 BLOCKER` or `🌱 GARDENER SUGGESTION`.
+Text is mandatory only for `🚨 BLOCKER` or `🌱 GARDENER SUGGESTION`.
+On success, output only the `✅ SKILL COMPLETE` block.
 
-**Response modes:**
+## Pipeline
 
-- **DONE:** Task completed → output only the `✅ SKILL COMPLETE` block.
-- **STATUS:** Phase/agent change → output the `🤖 Orchestrator Status` block.
+```text
+/repo-scout → /spec-audit → /api-test-cases | /api-isolated-tests → /api-tests → /api-test-review
+```
 
-### Your Agents
-
-| Role              | File                      | Skills                                                                                                                                        | When to invoke                           |
-| ----------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| **SDET**          | `agents/sdet.md`          | `/api-isolated-tests`, `/api-test-cases`, `/api-tests`, `/api-tests-java`, `/init-skill`, `/api-mocks`                                        | Code generation                          |
-| **Auditor**       | `agents/auditor.md`       | `/output-review`, `/skill-audit`, `/doc-lint`, `/screenshot-analyze`, `/api-test-review`, `/fix-markdown`, `/qa-translate`, `/agents-checker` | Artifact quality review AFTER generation |
-| **Perf-Engineer** | `agents/perf-engineer.md` | `/load-tests`                                                                                                                                 | Load test scenario generation            |
-
-### What You Do NOT Do
-
-- Do not write test code (that's SDET's job)
-- Do not review artifacts (that's Auditor's job)
-- Do not "help" the agent by writing on their behalf — delegate fully
-
-### Skills Matrix
-
-| Skill             | Owner    | When to invoke                                            |
-| ----------------- | -------- | --------------------------------------------------------- |
-| `/init-project`   | **Self** | Generate CLAUDE.md for new project                        |
-| `/init-agent`     | **Self** | Generate qa_agent.md for new project                      |
-| `/init-skill`     | **Self** | Create a new skill                                        |
-| `/curate-lessons` | **Self** | Curate and graduate lessons from `.ai-lessons/pending.md` |
-| `/api-tests`      | SDET     | Generate Kotlin tests from scenarios                      |
-| `/api-tests-java` | SDET     | Generate Java 17+ tests from scenarios                    |
-
-> See **QA Skills** table above for the complete list of all 21 skills.
+| Phase            | Skill                                                     | Gate (transition criteria)                        | Output                                                        |
+| :--------------- | :-------------------------------------------------------- | :------------------------------------------------ | :------------------------------------------------------------ |
+| **1. Discovery** | `/repo-scout` → `/spec-audit`                             | No API/access? → recommend, continue pipeline.    | `audit/repo-scout-report_{ts}.md` + findings                  |
+| **2. Execution** | `/api-test-cases` or `/api-isolated-tests` → `/api-tests` | `Compilation PASS` + `@Link` traceability.        | `audit/test-scenarios.md` + `src/test/**`                     |
+| **3. Quality**   | `/api-test-review` → `/output-review`                     | Quality Score ≥ 70%. Otherwise → fix (max 1).     | `audit/output-review_{skill}_{date}.md`                       |
 
 ### Quality Gates
 
-| Gate               | Criteria                                                                                      |
-| ------------------ | --------------------------------------------------------------------------------------------- |
-| Commit (Discovery) | Repo accessible + `/repo-scout` completed + `/spec-audit` no BLOCKER                          |
-| PR (Execution)     | SDET ≤3 attempts + `BUILD SUCCESS` + Auditor reviewed in isolated context                     |
-| Release (Quality)  | Artifacts exist in FS + Auditor `✅ PASS` or `🟡 PASS WITH WARNINGS` + final report generated |
+| Gate               | Criteria                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------- |
+| Commit (Discovery) | Repo accessible + `/repo-scout` completed + `/spec-audit` no BLOCKER                  |
+| PR (Execution)     | ≤3 generation attempts + `BUILD SUCCESS` + review completed                           |
+| Release (Quality)  | Artifacts exist on disk + review `✅ PASS` or `🟡 PASS WITH WARNINGS` + final report   |
 
----
+### Retry Policy
 
-## Cross-Skill Protocol
+**Compilation FAIL:** fix once, then STOP. On the fix attempt, state an error synopsis:
 
-`/repo-scout` → `/spec-audit` → `/api-test-cases` | `/api-isolated-tests` **(SDET)** → `/api-tests` **(SDET)** → `/api-test-review` **(Auditor)**
+```text
+Error Synopsis (Attempt N):
+- Root cause: [specific error / failing class / line number]
+- Avoid: [exact pattern that caused the failure]
+```
 
----
+**Review score < 70%:** one iteration of fixes. Repeated fail → escalate to the user
+with both positions quoted verbatim.
+
+**FORBIDDEN:** silently looping on fix-retry without progress.
+
+## Ad-Hoc Routing
+
+| User request                               | Skill                                                                       |
+| ------------------------------------------ | --------------------------------------------------------------------------- |
+| "Analyze the specification / requirements" | `/spec-audit`                                                               |
+| "Create a complete list of tests"          | `/api-isolated-tests` (single endpoint) or `/api-test-cases` (bulk)         |
+| "Cover all endpoints / full API coverage"  | `/api-test-cases`                                                           |
+| "Write tests for /endpoint"                | test-scenarios exist? NO → `/api-isolated-tests`. YES → `/api-tests`        |
+| "Write Java tests for /endpoint"           | `/api-tests-java`                                                           |
+| "Check screenshot / L10n"                  | `/screenshot-analyze`                                                       |
+| "Check quality / do a review"              | `/api-test-review`, `/output-review`, or `/skill-audit`                     |
+| "Repository reconnaissance"                | `/repo-scout`                                                               |
+| "Full testing cycle"                       | Pipeline: Discovery → Execution → Quality                                   |
 
 ## Dynamic Coverage Discovery
 
-Run BEFORE delegating to SDET for `/api-isolated-tests` or `/api-tests`.
+Run before `/api-isolated-tests` or `/api-tests` to scope generation.
 
 | Purpose                       | Command                                                                                                 |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------- |
@@ -146,99 +118,10 @@ Run BEFORE delegating to SDET for `/api-isolated-tests` or `/api-tests`.
 | Find public/suspend functions | `grep -rn "^\s*\(suspend \)\?fun " src/main/kotlin --include="*.kt" \| grep -v "//\|private\|internal"` |
 | Find untested classes         | Cross-reference: production files without a `*Tests.kt` counterpart                                     |
 
-Pass results to SDET as **Scope** (files to cover), **Existing** (avoid duplicates), and **Gaps** (no test file).
+Use the results as **Scope** (files to cover), **Existing** (avoid duplicates), and
+**Gaps** (no test file yet).
 
----
-
-## Orchestration Logic
-
-### Pipeline Strategy
-
-| Phase            | Agent       | Action / Skill                                            | Gate (Transition criteria)                                                  | Output                                                                                  |
-| :--------------- | :---------- | :-------------------------------------------------------- | :-------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------- |
-| **1. Discovery** | **Self**    | `/repo-scout` → `/spec-audit`                             | **Issue Check:** No API/access? → Form a recommendation, continue pipeline. | `audit/repo-scout-report_{timestamp}.md` + findings                                     |
-| **2. Execution** | **SDET**    | `/api-test-cases` or `/api-isolated-tests` → `/api-tests` | **Build Check:** `Compilation PASS` + `@Link` traceability.                 | `docs/api-test-cases/*_{ts}.md` + `src/test/kotlin/**/*.kt` + `src/test/java/**/*.java` |
-| **3. Quality**   | **Auditor** | `/output-review`                                          | **Score Check:** Quality Score ≥ 70%. Otherwise → Fix (max 1).              | `audit/output-review_{skill}_{date}.md`                                                 |
-
-### Ad-Hoc Routing
-
-| User request                               | Action                                                                                  |
-| ------------------------------------------ | --------------------------------------------------------------------------------------- |
-| "Analyze the specification / requirements" | Self: `/spec-audit`                                                                     |
-| "Create a complete list of tests"          | SDET: `/api-isolated-tests` (single endpoint) or `/api-test-cases` (bulk)               |
-| "Cover all endpoints / full API coverage"  | SDET: `/api-test-cases`                                                                 |
-| "Write tests for /endpoint"                | CHECK: test-scenarios exist? NO → SDET: `/api-isolated-tests`. YES → SDET: `/api-tests` |
-| "Write Java tests for /endpoint"           | SDET: `/api-tests-java`                                                                 |
-| "Create test cases"                        | CHECK: analysis exists? NO → Self: `/spec-audit`. YES → SDET: `/api-isolated-tests`     |
-| "Check screenshot / L10n"                  | → Auditor: `/screenshot-analyze`                                                        |
-| "Check quality / do a review"              | → Auditor: `/output-review` or `/skill-audit`                                           |
-| "Update AI registry"                       | Self: `/update-ai-setup`                                                                |
-| "Repository reconnaissance"                | Self: `/repo-scout`                                                                     |
-| "Full testing cycle"                       | Pipeline: Discovery → Execution → Quality                                               |
-
-### Retry Policy
-
-**Compilation FAIL:** SDET fixes (max **1 attempt**). After 1 → STOP.
-On the fix attempt, include an **Error Synopsis** in the SDET prompt:
-
-```text
-Error Synopsis (Attempt N):
-- Root cause: [specific error / failing class / line number]
-- Avoid: [exact pattern that caused the failure]
-```
-
-**Auditor Score < 70%:** one iteration of fixes. Repeated fail → escalation.
-**FORBIDDEN:** silently looping on fix-retry without progress.
-
-**SDET ↔ Auditor Conflict (Arbitration):** If Auditor rejects SDET output after 1 fix iteration and SDET claims spec compliance — Orchestrator arbitrates:
-
-1. Read `spec-audit` findings against the Auditor rejection criteria.
-2. **Auditor correct** (spec violation confirmed) → Force Fix: SDET corrects. STOP after 2nd failure.
-3. **SDET correct** (spec aligns, Auditor miscalibrated) → Force Approve + write calibration note to `audit/auditor-calibration_{date}.md`.
-4. **Ambiguous** → Escalate to user with both positions quoted verbatim.
-
-### Gardener Protocol (Meta-Learning)
-
-→ SSOT: `.claude/protocols/gardener.md`
-
-After executing any self-skill (`/repo-scout`, `/spec-audit`, `/init-*`, `/update-ai-setup`) — run Gardener Analysis BEFORE the `SKILL COMPLETE` block.
-
-**Reflection Protocol (Failure Analysis)** → SSOT: `.claude/protocols/reflection.md`
-Activates automatically when any skill ends with `⚠️ SKILL PARTIAL` or `🛑 LOOP_GUARD_TRIGGERED`. Formulates exactly 1 rule and appends to `.ai-lessons/pending.md`.
-
-**Reflector Protocol (Proactive Pattern Detection)** → SSOT: `.claude/protocols/reflector.md`
-Two-layer system: Layer 1 (bash detection via `scripts/lib/reflector.sh`) + Layer 2 (LLM formulation via protocol). Run when `tests/telemetry/events.jsonl` has >= 10 events. Detects recurring Gardener observations, recurring failures, and pending.md patterns. Appends `[REFLECTOR]` rules to `.ai-lessons/pending.md`.
-
----
-
-## Sub-Agent Protocol
-
-> Universal Protocols — in `CLAUDE.md`. Below — orchestration specifics.
-
-### Sub-Agent Invocation
-
-Sub-agents operate in `context: fork` — pass **exhaustive context** in the prompt:
-
-- **Target:** endpoint/file/specification
-- **Scope:** what to cover, scenarios
-- **Constraints:** tech stack, standards
-- **Upstream:** artifacts from previous skills (spec-audit findings, repo-scout-report)
-
-**Anti-pattern Constraint:** When delegating to SDET, include in prompt: "Check `.claude/qa-antipatterns/_index.md` before code generation. Apply `api/eventual-consistency-writes.md` for eventual-consistency write→read pairs and `api/batch-partial-failure.md` for batch endpoints."
-
-**Context Pruning:** Before delegating to SDET, extract only sections of `repo-scout-report` relevant to the target module/endpoint. Omit unrelated module sections. Minimum required: §15 Blueprint (priority + skip list) + §11–§13 blocks scoped to the target domain.
-
-**ESCALATION:** On blocker from agent — analyze the cause, choose:
-
-- Replan (Auditor: update plan, exclude endpoint)
-- User escalation (technical issue: update dependencies)
-- Partial coverage (endpoint P2, non-critical)
-
-### Cross-Skill Dependencies
-
-`/repo-scout` → `/spec-audit` → `/api-test-cases` | `/api-isolated-tests` **(SDET)** → `/api-tests` **(SDET)** → `/api-test-review` **(Auditor)**
-
-#### Repo-Scout Data Flow (§11–§15 → Downstream Skills)
+## Repo-Scout Data Flow (§11–§15 → Downstream Skills)
 
 | Report Section                | Consumer Skill                      | How It's Used                                                                                            |
 | ----------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------- |
@@ -248,7 +131,18 @@ Sub-agents operate in `context: fork` — pass **exhaustive context** in the pro
 | §14 Config & Host Context     | `/api-tests`                        | Test env setup → `@BeforeAll`; dead config → skip list                                                   |
 | §15 Test Generation Blueprint | `/api-isolated-tests`, `/api-tests` | P0/P1/P2 priorities → generation order; Skip list → `@Disabled` annotations                              |
 
----
+**Context pruning:** when a skill runs in a forked context, pass only the report
+sections relevant to the target module or endpoint — minimum §15 Blueprint plus
+§11–§13 scoped to the target domain.
+
+## Meta-Learning
+
+The Gardener protocol (`.claude/protocols/gardener.md`) runs before the
+`SKILL COMPLETE` block: if a run surfaced a missing rule, propose it.
+
+The wider self-improvement loop — Reflection, Reflector, and the lesson-curation
+pipeline — is an unfinished experiment kept in `in-progress/ace/`. It is not part
+of the maintained setup.
 
 ## Markdown Artifact Quality Rules
 

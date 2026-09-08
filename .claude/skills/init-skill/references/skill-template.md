@@ -113,7 +113,7 @@ description: [Verb] + [what] + [context]. Max 100 characters.
 
 **Good:**
 ```yaml
-description: Generates API automated tests in Kotlin with common-test-libs and JUnit 5
+description: Generates API automated tests in Kotlin with ktor-client and JUnit 5
 description: Analyzes specification for contradictions and gaps
 description: Validates tests for naming convention compliance
 ```
@@ -192,7 +192,7 @@ Use for code-generating skills (/api-tests, /api-mocks, /api-isolated-tests).
 
 ### Block D — Status Reporting
 
-Use for multi-file scan skills (doc-lint, agents-checker, skill-audit).
+Use for multi-file scan skills (doc-lint, skill-audit).
 
 ```markdown
 > **Status Reporting**: After processing each batch, emit a single-line JSON progress:

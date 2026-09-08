@@ -2,7 +2,6 @@
 name: output-review
 description: Independent audit of any skill's output against its checklist. Use after skill completion to verify output quality. Do not use for auditing SKILL.md files themselves — use /skill-audit for that.
 allowed-tools: "Read Write Edit Glob Grep Bash(./gradlew*) Bash(wc*)"
-agent: auditor
 context: fork
 ---
 
@@ -12,7 +11,7 @@ Verifies skill OUTPUT against checklists from the target skill's SKILL.md. Indep
 
 ## Before Starting
 
-Read `.claude/qa_agent.md` and `.claude/agents/auditor.md`.
+Read `.claude/qa_agent.md`.
 
 ---
 
@@ -137,7 +136,7 @@ For each item from Phase 2:
 
 ### Phase 5 — Anti-Pattern Scan
 
-**Goal:** Check artifacts for anti-patterns from agents/sdet.md.
+**Goal:** Check artifacts for anti-patterns from `.claude/qa-antipatterns/`.
 
 1. `ls .claude/qa-antipatterns/` — get list of anti-patterns
 2. Grep artifacts for key signatures from file names (e.g. `Thread.sleep`, `Map<String, Any>`, PII)

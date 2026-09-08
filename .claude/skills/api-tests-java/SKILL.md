@@ -2,7 +2,6 @@
 name: api-tests-java
 description: Generates production-ready API automated tests in Java 17+ (JUnit5, Allure, AssertJ). Use when you need to cover REST endpoints with tests from test-scenarios.md or specification in Java. Do not use for Kotlin tests — use /api-tests for that.
 allowed-tools: "Read Write Edit Glob Grep Bash(./gradlew*)"
-agent: sdet
 context: fork
 ---
 

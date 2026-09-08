@@ -20,7 +20,7 @@
 
 | Component | Technology | BANNED |
 |-----------|------------|--------|
-| HTTP Client | [common-test-libs ApiClient/requests/axios] | [alternatives] |
+| HTTP Client | [ktor-client/requests/axios] | [alternatives] |
 | Serialization | [Jackson/Pydantic/zod] | [alternatives] |
 | Assertions | [assertEquals with message/pytest/Jest] | [alternatives] |
 | Test Framework | [JUnit 5/pytest/Jest] | [alternatives] |
@@ -58,7 +58,7 @@
 ```text
 | Component | Technology | BANNED |
 |-----------|------------|--------|
-| HTTP | common-test-libs ApiClient + ApiRequestBaseJson<T> | Custom HTTP wrappers |
+| HTTP | ktor-client (CIO) + a typed request base class | Custom HTTP wrappers |
 | JSON | Jackson (SNAKE_CASE) | Gson |
 | Assertions | assertEquals with message + Hamcrest checkAll | Assertions without message |
 | Polling | Awaitility (await.atMost().until {}) | Thread.sleep(), delay() |

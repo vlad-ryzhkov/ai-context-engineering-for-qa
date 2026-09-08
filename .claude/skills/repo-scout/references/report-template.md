@@ -141,7 +141,7 @@ Formula: covered endpoints / (REST + gRPC) × 100
 | Migrations | {✅/❌} | {Liquibase / Flyway / goose / Alembic / Knex}, {N changesets} |
 | Message Queue | {✅/❌} | {Kafka / RabbitMQ / NATS} |
 | Cache | {✅/❌} | {Redis / Memcached} |
-| Dev-Platform | {✅/❌} | {shared services} |
+| Platform config | {✅/❌} | {shared services} |
 
 ### Deployment Topology (S6)
 

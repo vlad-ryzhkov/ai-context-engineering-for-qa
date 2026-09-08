@@ -45,7 +45,7 @@ Determine which files to translate, in priority order:
    ```text
    Which files should I translate?
    Options:
-   - Single file path (e.g., .claude/agents/auditor.md)
+   - Single file path (e.g., .claude/qa_agent.md)
    - Directory with glob (e.g., .claude/skills/**/*.md)
    - "all" for all .md files in .claude/
    ```

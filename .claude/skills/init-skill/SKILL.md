@@ -2,7 +2,6 @@
 name: init-skill
 description: Generates new skills with interactive workflow, checkpoints, and iterative refinement. Use when you need to create a new skill, standardize a QA process, or automate routine checks. Use when creating a new skill or improving an existing one.
 allowed-tools: "Read Write Edit Glob Grep Bash"
-agent: sdet
 context: fork
 ---
 
@@ -15,7 +14,7 @@ Focus: QA tasks (testing, analysis, automation).
 
 ## Before Starting
 
-Read `.claude/qa_agent.md` and `.claude/agents/sdet.md`.
+Read `.claude/qa_agent.md`.
 
 ## When to Use
 
@@ -216,7 +215,6 @@ name: [skill-name]
 description: [What it does]. [When to use]. [When NOT to use]
 allowed-tools: "Read Write Edit Glob Grep Bash(npx*)"
 disable-model-invocation: false   # set true for side-effect skills
-agent: sdet                       # omit if no dedicated agent
 context: fork
 ---
 ```

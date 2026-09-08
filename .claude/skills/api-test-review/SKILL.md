@@ -1,7 +1,6 @@
 ---
 name: api-test-review
 description: Deep code review of Kotlin/Java API tests for security, architecture, and quality. Use after /api-tests for artifact validation. Do not use for specification analysis or test case generation.
-agent: auditor
 allowed-tools: "Read Glob Grep"
 context: fork
 ---
@@ -10,11 +9,11 @@ context: fork
 
 Before execution the agent MUST load:
 - `.claude/protocols/gardener.md` — Gardener Protocol for analyzing findings and proposing rules
-- `.claude/agents/auditor.md` → **Verbosity Protocol** — Keep output concise (3–5 lines summary, no redundant preamble, evidence-based only)
+
+> **Verbosity Protocol** — keep output concise: a 3–5 line summary, no preamble, evidence-based only.
 
 # Skill: /api-test-review
 
-**Owner:** Auditor
 **Trigger:** User invokes `/api-test-review` to audit Kotlin/Java API tests
 **Input:** Directory path or file path to test code (e.g., `src/test/kotlin/domain/`)
 **Output:** Structured review report with severity levels (🔴 CRITICAL, 🟠 MAJOR, 🟡 MINOR)

@@ -2,7 +2,6 @@
 name: doc-lint
 description: Documentation quality audit — size, structure, cross-file duplicates, SSOT violations. Use for quality control of human-readable files, finding duplication, and structure verification. Do not use for code review or source code analysis.
 allowed-tools: "Read Write Edit Glob Grep Bash(wc*)"
-agent: auditor
 context: fork
 ---
 
@@ -14,7 +13,7 @@ Scans all human-readable project files, finds issues with size, structure, cross
 
 ## Before Starting
 
-Read `.claude/qa_agent.md` and `.claude/agents/auditor.md`.
+Read `.claude/qa_agent.md`.
 
 ## When to Use
 

@@ -2,7 +2,6 @@
 name: update-ai-setup
 description: Scans project AI files and updates the docs/ai-setup.md Registry with current data. Use to synchronize the Registry after adding/removing Skills, patterns, or configs. Do not use to create a Registry from scratch — create docs/ai-setup.md manually instead.
 allowed-tools: "Read Write Edit Glob Grep Bash(wc*) Bash(ls*)"
-agent: auditor
 context: fork
 ---
 
@@ -14,7 +13,7 @@ Automatic update of docs/ai-setup.md — the Registry of all AI patterns, Skills
 
 ## Prerequisites
 
-Read `.claude/qa_agent.md` and `.claude/agents/auditor.md`.
+Read `.claude/qa_agent.md`.
 
 ## When to Use
 
