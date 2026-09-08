@@ -66,6 +66,24 @@ QA anti-patterns for generated code live in `.claude/qa-antipatterns/`. To add o
 
 Install: `bash scripts/setup-hooks.sh`
 
+## Restoring the Gradle wrapper
+
+**Known defect: `./gradlew` does not work in a fresh clone.**
+`gradle/wrapper/gradle-wrapper.jar` was swept up by a blanket `*.jar` rule in
+`.gitignore` and never committed, so the commands documented in `CLAUDE.md`
+(`./gradlew build`, `./gradlew test`) fail with `Unable to access jarfile`.
+
+The ignore rule now has an explicit negation for that one path, so the jar can be
+committed. It still needs to be generated once, by someone with Gradle available:
+
+```bash
+gradle wrapper --gradle-version 9.2.1 && git add gradle/wrapper/gradle-wrapper.jar && git commit -m 'build: commit the Gradle wrapper jar'
+```
+
+The version must match `distributionUrl` in `gradle/wrapper/gradle-wrapper.properties`.
+Until that lands, the Kotlin and Java skills still generate correct code — only
+the compile gate cannot run locally from a clean checkout.
+
 ## Where things go
 
 | Adding | Goes in |

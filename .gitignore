@@ -12,6 +12,9 @@
 
 # Package Files #
 *.jar
+# The Gradle wrapper jar is meant to be committed — without it ./gradlew cannot run
+# in a fresh clone. See CONTRIBUTING.md "Restoring the Gradle wrapper".
+!gradle/wrapper/gradle-wrapper.jar
 *.war
 *.nar
 *.ear
