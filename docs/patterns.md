@@ -150,7 +150,41 @@ context arrives as cache reads, so it measures context reuse directly.
 `pre-push` adds branch naming, compilation, and markdownlint; `skill-lint` runs
 on every skill edit. Install with `bash scripts/setup-hooks.sh`.
 
-### 19. Model Context Protocol servers
+### 19. Egress fence
+
+**Problem:** a skill that can read local files, run commands, and reach the
+network holds all three legs of the "lethal trifecta" — a prompt injection hidden
+in a specification or a test file could read a secret and send it out.
+
+**Mechanism, in three layers, weakest claim first:**
+
+1. **`disallowed-tools:` on every skill.** All 22 deny `WebFetch` and
+   `WebSearch`; the 9 that need no shell also deny `Bash`, which closes the
+   exfiltration leg outright for those 9.
+2. **A deny list in `.claude/settings.json`** for the egress binaries —
+   `curl`, `wget`, `nc`, `socat`, `ssh`, `scp`, `rsync`, `gh gist`.
+3. **`.claude/hooks/no-egress.sh`**, a `PreToolUse` hook on `Bash` that inspects
+   the command and exits 2 on anything matching those binaries. It catches what
+   a glob pattern misses: quoted names (`"curl"`), a second command after `&&`,
+   and `openssl s_client`. Tested by `.claude/hooks/no-egress.test.sh` — 20
+   cases, 10 that must block and 10 that must pass.
+
+**What this does not buy — stated rather than hidden.** Thirteen skills
+legitimately need `Bash` for `./gradlew`, `wc`, `npx`, `gh`, or `python3`. Any
+interpreter can open a socket without naming a blocked binary, so no allowlist of
+command names is airtight while those skills work at all. Narrowing the grant
+does not help either: `vigiles` treats a `Bash(...)` grant as bounded only when
+it pins a program that cannot read a file or speak a protocol — its list is
+`echo`, `printf`, `true`, `false`, `:`, `pwd`, `sleep`, `date`, `uname`,
+`hostname`, `whoami`, `id`, `basename`, `dirname` — and nothing these skills need
+is on it, deliberately. `wc` and `ls` are excluded by construction because they
+take a file operand.
+
+So layer 3 raises the cost of the casual exfiltration path. It is not a
+containment boundary. Treat a specification from an untrusted source as
+untrusted input.
+
+### 20. Model Context Protocol servers
 
 `context7` supplies current library documentation instead of training-cutoff
 memory; `sequential-thinking` supports step-by-step analysis. Declared in
@@ -190,4 +224,4 @@ Measured with `python3 scripts/context-check.py` and a section sweep over
 | `/spec-audit` has no self-review section | By design | The audit report is the quality gate |
 | `/fix-markdown` (36 lines) and `/pr` (90 lines) skip most baseline sections | By design | Utility skills where the full baseline would exceed the logic |
 | `/api-tests` and `/api-tests-java` have no inline completion block | By design | Both delegate to `.claude/skills/_shared/api-tests-shared.md`, which carries it. A naive grep over `SKILL.md` alone reports a false positive here |
-| 14 of 22 skills still hold all three "lethal trifecta" legs | Accepted risk | Closing the exfiltration leg means denying `Bash`, and those 14 need it for gradle, `wc`, `npx`, or `gh`. The 8 that do not need a shell deny it. See [README](../README.md#harness-verification) |
+| 13 of 22 skills still hold all three "lethal trifecta" legs | Accepted risk | They need `Bash` for gradle, `wc`, `npx`, `gh`, or `python3`, and an interpreter can open a socket without naming a blocked binary. Mitigated in three layers, none of them a containment boundary — see [19. Egress fence](#19-egress-fence) |

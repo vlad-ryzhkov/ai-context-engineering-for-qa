@@ -4,6 +4,7 @@ description: Generates in-process HTTP mock server for the API under test + Wire
 context: fork
 input: specification file (same path used for /api-tests)
 output: helpers/MockServer.kt, helpers/MockServerExtension.kt, META-INF/services/, junit-platform.properties
+allowed-tools: "Read Write Edit Glob Grep"
 disallowed-tools: WebFetch, WebSearch, Bash
 ---
 

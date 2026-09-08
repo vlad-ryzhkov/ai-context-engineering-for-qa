@@ -63,8 +63,18 @@ QA anti-patterns for generated code live in `.claude/qa-antipatterns/`. To add o
 | `pre-push` | Branch naming, forbidden files, Kotlin compilation, markdownlint |
 | `skill-lint` (post-edit) | Line count, baseline sections, forbidden patterns |
 | `delta-guard` (post-edit) | Warns when a governed context file is fully rewritten instead of edited |
+| `no-egress` (pre-Bash) | Blocks commands that move bytes off the machine — see [19. Egress fence](docs/patterns.md#19-egress-fence) |
 
-Install: `bash scripts/setup-hooks.sh`
+Install the git hooks: `bash scripts/setup-hooks.sh`
+The three assistant hooks are wired in `.claude/settings.json` and need no install.
+
+Changing `no-egress.sh` means running its tests:
+
+```bash
+shellcheck .claude/hooks/no-egress.sh && bash .claude/hooks/no-egress.test.sh
+```
+
+20 cases — 10 that must block, 10 that must pass. Both must be green.
 
 ## The Gradle build
 

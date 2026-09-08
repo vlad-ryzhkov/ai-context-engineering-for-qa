@@ -1,8 +1,8 @@
 ---
 name: screenshot-analyze
 description: Analyzes mobile app screenshots for L10N defects (translations, CLDR formats, RTL). Use for UI localization verification when you need to find translation errors, date/currency format issues, or RTL layout problems. Do not use for functional UI testing or code analysis.
-allowed-tools: "Read Write Edit Glob Grep Bash(open*)"
-disallowed-tools: WebFetch, WebSearch
+allowed-tools: "Read Write Edit Glob Grep"
+disallowed-tools: WebFetch, WebSearch, Bash
 context: fork
 ---
 
@@ -248,7 +248,8 @@ Generated in the screenshots directory.
 
 **Template:** `references/html-template.md`
 
-**MUST:** Open the report with `open {path}/analysis-report_{YYYYMMDD_HHMMSS}.html`
+**MUST:** Report the artifact path so the user can open it:
+`📊 Full report: {path}/analysis-report_{YYYYMMDD_HHMMSS}.html`
 
 ---
 

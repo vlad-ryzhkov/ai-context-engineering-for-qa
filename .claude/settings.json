@@ -22,7 +22,19 @@
       "Bash(git branch -D *)",
       "Bash(rm *)",
       "Bash(rm -r*)",
-      "Bash(unlink *)"
+      "Bash(unlink *)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(nc *)",
+      "Bash(ncat *)",
+      "Bash(netcat *)",
+      "Bash(socat *)",
+      "Bash(telnet *)",
+      "Bash(ssh *)",
+      "Bash(scp *)",
+      "Bash(sftp *)",
+      "Bash(rsync *)",
+      "Bash(gh gist *)"
     ]
   },
   "enabledMcpjsonServers": [
@@ -30,6 +42,18 @@
     "sequential-thinking"
   ],
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/no-egress.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit",
