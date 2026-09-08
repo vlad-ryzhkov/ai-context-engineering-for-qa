@@ -66,23 +66,30 @@ QA anti-patterns for generated code live in `.claude/qa-antipatterns/`. To add o
 
 Install: `bash scripts/setup-hooks.sh`
 
-## Restoring the Gradle wrapper
+## The Gradle build
 
-**Known defect: `./gradlew` does not work in a fresh clone.**
-`gradle/wrapper/gradle-wrapper.jar` was swept up by a blanket `*.jar` rule in
-`.gitignore` and never committed, so the commands documented in `CLAUDE.md`
-(`./gradlew build`, `./gradlew test`) fail with `Unable to access jarfile`.
+`./gradlew compileTestKotlin` works from a clean clone with **no Gradle and no
+JDK 17 installed**. Two things make that true, and both were broken before:
 
-The ignore rule now has an explicit negation for that one path, so the jar can be
-committed. It still needs to be generated once, by someone with Gradle available:
+- `gradle/wrapper/gradle-wrapper.jar` is committed. A blanket `*.jar` rule in
+  `.gitignore` used to swallow it, so `./gradlew` died with
+  `Unable to access jarfile` in every fresh clone. The rule now carries an
+  explicit negation for that one path.
+- `settings.gradle.kts` applies the Foojay toolchain resolver, so Gradle
+  downloads the JDK that `build.gradle.kts` asks for. Without it,
+  `kotlin { jvmToolchain(17) }` failed with
+  `Cannot find a Java installation ... matching {languageVersion=17}` on any
+  machine whose JDK was not 17 — which is most of them.
+
+Only one JDK is needed to bootstrap: whatever runs Gradle itself. Verified on
+JDK 24 with no JDK 17 present.
+
+If you ever regenerate the wrapper, the version must match `distributionUrl` in
+`gradle/wrapper/gradle-wrapper.properties`:
 
 ```bash
-gradle wrapper --gradle-version 9.2.1 && git add gradle/wrapper/gradle-wrapper.jar && git commit -m 'build: commit the Gradle wrapper jar'
+gradle wrapper --gradle-version 9.2.1
 ```
-
-The version must match `distributionUrl` in `gradle/wrapper/gradle-wrapper.properties`.
-Until that lands, the Kotlin and Java skills still generate correct code — only
-the compile gate cannot run locally from a clean checkout.
 
 ## Where things go
 
