@@ -220,11 +220,13 @@ the audit score does not credit it, because `vigiles` scores declared tool
 fences rather than hooks. Full reasoning:
 [docs/patterns.md § Egress fence](docs/patterns.md#19-egress-fence).
 
-> **Gotcha worth knowing:** `disallowed-tools` must be **comma-separated** for
-> vigiles to parse it. Claude Code accepts space-separated too, so
-> `disallowed-tools: WebFetch WebSearch Bash` works at runtime but reads as
-> closing nothing in the audit. Measured here: switching one skill from spaces
-> to commas moved the Safety score, with no other change.
+> **Gotcha worth knowing:** `disallowed-tools` must be **comma-separated** (or a
+> YAML list) for vigiles to parse it. Claude Code also accepts space-separated,
+> so `disallowed-tools: WebFetch WebSearch Bash` works at runtime but audits as
+> closing nothing. Measured here: switching one skill from spaces to commas moved
+> the Safety score with no other change. Reported upstream as
+> [zernie/vigiles#217](https://github.com/zernie/vigiles/issues/217) with the
+> root cause and a paren-aware tokenizer.
 
 ---
 
