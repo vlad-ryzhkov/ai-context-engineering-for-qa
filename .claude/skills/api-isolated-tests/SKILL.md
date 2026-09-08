@@ -2,6 +2,7 @@
 name: api-isolated-tests
 description: Generates an exhaustive test scenario matrix (Markdown) directly from API specifications. Use when you need full regression coverage, find edge cases, or prepare a strict spec for automated tests. Do not use for generating automated test code — use /api-tests for that.
 allowed-tools: "Read Write Edit Glob Grep"
+disallowed-tools: WebFetch, WebSearch, Bash
 context: fork
 ---
 

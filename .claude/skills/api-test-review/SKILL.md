@@ -2,6 +2,7 @@
 name: api-test-review
 description: Deep code review of Kotlin/Java API tests for security, architecture, and quality. Use after /api-tests for artifact validation. Do not use for specification analysis or test case generation.
 allowed-tools: "Read Glob Grep"
+disallowed-tools: WebFetch, WebSearch, Bash
 context: fork
 ---
 

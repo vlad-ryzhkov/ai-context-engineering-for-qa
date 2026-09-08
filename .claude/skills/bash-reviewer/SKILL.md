@@ -6,6 +6,7 @@ description: >-
   Use when reviewing bash/shell scripts or when asking to check shell script quality.
   Do not use for Python/Ruby/Go scripts, GitHub Actions YAML, or issues already caught by shellcheck.
 allowed-tools: "Read Glob Grep"
+disallowed-tools: WebFetch, WebSearch, Bash
 context: fork
 ---
 

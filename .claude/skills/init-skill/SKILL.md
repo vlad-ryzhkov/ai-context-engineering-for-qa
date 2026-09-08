@@ -2,6 +2,7 @@
 name: init-skill
 description: Generates new skills with interactive workflow, checkpoints, and iterative refinement. Use when you need to create a new skill, standardize a QA process, or automate routine checks. Use when creating a new skill or improving an existing one.
 allowed-tools: "Read Write Edit Glob Grep Bash"
+disallowed-tools: WebFetch, WebSearch
 context: fork
 ---
 

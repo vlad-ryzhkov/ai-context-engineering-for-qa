@@ -4,6 +4,7 @@ description: "Analyzes, fixes, improves, and secures GitHub Actions workflows.
   Use when auditing CI/CD security, diagnosing broken workflows, making surgical changes,
   or optimizing performance. Do not use for non-GitHub-Actions CI systems (Jenkins, GitLab CI)."
 allowed-tools: "Read Write Edit Glob Grep Bash"
+disallowed-tools: WebFetch, WebSearch
 ---
 
 # /workflow-expert — GitHub Actions Workflow Expert

@@ -2,6 +2,7 @@
 name: api-test-cases
 description: Generates exhaustive test scenario matrices for ALL API endpoints grouped by domain. Use for full regression coverage across entire API surface. Do not use for single-endpoint deep-dive — use /api-isolated-tests.
 allowed-tools: "Read Write Edit Glob Grep AskUserQuestion"
+disallowed-tools: WebFetch, WebSearch, Bash
 context: fork
 ---
 

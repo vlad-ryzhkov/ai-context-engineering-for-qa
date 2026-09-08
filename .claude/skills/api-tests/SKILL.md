@@ -2,6 +2,7 @@
 name: api-tests
 description: Generates production-ready API automated tests in Kotlin (JUnit5, Allure). Use when you need to cover REST endpoints with tests from test-scenarios.md or specification. Do not use for test case generation — use /api-isolated-tests for that.
 allowed-tools: "Read Write Edit Glob Grep Bash(./gradlew*)"
+disallowed-tools: WebFetch, WebSearch
 context: fork
 ---
 

@@ -2,6 +2,7 @@
 name: qa-translate
 description: QA-grade technical translation of markdown files from Russian to English. Preserves markdown structure, applies consistent terminology from glossary, and verifies structural integrity. Use when translating .md files (skills, agents, protocols, specs, docs) for English-speaking audiences. Do not use for non-markdown files or EN→RU translation.
 allowed-tools: "Read Write Edit Glob Grep Bash(wc*)"
+disallowed-tools: WebFetch, WebSearch
 ---
 
 # /qa-translate — Technical Translation RU→EN

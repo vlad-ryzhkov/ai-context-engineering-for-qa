@@ -2,6 +2,7 @@
 name: skill-audit
 description: Audit SKILL.md and qa_agent.md for bloat, duplication, harmful patterns ("DO NOT FIX", bloated templates). Use to optimize AI setup and reduce token usage. Do not use for documentation audit — use /doc-lint instead.
 allowed-tools: "Read Write Edit Glob Grep Bash(wc*)"
+disallowed-tools: WebFetch, WebSearch
 context: fork
 ---
 
@@ -94,7 +95,7 @@ For each SKILL.md verify frontmatter against rules from `init-skill/references/y
 - `name` in kebab-case, matches folder name, no "claude"/"anthropic"
 - `description` contains three parts: **What / When / When NOT**
 - `description` < 1024 chars, no XML characters (`<`, `>`), single-line
-- If `agent:` is present — referenced file exists
+- `disallowed-tools` present, fencing the tools the skill does not need
 
 Severity: **ERROR** (required field missing), **WARNING** (description format violation, missing `allowed-tools`).
 
@@ -130,8 +131,8 @@ Grep: `## Verbosity Protocol`, `SILENT MODE`, `NO CHAT TABLES` in SKILL.md files
 
 - Severity: **CRITICAL** (if absent)
 - Why: Agents without this protocol pollute chat, output intermediate tables and lists, waste tokens on chatter
-- **Exception:** If the skill has `agent:` in frontmatter — check for Verbosity Protocol in the agent file (`agents/{name}.md`). No need to duplicate in SKILL.md — flag only if absent from both SKILL.md and the agent.
-- Recommendation: Add Verbosity Protocol to the agent file (not to SKILL.md)
+- **Exception:** micro-skills under ~100 lines, where the protocol would exceed the logic. Record the exemption in `docs/patterns.md`.
+- Recommendation: add a Verbosity Protocol block to SKILL.md
 
 ### Check 2: Self-Review Protocol (Bloated)
 

@@ -195,6 +195,25 @@ npx vigiles audit      # grade this harness A-F, read-only, no setup
 npx vigiles lint       # structural validity and dangling references
 ```
 
+Current grade: **B (81/100)** — Truthfulness 100, Triggering 100, Structure 100,
+Safety 81. Reorganising this repository took it from D (62): the fixes were a
+dangling bundled-resource reference, an over-long skill description that buried
+its own trigger signal, and adding a `disallowed-tools:` fence to all 22 skills.
+
+**Known residual risk.** Fourteen skills still hold all three legs of the
+"lethal trifecta" — they can read local data, reach the network, and run
+commands, so a prompt injection in a spec or a test file could in principle
+exfiltrate something. Closing the exfiltration leg means denying `Bash`, and
+those fourteen need it (`./gradlew`, `wc`, `npx`, `gh`). The eight skills that
+do not need `Bash` deny it. This is documented rather than hidden; treat a
+specification from an untrusted source as untrusted input.
+
+> **Gotcha worth knowing:** `disallowed-tools` must be **comma-separated** for
+> vigiles to parse it. Claude Code accepts space-separated too, so
+> `disallowed-tools: WebFetch WebSearch Bash` works at runtime but reads as
+> closing nothing in the audit. Measured here: switching one skill from spaces
+> to commas moved the Safety score, with no other change.
+
 ---
 
 ## Workshop & demo

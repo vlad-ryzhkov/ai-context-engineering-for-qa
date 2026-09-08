@@ -7,6 +7,7 @@ description: >-
   land on a PR. Not for a cold repo topology audit — that is improve-project-context. Never drafts
   new skills.
 allowed-tools: Read Edit Write Bash Glob
+disallowed-tools: WebFetch, WebSearch
 ---
 
 # /improve-context-from-sessions — Behavioral Retrospective
@@ -28,7 +29,7 @@ the whole drafting session.
 - Surgical Edit ONLY. Wholesale rewrite = BANNED.
 - **ONE pool, ONE apply.** Collect EVERY accepted delta, then apply and commit them together.
   BANNED: apply a batch → keep mining → apply again. Each apply re-injects the whole corpus at the
-  next context refresh, so N applies cost N × that. Re-run `scripts/context-check.py` AFTER the
+  next context refresh, so N applies cost N × that. Re-run `python3 scripts/context-check.py` AFTER the
   pool, before the commit.
 - Terse rule style for `rules/**` + `SKILL.md` + JIT pointers ONLY. `docs/**` = human-prose OK.
   Style spec: `docs/terse-rule-style.md`.
@@ -101,7 +102,7 @@ Before returning, verify internally:
 - [ ] Every candidate ran the ALREADY-COVERED grep; covered ones reported as `<path>:<line>`, not patched.
 - [ ] Dedup step 3 ran against CLAUDE.md and `.claude/**/*.md`.
 - [ ] Every patch card states PLACEMENT, REASONING, LOC, and `$/month`.
-- [ ] Cap check ran via `scripts/context-check.py`; its exit code is quoted, not guessed.
+- [ ] Cap check ran via `python3 scripts/context-check.py`; its exit code is quoted, not guessed.
 - [ ] Sort applied; TOP-3 disclosed first.
 - [ ] NO proof = NO rule. Nothing written without user consent.
 

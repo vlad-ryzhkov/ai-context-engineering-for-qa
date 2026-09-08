@@ -47,6 +47,16 @@ and graduation machinery was stripped out of it when this folder was created.
 repo root, protocols symlinked into `.claude/`), so **it will not install cleanly
 as-is.** Treat it as a design record, not a working installer.
 
+It also illustrates the failure it was meant to avoid. `ace-kit/docs/ace/` and
+`docs/` hold the same three design documents, and the two copies have drifted
+apart — as have `ace-kit/protocols/gardener.md` and the live
+`.claude/protocols/gardener.md`. Bundling a copy for portability created exactly
+the duplicate-that-diverges problem this repository now keeps one source of truth
+to prevent. Both copies are kept as the record; neither is authoritative.
+
+`in-progress/` is excluded from markdownlint (see `.markdownlintignore`) because
+nothing here is maintained.
+
 ## If picked up again
 
 The honest next step is not more machinery — it is a measurement: instrument how

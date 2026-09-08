@@ -1,16 +1,13 @@
 ---
 name: improve-project-context
 description: >-
-  Cold audit of AI context artifacts in ~/.claude and .claude — skills, rules, docs, hooks,
-  commands. Maps the dependency graph from CLAUDE.md / AGENTS.md entry points, measures the
-  always-loaded token budget, and flags orphans, duplication, and ambiguous JIT routing. Surgical
-  edits only. Use on /improve-project-context, "audit context", "review AI setup", "check repo
-  context". ALSO use before hand-rolling any measurement over the context corpus — counting
-  tokens, chars, LOC, or files across CLAUDE.md / rules / docs / skills; generating or re-syncing
-  a docs registry or context map; or checking corpus budget drift. It owns those measurements and
-  runs them through scripts/context-check.py. Not for a session retrospective — that is
-  improve-context-from-sessions.
+  Cold audit of AI context files — skills, rules, docs, hooks. Maps the dependency graph from
+  CLAUDE.md, measures the always-loaded token budget, flags orphans, duplication, and ambiguous
+  routing. Use on "audit context", "review AI setup", or before measuring anything across the
+  context corpus (tokens, LOC, budget drift) — it owns those measurements. Not for a session
+  retrospective; that is improve-context-from-sessions.
 allowed-tools: Read Edit Write Bash Glob
+disallowed-tools: WebFetch, WebSearch
 ---
 
 # /improve-project-context — Cold Topology Audit
@@ -20,7 +17,7 @@ ROLE: static analyser. Builds dep graph, measures token budget, finds structural
 ## Invariants (BANNED to violate)
 
 - Surgical Edit ONLY. Existing files → `Edit` anchored on header or last 2 lines. New files → `Write`. Wholesale rewrite = BANNED.
-- **ONE pool, ONE apply.** Collect EVERY accepted finding, then apply and commit them together. BANNED: apply a batch → keep auditing → apply again. Each apply re-injects the whole corpus at the next context refresh (measured 2026-09-01: 64,297 tok floor), so N applies cost N × that. Re-run `scripts/context-check.py` AFTER the pool, before the commit.
+- **ONE pool, ONE apply.** Collect EVERY accepted finding, then apply and commit them together. BANNED: apply a batch → keep auditing → apply again. Each apply re-injects the whole corpus at the next context refresh (a five-figure token floor on a mid-sized corpus), so N applies cost N × that. Re-run `python3 scripts/context-check.py` AFTER the pool, before the commit.
 - Terse rule style for `rules/**` + `SKILL.md` + JIT pointers ONLY. `docs/**` = human-prose OK (rationale, examples, incidents, decision trees). Style spec: `docs/context-budget.md`.
 - BANNED reads/edits: `*.local.json`, gitignored paths (verify FIRST), `*.zip`/binary (flag ORPHAN-ARTIFACT).
 - Trigger: explicit user call ONLY (`/improve-project-context`, "audit context", "cold audit"). NO auto-fire.

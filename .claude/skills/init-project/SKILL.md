@@ -2,6 +2,7 @@
 name: init-project
 description: Generates CLAUDE.md for a QA project — scans the repository, analyzes tech stack, creates an onboarding document. Use for a new QA project without CLAUDE.md or setting up AI-assisted workflow. Do not use if CLAUDE.md is already configured — edit manually.
 context: fork
+disallowed-tools: WebFetch, WebSearch, Bash
 ---
 
 # /init-project — CLAUDE.md Generator

@@ -86,3 +86,7 @@ local.properties
 *.key
 *.keystore
 *.jks
+
+# vigiles audit report (generated)
+vigiles-report.json
+vigiles-report.html

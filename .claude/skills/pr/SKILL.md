@@ -2,6 +2,7 @@
 name: pr
 description: Create a pull request — runs tests, commits changes, pushes branch, opens PR with conventional commit title. Use when ready to submit work for review. Do not use for committing without PR or direct pushes to main.
 allowed-tools: "Bash Read Edit Glob Grep"
+disallowed-tools: WebFetch, WebSearch
 ---
 
 # /pr — Pull Request Creator
