@@ -47,7 +47,7 @@ done
 
 # Check secret patterns in staged diff (exclude scripts/ — they contain pattern definitions)
 FOUND_SECRET=0
-STAGED_DIFF=$(git diff --cached -- . ':(exclude)scripts/' ':(exclude).claude/' ':(exclude)docs/' ':(exclude).ai-lessons/' ':(exclude)package-lock.json')
+STAGED_DIFF=$(git diff --cached -- . ':(exclude)scripts/' ':(exclude).claude/' ':(exclude)docs/' ':(exclude)in-progress/' ':(exclude)package-lock.json')
 for pattern in "${SECRET_PATTERNS[@]}"; do
   if echo "$STAGED_DIFF" | grep -qiE "^\+.*$pattern"; then
     echo -e "${RED}[pre-commit] BLOCKED: secret pattern detected: $pattern${NC}"
