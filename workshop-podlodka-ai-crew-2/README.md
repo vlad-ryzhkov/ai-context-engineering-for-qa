@@ -15,6 +15,18 @@ current catalogue see [`SKILLS.md`](../SKILLS.md) in the repository root.
 | [`model-comparison-notes.md`](model-comparison-notes.md) | Raw notes from the with-context vs. without-context demo |
 | [`rtl-example/rtl.png`](rtl-example/rtl.png) | Right-to-left layout defect used in the `/screenshot-analyze` demo |
 
+## Screenshot provenance
+
+`rtl-example/rtl.png` and the three locale screenshots under
+[`../src/test/resources/screenshots/brazil_passenger_main_screen/`](../src/test/resources/screenshots/brazil_passenger_main_screen/)
+(`ar_BR.png`, `en_BR.png`, `ru_BR.png`, plus a generated HTML report that embeds
+them) are captures of a shipped consumer ride-hailing app, used live during the
+talk to demonstrate `/screenshot-analyze` finding localisation defects.
+
+They contain no personal data — the addresses and prices are test values — and
+they show UI any user of that app sees. They are here because the talk was
+public. If that changes, they are the material to pull first.
+
 ## Watching it back
 
 - [Demo video](https://youtu.be/7VnjM44qkmc) — the capability walkthrough
