@@ -73,6 +73,16 @@ REQUIRE: the token verdict comes from `CLAUDE_PROJECT_DIR=<repo> python3 scripts
 about the audit process itself, output a brief proposal table. Otherwise:
 `🌱 Gardener: No updates needed.`
 
+## Completion
+
+```text
+✅ SKILL COMPLETE: /improve-project-context
+├─ Files mapped: [N]
+├─ Budget: [PASS/FAIL — context-check.py exit code]
+├─ Findings: [N] (applied: [N], declined: [N])
+└─ Drift score: [per-file bands recorded in docs/context-map.md]
+```
+
 ## NOT this skill
 
 - Session retrospective → `improve-context-from-sessions`

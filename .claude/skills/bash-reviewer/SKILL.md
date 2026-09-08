@@ -221,3 +221,7 @@ When proposing DRY improvements, verify the extraction is safe:
 ├─ Suggestions: [count]
 └─ Status: CLEAN / HAS ISSUES
 ```
+
+**Gardener Protocol**: call `.claude/protocols/gardener.md`. If this run surfaced a
+missing rule or an inefficiency, output a brief proposal table. Otherwise:
+`🌱 Gardener: No updates needed.`

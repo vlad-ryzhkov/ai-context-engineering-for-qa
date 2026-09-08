@@ -515,3 +515,7 @@ Files modified: N
 - `references/output-templates.md` — Output format templates per mode
 - `references/reliability.md` — Runner sizing, OOM prevention, deadlocks, timeouts
 - `references/architecture.md` — Call graph documentation, workflow_dispatch patterns
+
+**Gardener Protocol**: call `.claude/protocols/gardener.md`. If this run surfaced a
+missing rule or an inefficiency, output a brief proposal table. Otherwise:
+`🌱 Gardener: No updates needed.`

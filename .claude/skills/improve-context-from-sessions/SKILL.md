@@ -117,6 +117,16 @@ for recurring tool-call clusters across many sessions. Its scanner was vendored 
 work in a private corporate repository, so it is not published here. Everything above operates on
 the live dialog and needs no archive scanner.
 
+## Completion
+
+```text
+✅ SKILL COMPLETE: /improve-context-from-sessions
+├─ Signals mined: [N corrections, N tool-drift, N validated approaches]
+├─ Candidates: [N] (already covered: [N], patched: [N], declined: [N])
+├─ Budget: [PASS/FAIL — context-check.py exit code]
+└─ Cost delta: [Δtokens, $/month]
+```
+
 ## NOT this skill
 
 - Cold topology audit → `improve-project-context`

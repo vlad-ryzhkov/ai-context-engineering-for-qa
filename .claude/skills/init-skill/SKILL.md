@@ -372,3 +372,7 @@ echo "✅ Validation passed ($lines lines)"
 - Init script: `.claude/skills/init-skill/scripts/init_skill.sh`
 - Template: `references/skill-template.md`
 - Examples: `.claude/skills/*/SKILL.md`
+
+**Gardener Protocol**: call `.claude/protocols/gardener.md`. If this run surfaced a
+missing rule or an inefficiency, output a brief proposal table. Otherwise:
+`🌱 Gardener: No updates needed.`

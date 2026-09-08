@@ -180,9 +180,14 @@ with each generated skill.
 
 Honest list of places where this setup does not meet its own rules.
 
+Measured with `python3 scripts/context-check.py` and a section sweep over
+`.claude/skills/*/SKILL.md`; 8 of 22 skills have a gap, listed in full below.
+
 | Item | Status | Why |
 | ---- | ------ | --- |
-| `/repo-scout` (515 lines) and `/workflow-expert` (516 lines) exceed the 500-line cap | Known | Both are multi-language dispatchers; the next extraction pass should move per-language blocks into `references/` |
+| `/repo-scout` (516 lines) and `/workflow-expert` (521 lines) exceed the 500-line cap | Known | Both are multi-language dispatchers; the next extraction pass should move per-language blocks into `references/` |
 | `/api-test-review` has no self-review section | Known | An eight-phase review pipeline needs the density; its output *is* the quality artifact |
 | `/spec-audit` has no self-review section | By design | The audit report is the quality gate |
-| `/fix-markdown` (35 lines) and `/pr` (89 lines) skip most baseline sections | By design | Utility skills where the full baseline would exceed the logic |
+| `/fix-markdown` (36 lines) and `/pr` (90 lines) skip most baseline sections | By design | Utility skills where the full baseline would exceed the logic |
+| `/api-tests` and `/api-tests-java` have no inline completion block | By design | Both delegate to `.claude/skills/_shared/api-tests-shared.md`, which carries it. A naive grep over `SKILL.md` alone reports a false positive here |
+| 14 of 22 skills still hold all three "lethal trifecta" legs | Accepted risk | Closing the exfiltration leg means denying `Bash`, and those 14 need it for gradle, `wc`, `npx`, or `gh`. The 8 that do not need a shell deny it. See [README](../README.md#harness-verification) |
