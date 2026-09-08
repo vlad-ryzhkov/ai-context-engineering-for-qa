@@ -1,286 +1,235 @@
 # AI Context Engineering for QA
 
-Stop writing ad-hoc prompts. Start using engineered AI skills for QA.
+Stop writing ad-hoc prompts. Engineer the context instead.
 
-This repository is a ready-to-use library of **21 AI skills** (reusable prompts that tell the AI exactly how to perform a QA task),
-**31 anti-pattern quality gates** (rules the AI checks its own output against before finishing),
-and **3 specialized agents** (AI roles — one writes test code, one reviews it, one generates load tests) designed specifically for QA workflows.
-Copy the `.claude/` folder into your project, and your AI assistant immediately knows how to audit specs,
-generate test cases, write API tests (Kotlin/Java), and check its own output.
+A working library of **22 AI skills** for QA work — reusable instruction files that tell an AI
+assistant exactly how to audit a specification, generate test cases, write API tests in Kotlin or
+Java, and review its own output — plus **32 anti-pattern quality gates** the assistant checks its
+output against before it finishes.
 
-Works with Claude Code, OpenCode, Cursor, VS Code Copilot, Codex, JetBrains AI, and Gemini Code Assist.
+Copy `.claude/` into your project and the assistant knows how to do QA work in it.
 
 <p align="center">
-  <img src="presentation/context-pyramid.png" alt="Context Pyramid" width="300"/>
+  <img src="workshop-podlodka-ai-crew-2/presentation/context-pyramid.png" alt="Context Pyramid" width="300"/>
 </p>
 
 ---
 
-## Why does this exist?
+## Why this exists
 
-AI coding assistants can write your API tests, audit your specs, and review your code — but only if you give them
-the right instructions. Without context, the AI starts from zero every conversation: it picks random libraries,
-ignores your coding standards, and produces output you have to rewrite. This repository contains field-tested
-instructions that make the AI behave like a senior QA engineer who already knows your project.
+An AI assistant can write your API tests, audit your specs, and review your code — but only with
+the right instructions. Without context it starts from zero every conversation: it picks whatever
+library it saw most in training, ignores your standards, and produces output you rewrite by hand.
+
+This repository is what a year of fixing that looks like: field-tested instructions, the design
+decisions behind them, and honest notes on the parts that did not work.
+
+It started as material for one workshop. It is now the author's working portfolio of skill and
+context engineering. Corporate skills are deliberately not here.
 
 ---
 
-## Quick Start
+## Quick start
 
-You don't need to read the whole repo. Three steps to start getting value:
+1. **Copy** `.claude/` into your backend or QA project root.
+   Not using Claude Code? See [docs/adapting-to-other-tools.md](docs/adapting-to-other-tools.md).
 
-1. **Copy** — Copy the `.claude/` folder from this repo into your backend or QA project root.
-   For non-Claude IDEs (Cursor, Copilot, etc.), see [IDE Compatibility](#ide-compatibility) below.
+2. **Write `CLAUDE.md` by hand** — tech stack, build and test commands, banned alternatives. Nothing
+   else. Research shows hand-written context files beat AI-generated ones, and bloated ones actively
+   *reduce* success rate while raising cost by over 20%. Guidelines:
+   [docs/claudemd-instructions.md](docs/claudemd-instructions.md).
 
-2. **Create CLAUDE.md by hand** — Write a minimal `CLAUDE.md` in your project root with only:
-   tech stack, build/test commands, and banned alternatives.
-   See [docs/claudemd-instructions.md](docs/claudemd-instructions.md) for guidelines.
-   Research shows that hand-written context files outperform AI-generated ones (+4% vs −3% success rate).
+3. **Run a skill.** Start by scanning a backend repo:
 
-3. **Run your first skill** — Try scanning a backend repo:
    ```text
    /repo-scout
    ```
-   The AI reads your codebase and produces a structured report: API endpoints found, tech stack detected,
-   test coverage gaps, and a blueprint for test generation.
 
-> **New to AI coding assistants?** Start with the [`spec-only` branch](../../tree/spec-only) — it contains
-> only API specifications with no pre-generated code, so you can follow the full pipeline from scratch.
-> See [Demo Video](https://youtu.be/7VnjM44qkmc) for a walkthrough.
+   You get a structured report: endpoints found, tech stack detected, coverage gaps, and a blueprint
+   for generating tests.
+
+> **New to this?** Start on the [`spec-only` branch](../../tree/spec-only) — API specifications only,
+> no pre-generated code, so you can walk the whole pipeline yourself.
 
 ---
 
-## Core QA Workflow
+## The skills
 
-The main pipeline — choose your starting point based on scope:
+**[`SKILLS.md`](SKILLS.md) is the single source of truth** — all 22 skills, grouped, each with a
+status. Nothing else in this repo keeps a second list.
+
+The core pipeline:
 
 ```text
-/repo-scout       →  /api-test-cases     →  /api-tests      →  /api-test-review
-(backend repo)       (test scenarios)       (QA test repo)     (code review)
+/repo-scout    →  /spec-audit   →  /api-test-cases  →  /api-tests    →  /api-test-review
+(backend repo)    (find spec       (scenario matrix)   (Kotlin or       (security,
+                   contradictions)                      Java tests)      architecture)
 ```
 
-| Skill              | Input                 | Output                                        | What you get                                         |
-| ------------------ | --------------------- | --------------------------------------------- | ---------------------------------------------------- |
-| `/repo-scout`      | Backend repository    | API surface map, coverage gaps                | Catalog of endpoints, infrastructure, entry points   |
-| `/api-test-cases`  | Specification + audit | Test scenario matrix (Markdown)               | Exhaustive test cases for all endpoints, by priority |
-| `/api-tests`       | Test scenarios + spec | Kotlin test code (JUnit 5, Allure)            | Production-ready tests, run with `./gradlew test`    |
-| `/api-tests-java`  | Test scenarios + spec | Java 17+ test code (JUnit 5, Allure, AssertJ) | Same as above, Java teams opt-in                     |
-| `/api-test-review` | Test code + spec      | Review report (Markdown)                      | Deep code review: security, architecture, quality    |
+| Skill              | Input                 | Output                                        |
+| ------------------ | --------------------- | --------------------------------------------- |
+| `/repo-scout`      | Backend repository    | API surface map, coverage gaps, test blueprint |
+| `/spec-audit`      | Specification         | Audit report — contradictions, gaps, risks     |
+| `/api-test-cases`  | Specification + audit | Test scenario matrix for all endpoints         |
+| `/api-tests`       | Scenarios + spec      | Kotlin tests (JUnit 5, ktor-client, Allure)    |
+| `/api-tests-java`  | Scenarios + spec      | Java 17+ tests (JUnit 5, AssertJ, Allure)      |
+| `/api-test-review` | Test code + spec      | Review report with severity levels             |
 
-> While `/api-tests` provides good coverage out of the box, it is designed to be adapted to your team's architectural guidelines.
->
-> **Optional:** `/api-isolated-tests` — generates detailed test scenarios for a single endpoint (steps, data, expected results). Use when you need a deep-dive into one area instead of full API coverage.
+For an existing test suite, skip generation: `/repo-scout` → `/api-test-cases` (gap analysis) →
+`/api-test-review` (legacy audit and contract check) → `/api-tests fix` (surgical fixes, no
+regeneration).
 
-### See it in action
+### What the output looks like
 
-Here is what real skill output looks like (truncated). Each example links to the full artifact in this repo.
-
-**`/spec-audit` — finds contradictions in API specifications:**
+`/spec-audit` on a registration API — it reads the spec adversarially rather than trusting it:
 
 ```text
 Spec Audit — Registration API v1
 Verdict: BLOCKED | Score: 0%
 
 Top 3 Risks:
-1. [BLOCKER] Spec declares 2FA via SMS but phone field is absent from Request Body
+1. [BLOCKER]  Spec declares 2FA via SMS but the phone field is absent from the request body
 2. [CRITICAL] No HTTP Responses section — no success code, no error codes
 3. [CRITICAL] Example payload violates Business Rule 3 (password contains "Alex")
 ```
 
-> Full report: [`audit/spec-audit_registration-api-v1_20260226_000000.md`](audit/spec-audit_registration-api-v1_20260226_000000.md)
-
-**`/api-test-cases` — generates exhaustive test scenario matrix:**
+`/api-test-review` on generated tests:
 
 ```text
-Feature: User Registration (POST /api/v1/users/register) [CRITICAL]
-
-| ID     | Type | Scenario                          | Expected Result          |
-|--------|------|-----------------------------------|--------------------------|
-| REG-01 | POS  | Happy path — minimal valid data   | 201 Created + JWT token  |
-| REG-07 | NEG  | Missing email field               | 400 + VALIDATION_ERROR   |
-| REG-12 | NEG  | Email is empty string             | 400 + VALIDATION_ERROR   |
-| ...    |      | (40+ scenarios per endpoint)      |                          |
-```
-
-> Full scenarios: [`docs/test-cases/test-scenarios_20260226_120000.md`](docs/test-cases/test-scenarios_20260226_120000.md)
-
-**`/api-test-review` — deep code review of generated tests:**
-
-```text
-API Test Review Report: Registration
-Scope: 19 files, 70+ tests
-
 🔴 CRITICAL: Thread.sleep(2000) in RegistrationIdempotencyTests.kt:45
-   Fix: Replace with runTest { advanceTimeBy(2.seconds) }
+   Fix: replace with runTest { advanceTimeBy(2.seconds) }
 
 🟠 MAJOR: Missing Content-Type assertion in RegistrationPositiveTests.kt:28
    Fix: response.contentType() shouldBe ContentType.Application.Json
-
-✅ Security: No issues found
-✅ Allure Integration: No issues found
 ```
 
-> Full review: [`audit/api-test-review-report_registration_20260301_143000.md`](audit/api-test-review-report_registration_20260301_143000.md)
+A real scenario matrix generated during the workshop:
+[`workshop-podlodka-ai-crew-2/example-test-scenarios.md`](workshop-podlodka-ai-crew-2/example-test-scenarios.md).
 
-### Pipeline for Existing Test Suites
+> **Always review AI output.** Well-engineered prompts raise the floor; they do not remove the need
+> for a human to validate anything before it merges or runs.
 
-When a test suite already exists, skip generation and focus on auditing and remediating:
+---
 
-```text
-/repo-scout  →  /api-test-cases  →  /api-test-review  →  /api-tests fix
-(fresh map)     (gap analysis)      (legacy audit +        (surgical fixes,
-                                     contract check)         no regeneration)
+## Repository layout
+
+| Path | What it is |
+| ---- | ---------- |
+| [`SKILLS.md`](SKILLS.md) | Every skill, grouped, with status. The single source of truth |
+| [`.claude/skills/`](.claude/skills/) | The skills themselves, flat, one directory each |
+| [`.claude/qa-antipatterns/`](.claude/qa-antipatterns/) | 32 quality gates the assistant checks generated code against |
+| [`.claude/qa_agent.md`](.claude/qa_agent.md) | The QA role: pipeline, gates, retry policy |
+| [`docs/patterns.md`](docs/patterns.md) | The design decisions and why each one exists |
+| [`docs/adapting-to-other-tools.md`](docs/adapting-to-other-tools.md) | Running these skills outside Claude Code |
+| [`docs/context-budget.md`](docs/context-budget.md) | Token caps for the always-loaded context |
+| [`scripts/`](scripts/) | Git hooks, the context budget checker, the cost-rate reporter |
+| [`workshop-podlodka-ai-crew-2/`](workshop-podlodka-ai-crew-2/README.md) | Materials from the February 2026 workshop |
+| [`in-progress/`](in-progress/README.md) | Unfinished experiments, wired into nothing |
+| [`archive/`](archive/README.md) | What was removed, and why |
+
+Skills sit flat in `.claude/skills/` on purpose: **Claude Code does not scan category
+subdirectories**, so grouping them into folders would make them undiscoverable. The grouping is in
+`SKILLS.md` instead.
+
+---
+
+## Two tools worth running
+
+```bash
+python3 scripts/context-check.py      # is your always-loaded context over budget?
+python3 scripts/ai-efficiency.py      # $ per 1M tokens, by day / week / month
 ```
 
-Key differences from the greenfield flow:
-
-- Skip `/api-tests` generate — tests already exist
-- `/api-test-review` reads API contracts (Swagger/OpenAPI/Protobuf/GraphQL) from the repo and validates test DTOs against the actual spec
-- `/api-tests fix` automatically fixes common issues (Thread.sleep, runBlocking, missing timeouts) without rewriting test logic
-
-### Utility Skills
-
-| Skill            | Purpose                                                                     |
-| ---------------- | --------------------------------------------------------------------------- |
-| `/skill-audit`   | Audit SKILL.md files for bloat, duplication, and harmful patterns           |
-| `/output-review` | Independent AI audit of any skill's output against its own checklist        |
-| `/doc-lint`      | Documentation quality audit — structure issues, duplicates, SSOT violations |
-| `/api-mocks`     | Generate HTTP mock server + WireMock singletons from spec                   |
-| `/fix-markdown`  | Fix markdownlint errors across the repo                                     |
-| `/pr`            | Create a pull request with conventional commit title                        |
-
-> Full catalog of all 21 skills (setup, audit, analysis, translation): [docs/ai-setup.md](docs/ai-setup.md)
-
-> **Disclaimer:** Always review AI-generated results. Even with well-crafted prompts and agents, outputs must be validated by a human before being merged or executed.
+`ai-efficiency.py` reports a *rate*, never a total. Absolute spend tracks how much you worked; the
+rate tracks how well your setup reuses context, because it falls as more of the context arrives as
+cache reads instead of fresh input.
 
 ---
 
-## CLAUDE.md — Keep It Minimal
+## Adapt it
 
-Research shows that bloated or LLM-generated context files **reduce** agent success rate and increase inference cost by over 20%.
-Keep your `CLAUDE.md` as small as possible: only specific tooling, build commands, and banned alternatives.
-Do not add codebase overviews or duplicate existing documentation.
+This is a starting point, not a product.
 
-See [docs/claudemd-instructions.md](docs/claudemd-instructions.md) for the full guidelines.
+1. Run a skill and read the output. Expect gaps on the first try.
+2. Edit the `.md` file. Skills are natural language — add your team's requirements, delete noise, or
+   ask the assistant to improve the instructions directly.
+3. Audit what you changed: `/skill-audit` for one skill, `/improve-project-context` for the whole
+   corpus.
+4. Once the results are consistently good, share the files with your team.
 
----
-
-## How to Adapt
-
-This library is a starting point. To make it yours:
-
-1. **Run a skill and review.** Expect some gaps on the first try.
-2. **Tweak the `.md` files.** Skills are just natural language. Add your team's specific requirements, remove noise, or ask the AI to improve the prompt directly.
-3. **Iterate and share.** After major edits, run `/skill-audit` to check quality.
-4. **Once results are consistently good**, share the updated skill files with your team.
+Contributing, quality requirements, and the git hooks: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ---
 
-## IDE Compatibility
+## Tech stack of generated tests
+
+**Kotlin** (`/api-tests`, default): JUnit 5 · ktor-client (CIO) · Jackson · Kotest assertions ·
+Allure
+
+**Java 17+** (`/api-tests-java`, opt-in): JUnit 5 · `java.net.http.HttpClient` · Jackson · AssertJ ·
+Awaitility · Allure
+
+Both stacks are locked with an explicit banned-alternatives list in `CLAUDE.md` — see
+[pattern 6](docs/patterns.md#6-locked-tech-stack-with-an-explicit-banned-column) for why naming the
+banned option matters.
+
+---
+
+## Related projects
+
+- **[vigiles](https://github.com/zernie/vigiles)** — grades an agent harness A–F and lints it for
+  the failures markdown validation misses: subagents listing tools that do not exist, skills with
+  descriptions so similar the model fires the wrong one, rules documented in prose but enforced
+  nowhere. A friendly project: this repository is audited with it, and the author contributes
+  upstream. See [Harness verification](#harness-verification) below.
+- **[anthropics/skills](https://github.com/anthropics/skills)** — the official skill library,
+  including `skill-creator`. Compared against `/init-skill` in
+  [docs/patterns.md](docs/patterns.md#init-skill-versus-the-official-skill-creator).
+- **[mattpocock/skills](https://github.com/mattpocock/skills)** — small, composable, well-documented
+  skills for general engineering work; a good model for how to write one.
+
+### Harness verification
+
+```bash
+npx vigiles audit      # grade this harness A-F, read-only, no setup
+npx vigiles lint       # structural validity and dangling references
+```
+
+---
+
+## Workshop & demo
+
+- [Demo video](https://youtu.be/7VnjM44qkmc) — presented at Podlodka AI Crew #2, February 2026
+- [Workshop materials](workshop-podlodka-ai-crew-2/README.md) — slides, live commands, model
+  comparison notes
+- Branches: `main` (configured project with generated tests), `spec-only` (clean starting point)
 
 <details>
-<summary><strong>Compatibility matrix — click to expand</strong></summary>
+<summary><strong>Further reading</strong></summary>
 
-| Capability    | Claude Code | OpenCode   | Cursor                  | VS Code Copilot             | IntelliJ Copilot            | Codex               | JetBrains AI             | Gemini Code Assist      | Generic Chat |
-| ------------- | ----------- | ---------- | ----------------------- | --------------------------- | --------------------------- | ------------------- | ------------------------ | ----------------------- | ------------ |
-| `CLAUDE.md`   | **Native**  | **Native** | **Native**              | → `copilot-instructions.md` | → `copilot-instructions.md` | → `AGENTS.md`       | → `.junie/guidelines.md` | → `GEMINI.md` (symlink) | Copy-paste   |
-| `qa_agent.md` | **Native**  | **Native** | → `.cursor/rules/*.mdc` | → `copilot-instructions.md` | → `copilot-instructions.md` | → `AGENTS.md`       | → `.junie/guidelines.md` | Manual read             | Copy-paste   |
-| `skills/*.md` | **Native**  | **Native** | → `.cursor/rules/*.mdc` | **Native**                  | Open in editor              | → `.agents/skills/` | Read `.claude/skills/`   | Manual read             | Copy-paste   |
-| Plugins       | Yes         | No         | No                      | No                          | No                          | Yes                 | No                       | No                      | No           |
-| Anti-patterns | Yes         | Yes        | Yes                     | Yes                         | Yes                         | Yes                 | Yes                      | Yes                     | Copy-paste   |
+**Prompt & skill engineering**
 
-> **Disclaimer:** Non-Claude tools may consume higher token usage — check token usage for any skill.
-> If significant, use the native file structure per official documentation.
-
-</details>
-
-> IDE-specific prompts for running each skill: [docs/workshop-commands.md](docs/workshop-commands.md)
-
----
-
-## Architecture
-
-- **21 skills** in `.claude/skills/` — from repo scanning to test generation to translation
-- **31 anti-pattern quality gates** in `.claude/qa-antipatterns/` — the AI checks generated code against these before finishing
-- **3 specialized agents** in `.claude/agents/` — SDET (writes test code), Auditor (reviews quality), and Perf Engineer (generates load tests)
-- **Layered context loading** — the AI reads only what it needs for the current task (`CLAUDE.md` always, agent/skill files on demand), keeping responses fast and focused
-- **Self-improving loop** — the AI suggests improvements to its own knowledge base at the end of each run, so skills get better over time
-- **Chained pipeline** — each skill builds on the previous one's output (`/repo-scout` → `/api-test-cases` → `/api-tests` → `/api-test-review`), so results are consistent and traceable
-
-> Full inventory of all files and architectural patterns: [docs/ai-setup.md](docs/ai-setup.md)
-
----
-
-## Tech Stack (for generated API tests)
-
-**Kotlin (default — `/api-tests`):**
-
-| Component      | Technology             |
-| -------------- | ---------------------- |
-| Language       | Kotlin                 |
-| Test Framework | JUnit 5                |
-| HTTP Client    | ktor-client (CIO)      |
-| Serialization  | Jackson                |
-| Assertions     | Kotest assertions-core |
-| Reporting      | Allure                 |
-
-**Java 17+ (opt-in — `/api-tests-java`):**
-
-| Component      | Technology                          |
-| -------------- | ----------------------------------- |
-| Language       | Java 17+                            |
-| Test Framework | JUnit 5                             |
-| HTTP Client    | `java.net.http.HttpClient` (JDK 17) |
-| Serialization  | Jackson (PropertyNamingStrategies)  |
-| Assertions     | AssertJ (`.as()` message required)  |
-| Async wait     | Awaitility                          |
-| Reporting      | Allure                              |
-
----
-
-## Demo & Resources
-
-- [Demo Video](https://youtu.be/7VnjM44qkmc) — capability walkthrough, presented at Podlodka AI Crew #2 (February 2026)
-- [Presentation (PDF)](presentation/Workshop_AI_for_QA.pdf)
-- [Workshop commands & IDE prompts](docs/workshop-commands.md)
-- Branches: `main` (fully configured project with generated tests), `spec-only` (clean starting point — API specs only, no generated code; best for first-time users)
-
-<details>
-<summary><strong>Additional resources — click to expand</strong></summary>
-
-### Prompt Engineering
-
-- [Anthropic Prompt Guide](https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview)
-
-### Anthropic (Claude)
-
-- [Anthropic Cookbook](https://github.com/anthropics/anthropic-cookbook)
+- [Anthropic prompt engineering guide](https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview)
 - [The Complete Guide to Building Skills for Claude (PDF)](https://resources.anthropic.com/hubfs/The-Complete-Guide-to-Building-Skill-for-Claude.pdf?hsLang=en)
-- [Sub-agents](https://code.claude.com/docs/en/sub-agents)
+- [Anthropic cookbook](https://github.com/anthropics/anthropic-cookbook)
+- [Claude Code skills documentation](https://code.claude.com/docs/en/skills)
+- [Sub-agents](https://code.claude.com/docs/en/sub-agents) — and
+  [why this repo stopped using them](archive/agents/README.md)
 
-### VS Code & GitHub Copilot
+**Other tools**
 
-- [Custom Instructions](https://code.visualstudio.com/docs/copilot/customization/custom-instructions)
+- [VS Code custom instructions](https://code.visualstudio.com/docs/copilot/customization/custom-instructions)
+- [Cursor skills](https://cursor.com/docs/context/skills)
+- [Codex agent skills](https://developers.openai.com/codex/skills/)
 
-### Cursor
+**Translations**
 
-- [Skills](https://cursor.com/docs/context/skills)
-- [Subagents](https://cursor.com/docs/context/subagents)
-
-### Codex
-
-- [Agent Skills](https://developers.openai.com/codex/skills/)
-
-### Skills
-
-- [Official skill creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator)
-
-### Vibe Coding
-
-- [Vibe coding tips](https://www.threads.com/@boris_cherny/post/DTBVlMIkpcm)
-
-### Translations
-
-- [Translated version of this repository (ru)](https://github.com/vlad-ryzhkov/AI-QA-workshop-feb19)
+- [Russian version of this repository](https://github.com/vlad-ryzhkov/AI-QA-workshop-feb19)
 
 </details>
+
+---
+
+## Licence
+
+[MIT](LICENSE).

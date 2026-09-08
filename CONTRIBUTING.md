@@ -2,69 +2,84 @@
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 20+ (for `markdownlint` and `vigiles`)
+- Python 3.11+ (for `scripts/context-check.py` and `scripts/ai-efficiency.py`)
 - Bash 4+
 - Git hooks: `bash scripts/setup-hooks.sh`
 
-## Creating a Skill
+## Creating a skill
 
-1. Run `/init-skill` — follows the skill template and checklist
-2. Validate: `npx agnix --target claude-code .`
-3. Run `/skill-audit` for a deep audit
+1. Run `/init-skill` — it follows the template and checklist.
+2. **Add it to [`SKILLS.md`](SKILLS.md) in the same change.** A skill missing from
+   that table is a defect; it is the only skill list in the repository, and
+   `/improve-project-context` will flag the skill as an orphan.
+3. Validate structurally: `npx vigiles lint`.
+4. Audit the content: `/skill-audit`.
 
-## Quality Requirements
+Skills go flat in `.claude/skills/<name>/`. Do **not** group them into category
+subdirectories — Claude Code only discovers `SKILL.md` exactly one level deep, so
+`.claude/skills/api-testing/api-tests/SKILL.md` would never load. Grouping is
+editorial and lives in `SKILLS.md`.
 
-All skills must pass:
+## Quality requirements
 
-| Check          | Tool                               | Threshold              |
-| -------------- | ---------------------------------- | ---------------------- |
-| AI config lint | `npx agnix --target claude-code .` | Zero errors            |
-| Line count     | `/skill-audit` check               | ≤500 lines (warn >400) |
+| Check | Command | Threshold |
+| ----- | ------- | --------- |
+| Harness structure | `npx vigiles lint` | Zero errors |
+| Harness grade | `npx vigiles audit` | No regression |
+| Context budget | `python3 scripts/context-check.py` | Exit code 0 |
+| Skill size | `/skill-audit` | ≤500 lines (warn over 400) |
+| Markdown | `npx markdownlint -c .markdownlint.yaml '**/*.md'` | Zero errors |
 
-### Tier 1 Baseline Sections (required in every SKILL.md)
+Two skills currently exceed the size cap — see
+[Known limitations](docs/patterns.md#known-limitations). Do not add a third.
 
-- **Quality Gate / Self-Review** — inline checklist before output
-- **Gardener** — reference to `.claude/protocols/gardener.md`
+### Baseline sections required in every `SKILL.md`
+
+Enforced by `.claude/hooks/skill-lint.sh` on every edit:
+
+- **Quality Gate / Self-Review** — an inline checklist before output
+- **Gardener** — a reference to `.claude/protocols/gardener.md`
 - **SILENT MODE / Verbosity** — token economy compliance
-- **SKILL COMPLETE / Completion** — structured completion block
+- **SKILL COMPLETE** — a structured completion block
 
-## Running Quality Checks
-
-```bash
-# Lint all AI config files
-npx agnix --target claude-code .
-
-# Strict mode (warnings become errors)
-npx agnix --target claude-code --strict .
-
-# Auto-fix where possible
-npx agnix --target claude-code --fix .
-```
-
-## PR Checklist
-
-Before opening a PR that touches `.claude/`:
-
-- [ ] `npx agnix --target claude-code .` passes
-- [ ] `/skill-audit` — zero errors
-- [ ] SKILL.md ≤500 lines; overflow moved to `references/`
-
-## Git Hooks
-
-| Hook                     | What it checks                                                   |
-| ------------------------ | ---------------------------------------------------------------- |
-| `pre-commit`             | Forbidden files, secret patterns, staged SKILL.md structure      |
-| `pre-push`               | Branch naming, forbidden files, Kotlin compilation, markdownlint |
-| `skill-lint` (post-edit) | Line count, Tier 1 Baseline sections, forbidden patterns         |
-
-Setup: `bash scripts/setup-hooks.sh`
+Utility skills under ~100 lines may skip most of these; the full baseline would
+exceed their logic. Record the exemption in
+[Known limitations](docs/patterns.md#known-limitations).
 
 ## Anti-patterns
 
-All QA anti-patterns live in `.claude/qa-antipatterns/`. The index at `_index.md` must list every pattern file. Check S17 validates this.
-
-To add a new anti-pattern:
+QA anti-patterns for generated code live in `.claude/qa-antipatterns/`. To add one:
 
 1. Create `.claude/qa-antipatterns/{category}/{problem-name}.md`
-2. Add entry to `_index.md`
-3. Run `npx agnix --target claude-code .` to verify
+2. Add an entry to `_index.md` — the index must list every pattern file
+3. Run `npx vigiles lint` to verify nothing dangles
+
+## Git hooks
+
+| Hook | What it checks |
+| ---- | -------------- |
+| `pre-commit` | Forbidden files, secret patterns, staged `SKILL.md` structure |
+| `pre-push` | Branch naming, forbidden files, Kotlin compilation, markdownlint |
+| `skill-lint` (post-edit) | Line count, baseline sections, forbidden patterns |
+| `delta-guard` (post-edit) | Warns when a governed context file is fully rewritten instead of edited |
+
+Install: `bash scripts/setup-hooks.sh`
+
+## Where things go
+
+| Adding | Goes in |
+| ------ | ------- |
+| A working skill | `.claude/skills/` **and** `SKILLS.md` |
+| An unfinished experiment | `in-progress/`, referenced from nothing in `.claude/` |
+| A design decision worth explaining | `docs/patterns.md` |
+| Something being retired | `archive/`, with a README saying why |
+
+## PR checklist
+
+- [ ] `npx vigiles lint` passes
+- [ ] `python3 scripts/context-check.py` exits 0
+- [ ] `/skill-audit` reports zero errors on any skill you touched
+- [ ] New or renamed skill is in `SKILLS.md`
+- [ ] `SKILL.md` ≤500 lines; overflow moved to `references/`
+- [ ] No internal company names, hostnames, or private tooling contracts

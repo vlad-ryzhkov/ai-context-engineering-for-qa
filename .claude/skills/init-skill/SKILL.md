@@ -7,6 +7,13 @@ context: fork
 
 # /init-skill — New Skill Generator
 
+> **Status: private successor.** This version works and is maintained enough to
+> use, but the author runs a non-public variant whose generated skills ship with
+> an eval suite that scores them — so "does this skill work" is measured rather
+> than reviewed. Fixes land there first. Public alternative:
+> [anthropics/skills `skill-creator`](https://github.com/anthropics/skills/tree/main/skills/skill-creator).
+> Status vocabulary: [`SKILLS.md`](../../../SKILLS.md).
+
 <purpose>
 Interactive creation of a new skill with step-by-step workflow, checkpoints, and a refinement cycle.
 Focus: QA tasks (testing, analysis, automation).

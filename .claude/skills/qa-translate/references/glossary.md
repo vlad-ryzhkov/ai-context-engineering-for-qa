@@ -155,7 +155,7 @@ These items MUST remain exactly as-is in the translation:
 - `/spec-audit`, `/api-isolated-tests`, `/api-tests`, `/repo-scout`
 - `/screenshot-analyze`, `/doc-lint`, `/skill-audit`
 - `/init-skill`, `/init-agent`, `/init-project`
-- `/update-ai-setup`, `/qa-translate`
+- `/qa-translate`
 
 ### Tool Names
 

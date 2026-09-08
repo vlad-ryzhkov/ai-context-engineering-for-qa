@@ -1,59 +1,27 @@
-# AGENTS.md — Project Context Bridge
+# AGENTS.md
 
-## CORE INSTRUCTION
+Entry point for assistants that read `AGENTS.md` rather than `CLAUDE.md`
+(OpenAI Codex and others following the same convention).
 
-**YOU MUST READ AND FOLLOW `CLAUDE.md` AT THE ROOT OF THIS PROJECT.**
+## Read these, in order
 
-`CLAUDE.md` is the **Single Source of Truth** for:
+1. **[`CLAUDE.md`](CLAUDE.md)** — the single source of truth for tech stack,
+   commands, safety protocols, and the communication protocol. If it conflicts
+   with anything else, `CLAUDE.md` wins.
+2. **[`.claude/qa_agent.md`](.claude/qa_agent.md)** — the QA role: pipeline,
+   quality gates, retry policy, anti-patterns.
+3. **[`SKILLS.md`](SKILLS.md)** — every available skill, grouped, with status.
+   This is the only skill list in the repository; do not expect another.
 
-1. **Tech Stack:** Kotlin, JUnit 5, Allure, ktlint — LOCKED.
-2. **Safety Protocols:** No destructive commands, no .env leaks.
-3. **Code Style:** Formatting, naming conventions, assertion rules.
-4. **Communication Protocol:** CLI-mode, no preambles, tool-first.
+## Invoking a skill
 
-## QA AGENT PERSONA
+Skills are plain markdown at `.claude/skills/<name>/SKILL.md`. If your tool has
+no native skill mechanism, read the file and follow it as instructions. See
+[`docs/adapting-to-other-tools.md`](docs/adapting-to-other-tools.md).
 
-**YOU MUST ALSO READ:** `.claude/qa_agent.md`
+## Non-negotiable
 
-`qa_agent.md` defines:
-
-- QA Lead philosophy and mindset
-- Anti-patterns to avoid
-- Workflow protocols (Fail Fast, Compilation Gate)
-
-## CRITICAL BEHAVIOR
-
-- If `CLAUDE.md` conflicts with any other instruction, `CLAUDE.md` WINS.
-- Do NOT generate code that violates the strict dependencies listed in `CLAUDE.md`.
-- All documentation and skill content must be written in **English**, unless explicitly stated otherwise.
-
-## AVAILABLE SKILLS
-
-Invoke with `$skill-name` or via the skill selector:
-
-| Skill                 | Purpose                                 |
-| --------------------- | --------------------------------------- |
-| `$repo-scout`         | Repository scanning                     |
-| `$spec-audit`         | QA audit of requirements                |
-| `$api-isolated-tests` | Test cases from specification           |
-| `$api-test-cases`     | Bulk test cases for entire API          |
-| `$api-tests`          | API automated tests (Kotlin)            |
-| `$api-tests-java`     | API automated tests (Java 17+)          |
-| `$api-test-review`    | Deep code review of generated API tests |
-| `$api-mocks`          | HTTP mock server generation             |
-| `$load-tests`         | JMeter DSL load test scenarios          |
-| `$screenshot-analyze` | Screenshot analysis for L10N defects    |
-| `$doc-lint`           | Documentation audit                     |
-| `$skill-audit`        | SKILL.md files audit                    |
-| `$init-skill`         | New skill creation                      |
-| `$init-agent`         | qa_agent.md creation                    |
-| `$init-project`       | CLAUDE.md project initialization        |
-| `$update-ai-setup`    | AI setup registry update                |
-| `$output-review`      | Independent skill output audit          |
-| `$agents-checker`     | Agent setup validation                  |
-| `$qa-translate`       | Technical translation RU→EN             |
-| `$fix-markdown`       | Fix markdownlint errors                 |
-| `$pr`                 | Pull request creation                   |
-| `$curate-lessons`     | Lesson curation from pending.md         |
-
-**Recommended Workflow:** `$repo-scout` → `$api-test-cases` → `$api-tests` → `$api-test-review`
+- Do not generate code that violates the locked dependencies in `CLAUDE.md`.
+- All documentation and skill content is written in English.
+- Anti-patterns for generated test code live in `.claude/qa-antipatterns/`; read
+  `_index.md` before generating tests.

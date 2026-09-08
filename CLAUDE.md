@@ -1,10 +1,11 @@
-# AI QA Workshop Environment
+# AI Context Engineering for QA
 
 ## Context
 
-- **Project:** QA Automation Workshop
+- **Project:** a library of QA automation skills, plus a demo Gradle project to run them against
 - **Role:** Senior QA Automation Engineer
 - **Language:** Kotlin, Markdown
+- **Skill catalogue:** `SKILLS.md` — the single source of truth. Do not maintain a second list.
 
 ## Communication Protocol (STRICT)
 
@@ -68,6 +69,8 @@ Before pushing to any branch, explicitly confirm the target branch name with the
 
 When asked to shorten, simplify, or trim output/content — remove only what is explicitly requested. Never remove safety protocols or customization prompts unless explicitly stated.
 
-**Agent context:** `.claude/qa_agent.md` — for core testing and orchestration skills, read this file before proceeding. Contains output format, skill completion protocol, and workflow pipeline.
+**QA role:** `.claude/qa_agent.md` — read before any testing work. Contains the pipeline, quality gates, retry policy, and the skill completion protocol.
 
 **Delta Update Protocol:** Context files evolve via surgical `Edit`, never full `Write` overwrites. `delta-guard.sh` hook warns on violations.
+
+**Nothing in `in-progress/` or `archive/` is active.** Do not read from them for a task, and never reference them from `.claude/`.

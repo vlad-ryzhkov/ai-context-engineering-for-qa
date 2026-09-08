@@ -5,7 +5,14 @@ allowed-tools: "Read Write Edit Glob Grep Bash(wc*)"
 context: fork
 ---
 
-# Skill & Agent Audit
+# Skill Audit
+
+> **Status: private successor.** This version works and is maintained enough to
+> use, but the author runs a non-public variant that scores each finding against
+> a graded rubric with a pass threshold instead of emitting an unweighted list.
+> Fixes land there first. For a public alternative that grades a whole harness,
+> see [vigiles](https://github.com/zernie/vigiles). Status vocabulary:
+> [`SKILLS.md`](../../../SKILLS.md).
 
 Audit AI instructions for efficiency: detect bloat, duplication, harmful patterns.
 
