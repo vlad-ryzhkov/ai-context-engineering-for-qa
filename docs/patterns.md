@@ -43,7 +43,7 @@ extracted content is not loaded at all, compressed content is still loaded.
 
 **Problem:** the assistant repeats the same mistakes — hardcoded data, missing
 assertions, `Thread.sleep()`.
-**Mechanism:** 32 pattern files in `.claude/qa-antipatterns/` across four
+**Mechanism:** 31 pattern files in `.claude/qa-antipatterns/` across four
 categories, with an index the skill reads before generating. The generated code
 is checked against them before the skill finishes.
 

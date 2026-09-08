@@ -4,7 +4,7 @@ Stop writing ad-hoc prompts. Engineer the context instead.
 
 A working library of **22 AI skills** for QA work — reusable instruction files that tell an AI
 assistant exactly how to audit a specification, generate test cases, write API tests in Kotlin or
-Java, and review its own output — plus **32 anti-pattern quality gates** the assistant checks its
+Java, and review its own output — plus **31 anti-pattern quality gates** the assistant checks its
 output against before it finishes.
 
 Copy `.claude/` into your project and the assistant knows how to do QA work in it.
@@ -117,7 +117,7 @@ A real scenario matrix generated during the workshop:
 | ---- | ---------- |
 | [`SKILLS.md`](SKILLS.md) | Every skill, grouped, with status. The single source of truth |
 | [`.claude/skills/`](.claude/skills/) | The skills themselves, flat, one directory each |
-| [`.claude/qa-antipatterns/`](.claude/qa-antipatterns/) | 32 quality gates the assistant checks generated code against |
+| [`.claude/qa-antipatterns/`](.claude/qa-antipatterns/) | 31 quality gates the assistant checks generated code against |
 | [`.claude/qa_agent.md`](.claude/qa_agent.md) | The QA role: pipeline, gates, retry policy |
 | [`docs/patterns.md`](docs/patterns.md) | The design decisions and why each one exists |
 | [`docs/adapting-to-other-tools.md`](docs/adapting-to-other-tools.md) | Running these skills outside Claude Code |
