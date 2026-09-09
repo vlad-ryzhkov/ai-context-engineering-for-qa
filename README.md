@@ -122,6 +122,7 @@ A real scenario matrix generated during the workshop:
 | [`docs/patterns.md`](docs/patterns.md) | The design decisions and why each one exists |
 | [`docs/adapting-to-other-tools.md`](docs/adapting-to-other-tools.md) | Running these skills outside Claude Code |
 | [`docs/context-budget.md`](docs/context-budget.md) | Token caps for the always-loaded context |
+| [`docs/context-visibility.md`](docs/context-visibility.md) | Seeing the budget and the live context window while you work |
 | [`scripts/`](scripts/) | Git hooks, the context budget checker, the cost-rate reporter |
 | [`workshop-podlodka-ai-crew-2/`](workshop-podlodka-ai-crew-2/README.md) | Materials from the February 2026 workshop |
 | [`in-progress/`](in-progress/README.md) | Unfinished experiments, wired into nothing |
