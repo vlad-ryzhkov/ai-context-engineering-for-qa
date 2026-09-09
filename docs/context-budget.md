@@ -86,3 +86,5 @@ Imperative ONLY, drop articles, arrows+caps, sentences <12 words, ONE example ma
 
 - Per-file Size Pressure: `improve-project-context` + `improve-context-from-sessions` skills.
 - Reflex trigger: `~/.claude/CLAUDE.md` → "Context-corpus edit gate".
+- Surfacing these numbers in a session — the `SessionStart` budget warning and the status-line
+  context meter: `docs/context-visibility.md`.
